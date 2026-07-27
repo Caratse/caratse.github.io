@@ -63,11 +63,20 @@
     .section-head h2{font-size:16px;margin:0}
     .section-head button{border:0;background:transparent;font-weight:700;color:#6B5A00}
     .list{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 6px 20px rgba(30,30,30,.05)}
-    .txn{
-      display:grid;grid-template-columns:46px 1fr auto;gap:11px;align-items:center;
-      padding:13px 14px;border-bottom:1px solid var(--line)
+    .swipe-row{position:relative;overflow:hidden;background:#F05A55;border-bottom:1px solid var(--line)}
+    .swipe-delete{
+      position:absolute;right:0;top:0;bottom:0;width:82px;border:0;background:#F05A55;color:#fff;
+      font-weight:850;display:grid;place-items:center;font-size:13px
     }
-    .txn:last-child{border-bottom:0}
+    .txn{
+      position:relative;z-index:1;background:#fff;
+      display:grid;grid-template-columns:46px 1fr auto;gap:11px;align-items:center;
+      padding:13px 14px;border-bottom:0;transform:translateX(0);transition:transform .18s ease;
+      touch-action:pan-y
+    }
+    .swipe-row.open .txn{transform:translateX(-82px)}
+    .swipe-row.swiping .txn{transition:none}
+    .swipe-row:last-child{border-bottom:0}
     .txn-icon{width:42px;height:42px;border-radius:14px;background:var(--yellow-soft);display:grid;place-items:center;font-size:20px}
     .txn-title{font-weight:750;font-size:14px;margin-bottom:4px}
     .txn-meta{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
@@ -217,11 +226,11 @@
       border-radius:28px 28px 0 0;padding:16px 18px calc(14px + env(safe-area-inset-bottom));
       animation:up .22s ease;display:flex;flex-direction:column
     }
-    .sheet-scroll{overflow:auto;overscroll-behavior:contain;padding:0 1px 8px;min-height:0;flex:1}
-    .txn-form-grid{margin-top:0}
+    .sheet-scroll{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 1px 8px;min-height:0;flex:1;width:100%}
+    .txn-form-grid{margin-top:0;grid-template-columns:1fr}
     .txn-form-grid .field{min-width:0}
     .txn-form-grid .field label{margin-bottom:4px}
-    .txn-form-grid .field input,.txn-form-grid .field select,.txn-form-grid .field textarea{padding:9px 10px}
+    .txn-form-grid .field input,.txn-form-grid .field select,.txn-form-grid .field textarea{padding:9px 10px;font-size:16px}
     .sticky-actions{
       position:sticky;bottom:0;z-index:8;background:#fff;
       margin:0 -18px calc(-14px - env(safe-area-inset-bottom));
@@ -230,6 +239,9 @@
       flex-shrink:0
     }
     .sticky-actions .primary,.sticky-actions .danger{min-height:46px}
+    #txnModal .sheet,#txnModal .sheet-scroll,#txnModal .amount-tag-row,#txnModal .txn-form-grid{max-width:100%;min-width:0}
+    #txnModal input,#txnModal select{touch-action:manipulation}
+    body.modal-open{overflow:hidden;position:fixed;width:100%;left:0;right:0}
     @keyframes up{from{transform:translateY(40px);opacity:.5}to{transform:none;opacity:1}}
     .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
     .sheet-head h3{margin:0;font-size:18px}
@@ -240,7 +252,7 @@
     .amount-wrap{display:flex;align-items:center;border-bottom:2px solid var(--yellow);margin-bottom:0;padding:4px 0;min-width:0}
     .amount-wrap span{font-size:28px;font-weight:800}
     .amount-wrap input{border:0;outline:0;width:100%;min-width:0;font-size:36px;font-weight:850;padding:8px;background:transparent}
-    .tag-beside-amount input{height:46px;font-size:13px}
+    .tag-beside-amount input{height:46px;font-size:16px}
     .modal-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:16px}
     .toast{
       position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);
@@ -292,14 +304,14 @@
       .sheet-head h3{font-size:17px}
       .type-toggle{margin-bottom:7px}
       .type-toggle button{padding:7px}
-      .amount-tag-row{grid-template-columns:minmax(0,1.2fr) minmax(105px,.8fr);gap:8px;margin-bottom:9px}
+      .amount-tag-row{grid-template-columns:minmax(0,1.15fr) minmax(120px,.85fr);gap:8px;margin-bottom:10px}
       .amount-wrap span{font-size:23px}
       .amount-wrap input{font-size:29px;padding:4px 6px}
-      .tag-beside-amount label{font-size:10px}
-      .tag-beside-amount input{height:38px;padding:7px 9px;font-size:12px}
-      .txn-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px}
-      .txn-form-grid .field label{font-size:10px}
-      .txn-form-grid .field input,.txn-form-grid .field select{height:38px;padding:7px 9px;font-size:13px}
+      .tag-beside-amount label{font-size:11px}
+      .tag-beside-amount input{height:42px;padding:8px 10px;font-size:16px}
+      .txn-form-grid{grid-template-columns:1fr;gap:9px}
+      .txn-form-grid .field label{font-size:11px}
+      .txn-form-grid .field input,.txn-form-grid .field select{height:44px;padding:8px 11px;font-size:16px}
       .sticky-actions{
         margin:0 -14px calc(-9px - env(safe-area-inset-bottom));
         padding:8px 14px calc(9px + env(safe-area-inset-bottom))
@@ -451,7 +463,7 @@
       <div class="panel">
         <div class="section-head" style="margin-top:0"><h2>About this app</h2></div>
         <p style="margin:0;color:var(--muted);line-height:1.55;font-size:13px">
-          English interface with RMB settlement. Version 8 redesigns Analysis into a mobile-friendly weekly/monthly/yearly trend view with an expense/income toggle and category ranking, inspired by your reference screen. Your records are stored locally in this browser.
+          English interface with RMB settlement. Version 9 fixes iPhone input zoom and layout shifting, stacks Date and Category cleanly, and adds swipe-left deletion to transaction lists. Your records are stored locally in this browser.
           Export a backup regularly, especially before changing devices or clearing browser data.
         </p>
         <button id="installBtn" class="primary hidden" style="width:100%;margin-top:14px">Install app</button>
@@ -840,13 +852,16 @@
     const sign=t.type==="income"?"+":"−";
     const cls=t.type==="income"?"income":"";
     const icon=categoryIcon(t.category);
-    return `<div class="txn" data-id="${t.id}">
-      <div class="txn-icon">${icon}</div>
-      <div>
-        <div class="txn-title">${escapeHtml(t.category)}</div>
-        <div class="txn-meta">${dateLabel(t.date)}${t.tag?` · ${escapeHtml(t.tag)}`:""}</div>
+    return `<div class="swipe-row" data-swipe-id="${t.id}">
+      <button class="swipe-delete" type="button" data-delete-id="${t.id}" aria-label="Delete record">Delete</button>
+      <div class="txn" data-id="${t.id}">
+        <div class="txn-icon">${icon}</div>
+        <div>
+          <div class="txn-title">${escapeHtml(t.category)}</div>
+          <div class="txn-meta">${dateLabel(t.date)}${t.tag?` · ${escapeHtml(t.tag)}`:""}</div>
+        </div>
+        <div class="txn-amount ${cls}">${sign}${money(t.amount)}</div>
       </div>
-      <div class="txn-amount ${cls}">${sign}${money(t.amount)}</div>
     </div>`;
   }
   function emptyHtml(title,sub){ return `<div class="empty"><strong>${title}</strong>${sub}</div>`; }
@@ -1114,11 +1129,15 @@
     $("txnCategory").value=t?.category||quickCategory||$("txnCategory").options[0]?.value||"";
     $("deleteTxn").classList.toggle("hidden",!t);
     $("txnModal").classList.add("open");
+    document.body.classList.add("modal-open");
     const formScroller=$("txnModal").querySelector(".sheet-scroll");
     if(formScroller)formScroller.scrollTop=0;
     setTimeout(()=>$("txnAmount").focus(),150);
   }
-  function closeModal(){ $("txnModal").classList.remove("open"); }
+  function closeModal(){
+    $("txnModal").classList.remove("open");
+    document.body.classList.remove("modal-open");
+  }
   function setTxnType(type){
     $("typeExpense").classList.toggle("active",type==="expense");
     $("typeIncome").classList.toggle("active",type==="income");
@@ -1291,9 +1310,64 @@
   $("typeIncome").addEventListener("click",()=>setTxnType("income"));
   $("saveTxn").addEventListener("click",saveTxn);
   $("deleteTxn").addEventListener("click",deleteTxn);
+  let swipeState=null;
+  document.addEventListener("touchstart",e=>{
+    const txn=e.target.closest(".txn[data-id]");
+    if(!txn)return;
+    const wrapper=txn.closest(".swipe-row");
+    const touch=e.touches[0];
+    swipeState={wrapper,txn,startX:touch.clientX,startY:touch.clientY,lastX:touch.clientX,moved:false};
+    qsa(".swipe-row.open").forEach(row=>{if(row!==wrapper)row.classList.remove("open");});
+  },{passive:true});
+
+  document.addEventListener("touchmove",e=>{
+    if(!swipeState)return;
+    const touch=e.touches[0];
+    const dx=touch.clientX-swipeState.startX;
+    const dy=touch.clientY-swipeState.startY;
+    if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>8)return;
+    if(Math.abs(dx)>6)swipeState.moved=true;
+    const base=swipeState.wrapper.classList.contains("open")?-82:0;
+    const offset=Math.max(-82,Math.min(0,base+dx));
+    swipeState.wrapper.classList.add("swiping");
+    swipeState.txn.style.transform=`translateX(${offset}px)`;
+    swipeState.lastX=touch.clientX;
+    e.preventDefault();
+  },{passive:false});
+
+  document.addEventListener("touchend",()=>{
+    if(!swipeState)return;
+    const dx=swipeState.lastX-swipeState.startX;
+    const wasOpen=swipeState.wrapper.classList.contains("open");
+    const shouldOpen=wasOpen?dx<45:dx<-35;
+    swipeState.wrapper.classList.remove("swiping");
+    swipeState.txn.style.transform="";
+    swipeState.wrapper.classList.toggle("open",shouldOpen);
+    swipeState.wrapper.dataset.justSwiped=swipeState.moved?"1":"0";
+    setTimeout(()=>{if(swipeState?.wrapper)delete swipeState.wrapper.dataset.justSwiped;},250);
+    swipeState=null;
+  },{passive:true});
+
   document.addEventListener("click",e=>{
+    const deleteBtn=e.target.closest("[data-delete-id]");
+    if(deleteBtn){
+      e.stopPropagation();
+      const id=deleteBtn.dataset.deleteId;
+      if(confirm("Delete this record?")){
+        state.transactions=state.transactions.filter(x=>x.id!==id);
+        saveState();renderAll();toast("Record deleted.");
+      }
+      return;
+    }
     const row=e.target.closest(".txn[data-id]");
-    if(row) openModal(null,row.dataset.id);
+    if(!row)return;
+    const wrapper=row.closest(".swipe-row");
+    if(wrapper?.dataset.justSwiped==="1")return;
+    if(wrapper?.classList.contains("open")){
+      wrapper.classList.remove("open");
+      return;
+    }
+    openModal(null,row.dataset.id);
   });
   qsa("#presetChips .chip").forEach(c=>c.addEventListener("click",()=>setPreset(c.dataset.preset)));
   ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>{
