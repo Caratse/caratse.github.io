@@ -1,4 +1,4 @@
-const CACHE_NAME = "daily-budget-cloud-v18-20260728";
+const CACHE_NAME = "daily-budget-cloud-v20-20260728";
 const APP_SHELL = [
   "./",
   "./index.html",

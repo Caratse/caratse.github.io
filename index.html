@@ -263,7 +263,43 @@
     .category-record-title{font-size:12px;font-weight:800}
     .category-record-meta{font-size:10px;color:var(--muted);margin-top:3px}
     .category-record-amount{font-size:12px;font-weight:900}
-    .category-detail-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:12px}
+    .category-detail-modal{background:#fff;align-items:stretch}
+    .category-detail-sheet{
+      width:min(760px,100%);height:100dvh;max-height:100dvh;
+      border-radius:0;padding:calc(12px + env(safe-area-inset-top)) 14px
+        calc(12px + env(safe-area-inset-bottom));
+      animation:none
+    }
+    .category-detail-head{
+      flex:0 0 auto;margin:0 0 10px;padding:0 2px 9px;
+      border-bottom:1px solid var(--line)
+    }
+    .category-detail-head h3{font-size:17px}
+    .category-detail-head .swipe-close-hint{
+      margin-left:auto;font-size:9px;color:var(--muted);font-weight:750
+    }
+    .category-detail-sheet .category-detail-summary{
+      flex:0 0 auto;margin-bottom:10px
+    }
+    .category-detail-list-head{
+      flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+      gap:10px;padding:2px 2px 8px
+    }
+    .category-detail-list-head h2{margin:0;font-size:14px}
+    .category-detail-scroll{
+      flex:1;min-height:0;padding:0 2px calc(8px + env(safe-area-inset-bottom))
+    }
+    .category-detail-record-day{
+      font-size:10px;font-weight:850;color:var(--muted);
+      padding:10px 1px 4px
+    }
+    .category-record-row{
+      background:#fff;border-bottom:1px solid var(--line);
+      padding:11px 2px
+    }
+    .category-record-title{font-size:12px}
+    .category-record-meta{font-size:10px}
+    .category-record-amount{font-size:12px}
     .point-value-bubble{background:#fff}
     .accuracy-summary{background:#F7F8FA;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:12px;line-height:1.55}
     .accuracy-summary.clean{background:#EAF8F0;color:#176B45;border-color:#C9EBD8}
@@ -279,8 +315,8 @@
     .duplicate-group-meta{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.45}
     .duplicate-group-count{font-size:10px;font-weight:850;background:#FFF0C2;color:#765900;border-radius:999px;padding:5px 8px;white-space:nowrap}
     .accuracy-note{font-size:10px;color:var(--muted);line-height:1.5;margin:9px 0 0}
-    .sheet.swipe-left-active{transition:none!important;will-change:transform,opacity}
-    .sheet.swipe-left-reset{transition:transform .16s ease,opacity .16s ease!important}
+    .sheet.swipe-right-active,.mini-sheet.swipe-right-active{transition:none!important;will-change:transform,opacity}
+    .sheet.swipe-right-reset,.mini-sheet.swipe-right-reset{transition:transform .16s ease,opacity .16s ease!important}
     #accuracyPanel{border:2px solid #F2D046;box-shadow:0 7px 20px rgba(202,157,0,.08)}
     .accuracy-location{font-size:10px;font-weight:800;color:#785E00;background:#FFF4BE;border-radius:999px;padding:5px 8px}
     .trash-panel-bottom{margin-bottom:22px}
@@ -807,7 +843,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 18 preserves the underlying page position when sheets close, resets swipe-delete rows immediately after Cancel, and removes the header subtitle.
+            Version 20 opens category details with every matching record already visible, removes Close and View-all buttons, supports right-swipe-only return, and restores the exact underlying interface.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -845,27 +881,29 @@
   </nav>
 </div>
 
-<div id="categoryDetailModal" class="modal">
+<div id="categoryDetailModal" class="modal category-detail-modal">
   <div class="sheet category-detail-sheet">
-    <div class="sheet-head">
-      <h3 id="categoryDetailTitle">Category details</h3><span class="swipe-close-hint">Swipe right to close</span>
-      <button id="closeCategoryDetail" class="secondary" type="button">Close</button>
+    <div class="sheet-head category-detail-head">
+      <h3 id="categoryDetailTitle">Category details</h3>
+      <span class="swipe-close-hint">→ Swipe right to return</span>
     </div>
-    <div class="sheet-scroll">
-      <div class="category-detail-summary">
-        <div id="categoryDetailIcon" class="category-detail-icon">•</div>
-        <div>
-          <small id="categoryDetailPeriod">Selected period</small>
-          <strong id="categoryDetailAmount">¥0.00</strong>
-          <div id="categoryDetailMeta" class="category-detail-meta"></div>
-        </div>
+
+    <div class="category-detail-summary">
+      <div id="categoryDetailIcon" class="category-detail-icon">•</div>
+      <div>
+        <small id="categoryDetailPeriod">Selected period</small>
+        <strong id="categoryDetailAmount">¥0.00</strong>
+        <div id="categoryDetailMeta" class="category-detail-meta"></div>
       </div>
-      <div class="section-head" style="margin-top:0"><h2>Recent matching records</h2></div>
+    </div>
+
+    <div class="category-detail-list-head">
+      <h2>All matching records</h2>
+      <span id="categoryDetailCount" class="badge">0 records</span>
+    </div>
+
+    <div class="sheet-scroll category-detail-scroll">
       <div id="categoryDetailRecords" class="category-record-list"></div>
-      <div class="category-detail-actions">
-        <button id="categoryDetailCloseBottom" class="secondary" type="button">Close</button>
-        <button id="categoryDetailViewAll" class="primary" type="button">View all records</button>
-      </div>
     </div>
   </div>
 </div>
@@ -927,8 +965,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=18"></script>
-<script src="firebase-cloud-v17.js?v=18"></script>
+<script src="firebase-config.js?v=20"></script>
+<script src="firebase-cloud-v17.js?v=20"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -1011,8 +1049,7 @@
   let recordFiltersExpanded = false;
   const pendingSaveOperations = new Map();
   let overlayScrollLockDepth = 0;
-  let overlaySavedScrollY = 0;
-  let overlaySavedView = null;
+  let overlayViewSnapshot = null;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
@@ -1880,15 +1917,95 @@
         <div class="top-category-share">#${index+1} · ${total?(amount/total*100).toFixed(1):"0.0"}%</div>
       </div>`).join(""):emptyHtml("No category data","Add records to see your top categories.");
   }
-  function lockPageForOverlay(){
-    if(overlayScrollLockDepth===0){
-      overlaySavedScrollY=Math.max(
+  function activeViewFromDom(){
+    const active=qsa(".view").find(view=>view.classList.contains("active"));
+    return active?.id?.replace(/View$/,"")||currentView||"home";
+  }
+
+  function captureOverlayViewSnapshot(){
+    return {
+      view:activeViewFromDom(),
+      scrollY:Math.max(
         window.scrollY||0,
         document.documentElement.scrollTop||0,
         document.body.scrollTop||0
-      );
-      overlaySavedView=currentView;
-      document.body.style.top=`-${overlaySavedScrollY}px`;
+      ),
+      selectedMonth,
+      selectedYear,
+      selectedWeek,
+      analysisMode,
+      analysisFlow,
+      analysisDrilldown,
+      recordFiltersExpanded,
+      filters:{
+        from:$("filterFrom")?.value||"",
+        to:$("filterTo")?.value||"",
+        type:$("filterType")?.value||"",
+        category:$("filterCategory")?.value||"",
+        search:$("filterSearch")?.value||""
+      },
+      settingsOpenIds:qsa("#settingsView details.settings-card")
+        .filter(section=>section.open)
+        .map(section=>section.id)
+    };
+  }
+
+  function restoreOverlayViewSnapshot(snapshot){
+    if(!snapshot)return;
+
+    selectedMonth=snapshot.selectedMonth;
+    selectedYear=snapshot.selectedYear;
+    selectedWeek=snapshot.selectedWeek;
+    analysisMode=snapshot.analysisMode;
+    analysisFlow=snapshot.analysisFlow;
+    analysisDrilldown=snapshot.analysisDrilldown;
+    recordFiltersExpanded=snapshot.recordFiltersExpanded;
+
+    currentView=snapshot.view;
+    qsa(".view").forEach(view=>{
+      view.classList.toggle("active",view.id===`${snapshot.view}View`);
+    });
+    qsa(".nav [data-view]").forEach(button=>{
+      button.classList.toggle("active",button.dataset.view===snapshot.view);
+    });
+
+    if($("filterFrom"))$("filterFrom").value=snapshot.filters.from;
+    if($("filterTo"))$("filterTo").value=snapshot.filters.to;
+    if($("filterType"))$("filterType").value=snapshot.filters.type;
+    if($("filterCategory")){
+      const exists=[...$("filterCategory").options]
+        .some(option=>option.value===snapshot.filters.category);
+      $("filterCategory").value=exists?snapshot.filters.category:"";
+    }
+    if($("filterSearch"))$("filterSearch").value=snapshot.filters.search;
+    renderRecordFilterToolbar();
+
+    qsa("#settingsView details.settings-card").forEach(section=>{
+      section.open=snapshot.settingsOpenIds.includes(section.id);
+    });
+  }
+
+  function restoreSavedScrollPosition(y){
+    const target=Math.max(0,Number(y)||0);
+    const previousBehavior=document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior="auto";
+    window.scrollTo(0,target);
+
+    requestAnimationFrame(()=>{
+      window.scrollTo(0,target);
+      requestAnimationFrame(()=>window.scrollTo(0,target));
+    });
+    setTimeout(()=>window.scrollTo(0,target),60);
+    setTimeout(()=>{
+      window.scrollTo(0,target);
+      document.documentElement.style.scrollBehavior=previousBehavior;
+    },170);
+  }
+
+  function lockPageForOverlay(){
+    if(overlayScrollLockDepth===0){
+      overlayViewSnapshot=captureOverlayViewSnapshot();
+      document.body.style.top=`-${overlayViewSnapshot.scrollY}px`;
       document.body.classList.add("modal-open");
     }
     overlayScrollLockDepth++;
@@ -1898,26 +2015,21 @@
     if(overlayScrollLockDepth>0)overlayScrollLockDepth--;
     if(overlayScrollLockDepth>0)return;
 
-    const restoreY=overlaySavedScrollY;
-    const restoreView=overlaySavedView;
-    overlaySavedScrollY=0;
-    overlaySavedView=null;
+    const snapshot=overlayViewSnapshot;
+    overlayViewSnapshot=null;
+
+    if(restore&&snapshot)restoreOverlayViewSnapshot(snapshot);
 
     document.body.classList.remove("modal-open");
     document.body.style.top="";
 
-    if(restore&&currentView===restoreView){
-      const previousBehavior=document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior="auto";
-      window.scrollTo(0,restoreY);
-      document.documentElement.style.scrollBehavior=previousBehavior;
-    }
+    if(restore&&snapshot)restoreSavedScrollPosition(snapshot.scrollY);
   }
 
   function resetSwipeSheet(modalId){
-    const sheet=$(modalId)?.querySelector(".sheet");
+    const sheet=$(modalId)?.querySelector(".sheet,.mini-sheet");
     if(!sheet)return;
-    sheet.classList.remove("swipe-left-active","swipe-left-reset");
+    sheet.classList.remove("swipe-right-active","swipe-right-reset");
     sheet.style.transform="";
     sheet.style.opacity="";
   }
@@ -1928,9 +2040,8 @@
 
     const INTERACTIVE_SELECTOR="input,textarea,select,[contenteditable='true']";
     let gesture=null;
-    let lastTouchTime=0;
 
-    function startGesture(clientX,clientY,pointerId=null,target=null){
+    function begin(clientX,clientY,pointerId,target){
       if(!modal.classList.contains("open"))return;
       if(target?.closest?.(INTERACTIVE_SELECTOR))return;
 
@@ -1941,12 +2052,13 @@
         lastX:clientX,
         lastY:clientY,
         startedAt:performance.now(),
-        horizontal:false,
+        directionLocked:false,
+        rightSwipe:false,
         moved:false
       };
     }
 
-    function moveGesture(clientX,clientY,event){
+    function move(clientX,clientY,event){
       if(!gesture)return;
 
       const dx=clientX-gesture.startX;
@@ -1954,127 +2066,118 @@
       gesture.lastX=clientX;
       gesture.lastY=clientY;
 
-      if(!gesture.horizontal){
-        if(Math.abs(dx)<5&&Math.abs(dy)<5)return;
+      if(!gesture.directionLocked){
+        if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
 
-        // Clear vertical gestures remain normal scrolling.
-        if(Math.abs(dy)>Math.abs(dx)*1.65){
+        if(Math.abs(dy)>Math.abs(dx)*1.55){
           gesture=null;
           resetSwipeSheet(modalId);
           return;
         }
 
-        // Only a rightward gesture starts closing.
-        if(dx<=0){
-          if(Math.abs(dx)>18)gesture=null;
+        gesture.directionLocked=true;
+        gesture.rightSwipe=dx>0;
+
+        // Explicitly cancel leftward swipes.
+        if(!gesture.rightSwipe){
+          gesture=null;
+          resetSwipeSheet(modalId);
           return;
         }
-
-        gesture.horizontal=true;
       }
 
-      if(dx<=0)return;
+      if(!gesture.rightSwipe||dx<=0)return;
 
       gesture.moved=true;
-      const distance=Math.min(dx,sheet.clientWidth);
+      const distance=Math.min(dx,Math.max(sheet.clientWidth,1));
       const progress=Math.min(distance/Math.max(sheet.clientWidth,1),1);
 
-      sheet.classList.add("swipe-left-active");
+      sheet.classList.add("swipe-right-active");
       sheet.style.transform=`translate3d(${distance}px,0,0)`;
-      sheet.style.opacity=String(Math.max(.22,1-progress*.78));
+      sheet.style.opacity=String(Math.max(.16,1-progress*.84));
 
       if(event?.cancelable)event.preventDefault();
     }
 
-    function finishGesture(){
+    function finish(){
       if(!gesture)return;
 
       const dx=gesture.lastX-gesture.startX;
       const dy=gesture.lastY-gesture.startY;
       const elapsed=Math.max(performance.now()-gesture.startedAt,1);
       const velocity=dx/elapsed;
-      const mostlyHorizontal=Math.abs(dx)>=Math.abs(dy)*.72;
-
-      // Lower distance and velocity thresholds make closing more sensitive.
+      const horizontalEnough=Math.abs(dx)>=Math.abs(dy)*.68;
       const shouldClose=
-        gesture.horizontal &&
-        mostlyHorizontal &&
-        (dx>=32 || velocity>=.28);
+        gesture.rightSwipe===true &&
+        dx>0 &&
+        horizontalEnough &&
+        (dx>=30||velocity>=.25);
 
       const moved=gesture.moved;
       gesture=null;
 
       if(shouldClose){
         suppressSheetClickUntil=Date.now()+420;
-        sheet.classList.remove("swipe-left-active");
-        sheet.classList.add("swipe-left-reset");
+        sheet.classList.remove("swipe-right-active");
+        sheet.classList.add("swipe-right-reset");
         sheet.style.transform=`translate3d(${Math.max(sheet.clientWidth,window.innerWidth)}px,0,0)`;
         sheet.style.opacity="0";
 
         setTimeout(()=>{
-          closeFunction();
+          closeFunction({restoreScroll:true});
           resetSwipeSheet(modalId);
-        },120);
+        },115);
       }else{
-        sheet.classList.remove("swipe-left-active");
-        sheet.classList.add("swipe-left-reset");
+        sheet.classList.remove("swipe-right-active");
+        sheet.classList.add("swipe-right-reset");
         sheet.style.transform="";
         sheet.style.opacity="";
-
-        if(moved)suppressSheetClickUntil=Date.now()+260;
-        setTimeout(()=>sheet.classList.remove("swipe-left-reset"),170);
+        if(moved)suppressSheetClickUntil=Date.now()+240;
+        setTimeout(()=>sheet.classList.remove("swipe-right-reset"),170);
       }
     }
 
-    // Modern iPhone Safari / installed PWA.
     sheet.addEventListener("pointerdown",event=>{
       if(event.pointerType==="mouse"&&event.button!==0)return;
-      if(Date.now()-lastTouchTime<500&&event.pointerType==="mouse")return;
-
-      startGesture(event.clientX,event.clientY,event.pointerId,event.target);
+      begin(event.clientX,event.clientY,event.pointerId,event.target);
       if(!gesture)return;
-
       try{sheet.setPointerCapture(event.pointerId);}catch(_){}
     });
 
     sheet.addEventListener("pointermove",event=>{
       if(!gesture||gesture.pointerId!==event.pointerId)return;
-      moveGesture(event.clientX,event.clientY,event);
+      move(event.clientX,event.clientY,event);
     });
 
-    const finishPointer=event=>{
+    const endPointer=event=>{
       if(!gesture||gesture.pointerId!==event.pointerId)return;
       try{sheet.releasePointerCapture(event.pointerId);}catch(_){}
-      finishGesture();
+      finish();
     };
 
-    sheet.addEventListener("pointerup",finishPointer);
-    sheet.addEventListener("pointercancel",finishPointer);
+    sheet.addEventListener("pointerup",endPointer);
+    sheet.addEventListener("pointercancel",endPointer);
 
-    // Touch fallback for iOS edge cases.
     sheet.addEventListener("touchstart",event=>{
-      if(typeof PointerEvent!=="undefined")return;
-      if(event.touches.length!==1)return;
-      lastTouchTime=Date.now();
+      if(typeof PointerEvent!=="undefined"||event.touches.length!==1)return;
       const touch=event.touches[0];
-      startGesture(touch.clientX,touch.clientY,null,event.target);
+      begin(touch.clientX,touch.clientY,null,event.target);
     },{passive:true});
 
     sheet.addEventListener("touchmove",event=>{
-      if(typeof PointerEvent!=="undefined")return;
-      if(!gesture||event.touches.length!==1)return;
+      if(typeof PointerEvent!=="undefined"||!gesture||event.touches.length!==1)return;
       const touch=event.touches[0];
-      moveGesture(touch.clientX,touch.clientY,event);
+      move(touch.clientX,touch.clientY,event);
     },{passive:false});
 
     sheet.addEventListener("touchend",()=>{
       if(typeof PointerEvent!=="undefined")return;
-      finishGesture();
+      finish();
     },{passive:true});
 
     sheet.addEventListener("touchcancel",()=>{
       if(typeof PointerEvent!=="undefined")return;
-      finishGesture();
+      finish();
     },{passive:true});
 
     sheet.addEventListener("click",event=>{
@@ -2093,29 +2196,51 @@
   }
   function openCategoryDetail(category){
     const range=analysisRange();
-    const matches=sortTxns(state.transactions.filter(t=>
-      t.type===analysisFlow&&t.category===category&&t.date>=range.from&&t.date<=range.to
+    const matches=sortTxns(state.transactions.filter(transaction=>
+      transaction.type===analysisFlow &&
+      transaction.category===category &&
+      transaction.date>=range.from &&
+      transaction.date<=range.to
     ));
+
     const periodTotal=currentAnalysisList()
-      .filter(t=>t.type===analysisFlow)
-      .reduce((s,t)=>s+(Number(t.amount)||0),0);
-    const categoryTotal=matches.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      .filter(transaction=>transaction.type===analysisFlow)
+      .reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
+    const categoryTotal=matches
+      .reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
+
     categoryDetailCurrent={category,range,type:analysisFlow};
     $("categoryDetailTitle").textContent=category;
     $("categoryDetailIcon").textContent=categoryIcon(category);
     $("categoryDetailPeriod").textContent=range.label;
     $("categoryDetailAmount").textContent=money(categoryTotal);
-    $("categoryDetailMeta").textContent=`${matches.length} record${matches.length===1?"":"s"} · ${periodTotal?(categoryTotal/periodTotal*100).toFixed(1):"0.0"}% of ${analysisFlow}`;
-    $("categoryDetailRecords").innerHTML=matches.length?matches.slice(0,7).map(t=>`
-      <div class="category-record-row">
-        <div>
-          <div class="category-record-title">${escapeHtml(t.tag||t.category)}</div>
-          <div class="category-record-meta">${dateLabel(t.date)} · ${escapeHtml(t.category)}</div>
-        </div>
-        <div class="category-record-amount">${t.type==="income"?"+":"−"}${money(t.amount)}</div>
-      </div>`).join(""):emptyHtml("No matching records","No records were found in this period.");
+    $("categoryDetailMeta").textContent=
+      `${matches.length} record${matches.length===1?"":"s"} · `+
+      `${periodTotal?(categoryTotal/periodTotal*100).toFixed(1):"0.0"}% of ${analysisFlow}`;
+    $("categoryDetailCount").textContent=
+      `${matches.length} record${matches.length===1?"":"s"}`;
+
+    let previousDate="";
+    $("categoryDetailRecords").innerHTML=matches.length
+      ?matches.map(transaction=>{
+          const dayHeader=transaction.date!==previousDate
+            ?`<div class="category-detail-record-day">${escapeHtml(transaction.date)} · ${dateLabel(transaction.date)}</div>`
+            :"";
+          previousDate=transaction.date;
+          return `${dayHeader}<div class="category-record-row">
+            <div>
+              <div class="category-record-title">${escapeHtml(transaction.tag||transaction.category)}</div>
+              <div class="category-record-meta">${escapeHtml(transaction.category)} · ${transaction.type==="income"?"Income":"Expense"}</div>
+            </div>
+            <div class="category-record-amount">${transaction.type==="income"?"+":"−"}${money(transaction.amount)}</div>
+          </div>`;
+        }).join("")
+      :emptyHtml("No matching records","No records were found in this period.");
+
     lockPageForOverlay();
     $("categoryDetailModal").classList.add("open");
+    const scrollArea=$("categoryDetailModal").querySelector(".category-detail-scroll");
+    if(scrollArea)scrollArea.scrollTop=0;
   }
   function previousAnalysisKey(){
     const key=currentAnalysisKey();
@@ -2850,20 +2975,6 @@ ${error.message||"Please check your network and try again."}`);
     const card=e.target.closest("[data-top-category]");
     if(!card)return;
     openCategoryDetail(card.dataset.topCategory);
-  });
-  $("closeCategoryDetail").addEventListener("click",closeCategoryDetail);
-  $("categoryDetailCloseBottom").addEventListener("click",closeCategoryDetail);
-  $("categoryDetailModal").addEventListener("click",e=>{if(e.target===$("categoryDetailModal"))closeCategoryDetail();});
-  $("categoryDetailViewAll").addEventListener("click",()=>{
-    if(!categoryDetailCurrent)return;
-    const current=categoryDetailCurrent;
-    closeCategoryDetail({restoreScroll:false});
-    openRecordsForPeriod({
-      from:current.range.from,
-      to:current.range.to,
-      type:current.type,
-      category:current.category
-    });
   });
   $("analysisBreakdownList").addEventListener("click",e=>{
     const row=e.target.closest("[data-breakdown-from]");
