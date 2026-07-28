@@ -200,6 +200,25 @@
     .mini-sheet p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
     .delete-box{margin-top:10px}
 
+    .cloud-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .cloud-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;background:#F0F1F3;color:#666;font-size:11px;font-weight:800}
+    .cloud-badge.online{background:#DCFCE7;color:#167548}
+    .cloud-badge.syncing{background:#FFF3C4;color:#775C00}
+    .cloud-badge.error{background:#FEE2E2;color:#B42323}
+    .cloud-auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .cloud-auth-grid .field.full{grid-column:1/-1}
+    .cloud-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+    .cloud-user{background:var(--yellow-soft);border-radius:15px;padding:12px;margin-bottom:10px;font-size:13px;line-height:1.5}
+    .cloud-message{font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0 0}
+    .cloud-warning{background:#FFF4E5;color:#8A5200;border-radius:14px;padding:11px 12px;font-size:12px;line-height:1.5;margin-top:10px}
+    .trash-list{display:grid;gap:8px;margin-top:10px}
+    .trash-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#FAFAFB;border:1px solid var(--line);border-radius:14px;padding:10px}
+    .trash-title{font-weight:800;font-size:13px}
+    .trash-meta{color:var(--muted);font-size:11px;margin-top:3px}
+    .trash-actions{display:flex;gap:5px}
+    .trash-actions button{border:0;border-radius:10px;padding:8px 9px;font-size:11px;font-weight:800}
+    .cloud-config-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#F5F5F6;border-radius:10px;padding:7px 9px;font-size:11px;word-break:break-all}
+
     .settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .settings-actions button{min-height:48px}
     .nav{
@@ -281,6 +300,8 @@
       .category-item{grid-template-columns:42px minmax(0,1fr)}
       .category-actions{grid-column:1/-1;justify-content:flex-end}
       .settings-actions{grid-template-columns:1fr}
+      .cloud-auth-grid,.cloud-actions{grid-template-columns:1fr}
+      .cloud-auth-grid .field.full{grid-column:auto}
       .analysis-hero{border-radius:0 0 18px 18px;margin:-10px -12px 12px;padding:10px 12px 12px}
       .analysis-flow-toggle{margin-bottom:8px}
       .analysis-flow-toggle button{font-size:15px}
@@ -416,6 +437,57 @@
     </section>
 
     <section id="settingsView" class="view">
+      <div class="panel" id="cloudPanel">
+        <div class="section-head" style="margin-top:0">
+          <h2>Cloud & account</h2>
+          <span id="cloudBadge" class="cloud-badge">Checking</span>
+        </div>
+
+        <div id="cloudNotConfigured" class="hidden">
+          <div class="cloud-warning">
+            Firebase has not been configured. Complete <strong>firebase-config.js</strong>,
+            enable Email/Password Authentication, create Firestore, and publish the included rules.
+          </div>
+          <p class="cloud-message">Expected project file:</p>
+          <div class="cloud-config-code">firebase-config.js</div>
+        </div>
+
+        <div id="cloudSignedOut" class="hidden">
+          <div class="cloud-auth-grid">
+            <div class="field full"><label>Email</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+            <div class="field full"><label>Password</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters"></div>
+          </div>
+          <div class="cloud-actions">
+            <button id="cloudSignIn" class="primary">Sign in</button>
+            <button id="cloudCreateAccount" class="secondary">Create account</button>
+            <button id="cloudResetPassword" class="secondary">Reset password</button>
+          </div>
+          <p class="cloud-message">After signing in, all new changes require cloud confirmation before the app reports success.</p>
+        </div>
+
+        <div id="cloudSignedIn" class="hidden">
+          <div class="cloud-user">
+            Signed in as <strong id="cloudUserEmail"></strong><br>
+            <span id="cloudRecordCount">0 cloud records</span>
+          </div>
+          <div id="cloudMigrationBox" class="cloud-warning hidden">
+            Local records were found, but this cloud account is empty.
+            Upload the current local data before continuing.
+            <button id="uploadLocalToCloud" class="primary" style="width:100%;margin-top:10px">Upload current data to cloud</button>
+          </div>
+          <div class="cloud-actions">
+            <button id="cloudRetrySync" class="secondary">Sync settings now</button>
+            <button id="cloudSignOut" class="secondary">Sign out</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="trashPanel">
+        <div class="section-head" style="margin-top:0"><h2>Cloud trash</h2><span class="badge">Recoverable</span></div>
+        <p class="cloud-message">Deleted records stay here until you permanently remove them.</p>
+        <div id="trashList" class="trash-list"></div>
+      </div>
+
       <div class="panel">
         <div class="section-head" style="margin-top:0">
           <h2>Categories</h2>
@@ -453,9 +525,9 @@
         <div class="settings-actions">
           <button id="exportCsv" class="secondary">Export CSV</button>
           <button id="backupJson" class="secondary">Backup JSON</button>
-          <button id="importJson" class="secondary">Import backup</button>
+          <button id="importJson" class="secondary">Import backup to cloud</button>
           <button id="loadDemo" class="secondary">Load demo data</button>
-          <button id="clearAll" class="danger">Delete all data</button>
+          <button id="clearAll" class="danger">Delete all cloud data</button>
         </div>
         <input id="importFile" class="hidden" type="file" accept=".json,application/json">
       </div>
@@ -463,8 +535,7 @@
       <div class="panel">
         <div class="section-head" style="margin-top:0"><h2>About this app</h2></div>
         <p style="margin:0;color:var(--muted);line-height:1.55;font-size:13px">
-          English interface with RMB settlement. Version 9 fixes iPhone input zoom and layout shifting, stacks Date and Category cleanly, and adds swipe-left deletion to transaction lists. Your records are stored locally in this browser.
-          Export a backup regularly, especially before changing devices or clearing browser data.
+          English interface with RMB settlement. Version 10 uses Firebase Authentication and Cloud Firestore as the primary data store. Local browser data is only a mirror for display and migration. New saves require cloud confirmation; deleted records go to Cloud trash.
         </p>
         <button id="installBtn" class="primary hidden" style="width:100%;margin-top:14px">Install app</button>
       </div>
@@ -537,6 +608,8 @@
 
 <div id="toast" class="toast"></div>
 
+<script src="firebase-config.js"></script>
+<script src="firebase-cloud.js"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -597,9 +670,236 @@
   let iconPickerTarget = null;
   let pendingDeleteCategory = null;
   let categoryEditing = false;
+  let cloudApi = null;
+  let cloudUser = null;
+  let cloudUnsubscribe = null;
+  let cloudTrash = [];
+  let cloudMigrationNeeded = false;
+  let cloudFirstTransactionSnapshot = true;
+  let cloudRemoteRecordCount = 0;
+  let cloudStatus = "checking";
+  let cloudStatusMessage = "";
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
+
+  function appSettingsPayload(){
+    return {
+      expenseCategories:[...state.expenseCategories],
+      incomeCategories:[...state.incomeCategories],
+      categoryIcons:{...state.categoryIcons},
+      budgets:JSON.parse(JSON.stringify(state.budgets||{}))
+    };
+  }
+  function restoreSettings(payload){
+    state.expenseCategories=[...(payload.expenseCategories||[])];
+    state.incomeCategories=[...(payload.incomeCategories||[])];
+    state.categoryIcons={...(payload.categoryIcons||{})};
+    state.budgets=JSON.parse(JSON.stringify(payload.budgets||{}));
+  }
+  function cloudReadyForWrite(){
+    if(!cloudApi?.configured){toast("Firebase is not configured.");setView("settings");return false;}
+    if(!cloudUser){toast("Sign in to save securely.");setView("settings");return false;}
+    if(!navigator.onLine){toast("No network. Nothing was saved.");return false;}
+    if(cloudMigrationNeeded){toast("Upload your current local data to cloud first.");setView("settings");return false;}
+    return true;
+  }
+  function withTimeout(promise, milliseconds=15000){
+    return Promise.race([
+      promise,
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Cloud confirmation timed out. Check your connection and try again.")),milliseconds))
+    ]);
+  }
+  function setCloudStatus(status,message=""){
+    cloudStatus=status;
+    cloudStatusMessage=message;
+    renderCloudPanel();
+  }
+  function saveLocalMirror(){
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  }
+  function applyCloudSettings(settings){
+    if(!settings)return;
+    if(Array.isArray(settings.expenseCategories)&&settings.expenseCategories.length)state.expenseCategories=[...settings.expenseCategories];
+    if(Array.isArray(settings.incomeCategories)&&settings.incomeCategories.length)state.incomeCategories=[...settings.incomeCategories];
+    if(settings.categoryIcons&&typeof settings.categoryIcons==="object")state.categoryIcons={...ICONS,...settings.categoryIcons};
+    if(settings.budgets&&typeof settings.budgets==="object")state.budgets=JSON.parse(JSON.stringify(settings.budgets));
+  }
+  function renderCloudPanel(){
+    const badge=$("cloudBadge");
+    if(!badge)return;
+    const configured=!!cloudApi?.configured;
+    $("cloudNotConfigured").classList.toggle("hidden",configured);
+    $("cloudSignedOut").classList.toggle("hidden",!configured||!!cloudUser);
+    $("cloudSignedIn").classList.toggle("hidden",!configured||!cloudUser);
+    $("trashPanel").classList.toggle("hidden",!configured||!cloudUser);
+
+    badge.className="cloud-badge";
+    if(!configured){
+      badge.textContent=cloudStatus==="checking"?"Checking":"Setup required";
+      badge.classList.add(cloudStatus==="error"?"error":"");
+    }else if(cloudStatus==="syncing"){
+      badge.textContent="Syncing";
+      badge.classList.add("syncing");
+    }else if(cloudStatus==="error"){
+      badge.textContent="Sync error";
+      badge.classList.add("error");
+    }else if(cloudUser){
+      badge.textContent="Cloud saved";
+      badge.classList.add("online");
+    }else{
+      badge.textContent="Signed out";
+    }
+
+    if(cloudUser){
+      $("cloudUserEmail").textContent=cloudUser.email||cloudUser.uid;
+      $("cloudRecordCount").textContent=`${cloudRemoteRecordCount} cloud record${cloudRemoteRecordCount===1?"":"s"}`;
+      $("cloudMigrationBox").classList.toggle("hidden",!cloudMigrationNeeded);
+    }
+    renderTrash();
+  }
+  function renderTrash(){
+    const container=$("trashList");
+    if(!container)return;
+    if(!cloudUser){
+      container.innerHTML=emptyHtml("Sign in required","Cloud trash is available after sign-in.");
+      return;
+    }
+    if(!cloudTrash.length){
+      container.innerHTML=emptyHtml("Trash is empty","Deleted records will appear here.");
+      return;
+    }
+    container.innerHTML=sortTxns(cloudTrash).map(item=>`<div class="trash-row">
+      <div>
+        <div class="trash-title">${categoryIcon(item.category)} ${escapeHtml(item.category)} · ${money(item.amount)}</div>
+        <div class="trash-meta">${dateLabel(item.date)}${item.tag?` · ${escapeHtml(item.tag)}`:""}</div>
+      </div>
+      <div class="trash-actions">
+        <button type="button" data-restore-trash="${item.id}" class="secondary">Restore</button>
+        <button type="button" data-purge-trash="${item.id}" class="danger">Remove</button>
+      </div>
+    </div>`).join("");
+  }
+  async function syncSettingsToCloud(showSuccess=false){
+    if(!cloudApi?.configured||!cloudUser||cloudMigrationNeeded)return false;
+    if(!navigator.onLine){setCloudStatus("error","Offline");return false;}
+    try{
+      setCloudStatus("syncing");
+      await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()));
+      setCloudStatus("online");
+      if(showSuccess)toast("Settings cloud-saved.");
+      return true;
+    }catch(error){
+      console.error(error);
+      setCloudStatus("error",error.message);
+      toast(error.message||"Cloud sync failed.");
+      return false;
+    }
+  }
+  function stopCloudSubscription(){
+    if(cloudUnsubscribe){
+      try{cloudUnsubscribe();}catch(_){}
+      cloudUnsubscribe=null;
+    }
+  }
+  function startCloudSubscription(user){
+    stopCloudSubscription();
+    cloudFirstTransactionSnapshot=true;
+    cloudMigrationNeeded=false;
+    setCloudStatus("syncing");
+    cloudUnsubscribe=cloudApi.subscribe(user.uid,{
+      onTransactions(items){
+        cloudRemoteRecordCount=items.length;
+        if(cloudFirstTransactionSnapshot&&items.length===0&&state.transactions.length>0){
+          cloudMigrationNeeded=true;
+        }else{
+          state.transactions=items;
+          cloudMigrationNeeded=false;
+          saveLocalMirror();
+          renderAll();
+        }
+        cloudFirstTransactionSnapshot=false;
+        setCloudStatus("online");
+        renderCloudPanel();
+      },
+      onSettings(settings){
+        if(settings){
+          applyCloudSettings(settings);
+          saveLocalMirror();
+          renderAll();
+        }
+      },
+      onTrash(items){
+        cloudTrash=items;
+        renderTrash();
+      },
+      onError(error){
+        console.error(error);
+        setCloudStatus("error",error.message||"Cloud listener failed.");
+      }
+    });
+  }
+  async function initCloud(){
+    try{
+      cloudApi=await window.CloudBudgetReady;
+      if(!cloudApi?.configured){
+        setCloudStatus("error",cloudApi?.reason||"Firebase is not configured.");
+        return;
+      }
+      cloudApi.onAuth(user=>{
+        cloudUser=user||null;
+        if(user){
+          startCloudSubscription(user);
+        }else{
+          stopCloudSubscription();
+          cloudTrash=[];
+          cloudRemoteRecordCount=0;
+          cloudMigrationNeeded=false;
+          setCloudStatus("signedout");
+          renderCloudPanel();
+        }
+      });
+    }catch(error){
+      console.error(error);
+      cloudApi=null;
+      setCloudStatus("error",error.message||"Firebase initialization failed.");
+    }
+  }
+  async function cloudAuthAction(action){
+    if(!cloudApi?.configured){toast("Firebase is not configured.");return;}
+    const email=$("cloudEmail").value.trim();
+    const password=$("cloudPassword").value;
+    if(!email){toast("Enter your email.");return;}
+    try{
+      setCloudStatus("syncing");
+      if(action==="signin")await cloudApi.signIn(email,password);
+      if(action==="signup")await cloudApi.signUp(email,password);
+      if(action==="reset"){
+        await cloudApi.resetPassword(email);
+        toast("Password reset email sent.");
+      }
+      if(action!=="reset")toast(action==="signup"?"Account created.":"Signed in.");
+    }catch(error){
+      console.error(error);
+      setCloudStatus("error",error.message);
+      toast(error.message||"Authentication failed.");
+    }
+  }
+  async function uploadCurrentStateToCloud(){
+    if(!cloudUser||!cloudApi?.configured)return;
+    if(!confirm(`Upload ${state.transactions.length} local record${state.transactions.length===1?"":"s"} to this cloud account?`))return;
+    try{
+      setCloudStatus("syncing");
+      await withTimeout(cloudApi.importState(cloudUser.uid,state),60000);
+      cloudMigrationNeeded=false;
+      setCloudStatus("online");
+      toast("Local data uploaded to cloud.");
+    }catch(error){
+      console.error(error);
+      setCloudStatus("error",error.message);
+      toast(error.message||"Cloud import failed.");
+    }
+  }
 
   function defaultState(){
     return {
@@ -816,12 +1116,7 @@
   }
 
   function renderAll(){
-  
-  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
-  }
-
-  populateMonths();
+    populateMonths();
     populateFilters();
     $("globalMonth").value=selectedMonth;
     renderDashboard();
@@ -829,6 +1124,7 @@
     renderAnalysis();
     renderBudgetEditor();
     renderCategoryManager();
+    renderCloudPanel();
   }
   function renderDashboard(){
     const list=txnsForMonth(selectedMonth);
@@ -1042,32 +1338,55 @@
   }
   function categoryArray(type){return type==="expense"?state.expenseCategories:state.incomeCategories;}
   function setCategoryMode(type){categoryMode=type;renderCategoryManager();}
-  function addCategory(){
+  async function addCategory(){
+    if(!cloudReadyForWrite())return;
+    const previous=appSettingsPayload();
     const name=$("newCategoryName").value.trim(),icon=$("newCategoryIcon").value || "⭐",list=categoryArray(categoryMode);
     if(!name){toast("Enter a category name.");return;}
     if(list.some(x=>x.toLowerCase()===name.toLowerCase())){toast("This category already exists.");return;}
-    list.push(name);state.categoryIcons[name]=icon;$("newCategoryName").value="";$("newCategoryIcon").value="⭐";saveState();renderAll();toast("Category added.");
+    list.push(name);state.categoryIcons[name]=icon;$("newCategoryName").value="";$("newCategoryIcon").value="⭐";
+    saveLocalMirror();renderAll();
+    if(!(await syncSettingsToCloud(false))){restoreSettings(previous);saveLocalMirror();renderAll();return;}
+    toast("Category cloud-saved.");
   }
-  function renameCategory(type,index,newName){
+  async function renameCategory(type,index,newName){
+    if(!cloudReadyForWrite())return renderCategoryManager();
+    const previous=appSettingsPayload();
     const list=categoryArray(type),old=list[index],name=newName.trim();
     if(!old||!name||old===name)return;
     if(list.some((x,i)=>i!==index&&x.toLowerCase()===name.toLowerCase())){toast("This category already exists.");renderCategoryManager();return;}
     list[index]=name;
     state.transactions.forEach(t=>{if(t.type===type&&t.category===old)t.category=name;});
-    state.categoryIcons[name]=state.categoryIcons[old]||ICONS[old]||"⭐";delete state.categoryIcons[old];saveState();renderAll();toast("Category renamed.");
+    state.categoryIcons[name]=state.categoryIcons[old]||ICONS[old]||"⭐";delete state.categoryIcons[old];
+    saveLocalMirror();renderAll();
+    try{
+      setCloudStatus("syncing");
+      await withTimeout(cloudApi.replaceCategory(cloudUser.uid,type,old,name,appSettingsPayload()),60000);
+      setCloudStatus("online");toast("Category renamed in cloud.");
+    }catch(error){
+      restoreSettings(previous);
+      state.transactions.forEach(t=>{if(t.type===type&&t.category===name)t.category=old;});
+      saveLocalMirror();renderAll();setCloudStatus("error",error.message);toast(error.message||"Rename failed.");
+    }
   }
-  function updateCategoryIcon(type,index,icon){
+  async function updateCategoryIcon(type,index,icon){
+    if(!cloudReadyForWrite())return;
+    const previous=appSettingsPayload();
     const cat=categoryArray(type)[index];
     if(!cat)return;
     state.categoryIcons[cat]=icon || "⭐";
-    saveState();
-    renderDashboard();renderRecords();renderAnalysis();renderCategoryManager();
+    saveLocalMirror();renderAll();
+    if(!(await syncSettingsToCloud(false))){restoreSettings(previous);saveLocalMirror();renderAll();}
   }
-  function moveCategory(type,index,dir){
+  async function moveCategory(type,index,dir){
+    if(!cloudReadyForWrite())return;
+    const previous=appSettingsPayload();
     const list=categoryArray(type),next=index+dir;
     if(next<0||next>=list.length)return;
     [list[index],list[next]]=[list[next],list[index]];
-    saveState();renderAll();toast("Category order updated.");
+    saveLocalMirror();renderAll();
+    if(!(await syncSettingsToCloud(false))){restoreSettings(previous);saveLocalMirror();renderAll();return;}
+    toast("Category order cloud-saved.");
   }
   function openIconPicker(type,index){
     iconPickerTarget={type,index};
@@ -1091,19 +1410,33 @@
     $("deleteCategoryModal").classList.add("open");
   }
   function closeDeleteCategory(){ $("deleteCategoryModal").classList.remove("open"); pendingDeleteCategory=null; }
-  function confirmDeleteCategory(){
-    if(!pendingDeleteCategory) return;
+  async function confirmDeleteCategory(){
+    if(!pendingDeleteCategory||!cloudReadyForWrite())return;
     const {type,index,needsMove}=pendingDeleteCategory;
     const list=categoryArray(type),cat=list[index];
-    if(!cat) return closeDeleteCategory();
-    let fallback = null;
+    if(!cat)return closeDeleteCategory();
+    const previous=appSettingsPayload();
+    let fallback=null;
     if(needsMove){
-      fallback = $("deleteCategoryTarget").value;
-      if(!fallback){ toast("Choose a target category."); return; }
-      state.transactions.forEach(t=>{if(t.type===type&&t.category===cat)t.category=fallback;});
+      fallback=$("deleteCategoryTarget").value;
+      if(!fallback){toast("Choose a target category.");return;}
     }
-    list.splice(index,1); delete state.categoryIcons[cat];
-    saveState(); closeDeleteCategory(); renderAll(); toast("Category deleted.");
+    list.splice(index,1);delete state.categoryIcons[cat];
+    if(fallback)state.transactions.forEach(t=>{if(t.type===type&&t.category===cat)t.category=fallback;});
+    saveLocalMirror();closeDeleteCategory();renderAll();
+    try{
+      setCloudStatus("syncing");
+      if(fallback){
+        await withTimeout(cloudApi.replaceCategory(cloudUser.uid,type,cat,fallback,appSettingsPayload()),60000);
+      }else{
+        await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()));
+      }
+      setCloudStatus("online");toast("Category deleted in cloud.");
+    }catch(error){
+      restoreSettings(previous);
+      if(fallback)state.transactions.forEach(t=>{if(t.type===type&&t.category===fallback)t.category=cat;});
+      saveLocalMirror();renderAll();setCloudStatus("error",error.message);toast(error.message||"Category delete failed.");
+    }
   }
 
   function setView(view){
@@ -1148,7 +1481,8 @@
   }
   function currentTxnType(){return $("typeIncome").classList.contains("active")?"income":"expense";}
 
-  function saveTxn(){
+  async function saveTxn(){
+    if(!cloudReadyForWrite())return;
     const amount=Number($("txnAmount").value);
     if(!amount||amount<=0){toast("Enter a valid amount.");return;}
     const old=editingId?state.transactions.find(x=>x.id===editingId):null;
@@ -1161,18 +1495,41 @@
       tag:$("txnTag").value.trim(),
       createdAt:Number(old?.createdAt)||Date.now()
     };
-    if(editingId){
-      const i=state.transactions.findIndex(x=>x.id===editingId);
-      if(i>=0)state.transactions[i]=txn;
-    }else{
-      state.transactions.push(txn);
+    const button=$("saveTxn"),original=button.textContent;
+    button.disabled=true;button.textContent="Saving to cloud...";
+    try{
+      setCloudStatus("syncing");
+      await withTimeout(cloudApi.saveTransaction(cloudUser.uid,txn,old));
+      const index=state.transactions.findIndex(x=>x.id===txn.id);
+      if(index>=0)state.transactions[index]=txn;else state.transactions.push(txn);
+      saveLocalMirror();
+      closeModal();renderAll();
+      setCloudStatus("online");
+      toast(editingId?"Cloud update confirmed.":"Cloud save confirmed.");
+    }catch(error){
+      console.error(error);
+      setCloudStatus("error",error.message);
+      toast(error.message||"Nothing was saved.");
+    }finally{
+      button.disabled=false;button.textContent=original;
     }
-    saveState();closeModal();renderAll();toast(editingId?"Record updated.":"Record saved.");
   }
-  function deleteTxn(){
-    if(!editingId||!confirm("Delete this record?"))return;
-    state.transactions=state.transactions.filter(x=>x.id!==editingId);
-    saveState();closeModal();renderAll();toast("Record deleted.");
+  async function deleteTxn(){
+    if(!editingId||!cloudReadyForWrite())return;
+    const txn=state.transactions.find(x=>x.id===editingId);
+    if(!txn||!confirm("Move this record to Cloud trash?"))return;
+    try{
+      setCloudStatus("syncing");
+      await withTimeout(cloudApi.moveToTrash(cloudUser.uid,txn));
+      state.transactions=state.transactions.filter(x=>x.id!==editingId);
+      saveLocalMirror();closeModal();renderAll();
+      setCloudStatus("online");
+      toast("Moved to Cloud trash.");
+    }catch(error){
+      console.error(error);
+      setCloudStatus("error",error.message);
+      toast(error.message||"Delete failed.");
+    }
   }
 
   function setPreset(preset){
@@ -1195,12 +1552,16 @@
     renderRecords();
   }
 
-  function saveBudget(){
+  async function saveBudget(){
+    if(!cloudReadyForWrite())return;
+    const previous=appSettingsPayload();
     const key=$("budgetMonth").value;
     state.budgets[key]={overall:Number($("overallBudget").value)||0};
-    saveState();
-    if(key===selectedMonth)renderAll();else renderBudgetEditor();
-    toast("Monthly budget saved.");
+    saveLocalMirror();renderAll();
+    if(!(await syncSettingsToCloud(false))){
+      restoreSettings(previous);saveLocalMirror();renderAll();return;
+    }
+    toast("Monthly budget cloud-saved.");
   }
   function exportCsv(){
     const headers=["Date","Type","Category","Amount (RMB)","Tag"];
@@ -1217,12 +1578,19 @@
   }
   function importBackup(file){
     const reader=new FileReader();
-    reader.onload=()=>{
+    reader.onload=async()=>{
       try{
+        if(!cloudReadyForWrite())return;
         const data=JSON.parse(reader.result);
-        if(!Array.isArray(data.transactions)||typeof data.budgets!=="object") throw new Error();
-        state=normalizeState(data);saveState();renderAll();toast("Backup imported.");
-      }catch(e){ alert("This is not a valid backup file."); }
+        if(!Array.isArray(data.transactions)||typeof data.budgets!=="object")throw new Error("Invalid backup.");
+        const imported=normalizeState(data);
+        if(!confirm(`Upload ${imported.transactions.length} backup records to the signed-in cloud account?`))return;
+        setCloudStatus("syncing");
+        await withTimeout(cloudApi.importState(cloudUser.uid,imported),60000);
+        state=imported;saveLocalMirror();renderAll();setCloudStatus("online");toast("Backup uploaded to cloud.");
+      }catch(error){
+        console.error(error);setCloudStatus("error",error.message);alert(error.message||"This is not a valid backup file.");
+      }
     };
     reader.readAsText(file);
   }
@@ -1247,9 +1615,18 @@
     if(!state.budgets[month])state.budgets[month]={overall:8000};
     saveState();renderAll();toast("Demo data loaded.");
   }
-  function clearAll(){
-    if(!confirm("Delete all records and budgets from this browser? This cannot be undone.")) return;
-    state=defaultState();saveState();renderAll();toast("All data deleted.");
+  async function clearAll(){
+    if(!cloudReadyForWrite())return;
+    if(!confirm("Delete every cloud record, trash item, history entry, category setting, and budget? This cannot be undone."))return;
+    const phrase=prompt('Type DELETE CLOUD DATA to confirm:');
+    if(phrase!=="DELETE CLOUD DATA"){toast("Cancelled.");return;}
+    try{
+      setCloudStatus("syncing");
+      await withTimeout(cloudApi.clearCloudData(cloudUser.uid),120000);
+      state=defaultState();cloudTrash=[];saveLocalMirror();renderAll();setCloudStatus("online");toast("Cloud data deleted.");
+    }catch(error){
+      console.error(error);setCloudStatus("error",error.message);toast(error.message||"Cloud deletion failed.");
+    }
   }
   function escapeHtml(s){
     return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -1273,6 +1650,37 @@
   $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"));
   $("categoryIncomeBtn").addEventListener("click",()=>setCategoryMode("income"));
   $("addCategory").addEventListener("click",addCategory);
+  $("cloudSignIn").addEventListener("click",()=>cloudAuthAction("signin"));
+  $("cloudCreateAccount").addEventListener("click",()=>cloudAuthAction("signup"));
+  $("cloudResetPassword").addEventListener("click",()=>cloudAuthAction("reset"));
+  $("cloudSignOut").addEventListener("click",async()=>{
+    try{await cloudApi.signOut();toast("Signed out.");}catch(error){toast(error.message||"Sign-out failed.");}
+  });
+  $("uploadLocalToCloud").addEventListener("click",uploadCurrentStateToCloud);
+  $("cloudRetrySync").addEventListener("click",()=>syncSettingsToCloud(true));
+  $("trashList").addEventListener("click",async e=>{
+    const restore=e.target.closest("[data-restore-trash]");
+    const purge=e.target.closest("[data-purge-trash]");
+    if(restore){
+      const txn=cloudTrash.find(x=>x.id===restore.dataset.restoreTrash);
+      if(!txn||!cloudReadyForWrite())return;
+      try{
+        setCloudStatus("syncing");
+        await withTimeout(cloudApi.restoreFromTrash(cloudUser.uid,txn));
+        setCloudStatus("online");toast("Record restored.");
+      }catch(error){setCloudStatus("error",error.message);toast(error.message||"Restore failed.");}
+    }
+    if(purge){
+      const txn=cloudTrash.find(x=>x.id===purge.dataset.purgeTrash);
+      if(!txn||!cloudReadyForWrite())return;
+      if(!confirm("Permanently remove this trash item?"))return;
+      try{
+        setCloudStatus("syncing");
+        await withTimeout(cloudApi.permanentlyDeleteTrash(cloudUser.uid,txn.id));
+        setCloudStatus("online");toast("Trash item permanently removed.");
+      }catch(error){setCloudStatus("error",error.message);toast(error.message||"Removal failed.");}
+    }
+  });
   $("toggleCategoryEdit").addEventListener("click",toggleCategoryEditing);
   $("newCategoryName").addEventListener("keydown",e=>{if(e.key==="Enter")addCategory();});
   $("newCategoryPalette").addEventListener("click",e=>{const btn=e.target.closest("[data-icon]");if(!btn)return;$("newCategoryIcon").value=btn.dataset.icon;renderCategoryManager();});
@@ -1348,14 +1756,22 @@
     swipeState=null;
   },{passive:true});
 
-  document.addEventListener("click",e=>{
+  document.addEventListener("click",async e=>{
     const deleteBtn=e.target.closest("[data-delete-id]");
     if(deleteBtn){
       e.stopPropagation();
       const id=deleteBtn.dataset.deleteId;
-      if(confirm("Delete this record?")){
-        state.transactions=state.transactions.filter(x=>x.id!==id);
-        saveState();renderAll();toast("Record deleted.");
+      const txn=state.transactions.find(x=>x.id===id);
+      if(!txn||!cloudReadyForWrite())return;
+      if(confirm("Move this record to Cloud trash?")){
+        setCloudStatus("syncing");
+        try{
+          await withTimeout(cloudApi.moveToTrash(cloudUser.uid,txn));
+          state.transactions=state.transactions.filter(x=>x.id!==id);
+          saveLocalMirror();renderAll();setCloudStatus("online");toast("Moved to Cloud trash.");
+        }catch(error){
+          console.error(error);setCloudStatus("error",error.message);toast(error.message||"Delete failed.");
+        }
       }
       return;
     }
@@ -1392,6 +1808,12 @@
 
   
 
+
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
+
+  initCloud();
   populateMonths();
   $("globalMonth").value=selectedMonth;
   $("budgetMonth").value=selectedMonth;

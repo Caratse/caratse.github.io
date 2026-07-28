@@ -1,8 +1,10 @@
 {
-  "name": "Daily Budget · RMB",
+  "id": "./",
+  "name": "Daily Budget Cloud · RMB",
   "short_name": "Daily Budget",
-  "description": "Simple English bookkeeping app with RMB settlement.",
+  "description": "English RMB bookkeeping app with Firebase cloud sync, cloud-confirmed saves, trash, and local migration.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#F7F7F8",
   "theme_color": "#FFD84D",
