@@ -502,6 +502,8 @@
       animation:pulseSave 1s infinite alternate
     }
     @keyframes pulseSave{from{opacity:.35}to{opacity:1}}
+    .brand h1{margin:0;line-height:1.1}
+    body.modal-open{overscroll-behavior:none}
 
 </style>
 </head>
@@ -511,7 +513,7 @@
     <div class="top-row">
       <div class="brand">
         <div class="logo">¥</div>
-        <div><h1>Daily Budget</h1><p>Simple records. Clear decisions.</p></div>
+        <div><h1>Daily Budget</h1></div>
       </div>
       <select id="globalMonth" class="month-select" aria-label="Analysis month"></select>
     </div>
@@ -805,8 +807,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 17 uses immediate local feedback with server-acknowledged background saving,
-            compact Records filters, and a collapsed Settings accordion.
+            Version 18 preserves the underlying page position when sheets close, resets swipe-delete rows immediately after Cancel, and removes the header subtitle.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -926,8 +927,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=17"></script>
-<script src="firebase-cloud-v17.js?v=17"></script>
+<script src="firebase-config.js?v=18"></script>
+<script src="firebase-cloud-v17.js?v=18"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -1009,6 +1010,9 @@
   let suppressSheetClickUntil = 0;
   let recordFiltersExpanded = false;
   const pendingSaveOperations = new Map();
+  let overlayScrollLockDepth = 0;
+  let overlaySavedScrollY = 0;
+  let overlaySavedView = null;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
@@ -1876,6 +1880,40 @@
         <div class="top-category-share">#${index+1} · ${total?(amount/total*100).toFixed(1):"0.0"}%</div>
       </div>`).join(""):emptyHtml("No category data","Add records to see your top categories.");
   }
+  function lockPageForOverlay(){
+    if(overlayScrollLockDepth===0){
+      overlaySavedScrollY=Math.max(
+        window.scrollY||0,
+        document.documentElement.scrollTop||0,
+        document.body.scrollTop||0
+      );
+      overlaySavedView=currentView;
+      document.body.style.top=`-${overlaySavedScrollY}px`;
+      document.body.classList.add("modal-open");
+    }
+    overlayScrollLockDepth++;
+  }
+
+  function unlockPageFromOverlay({restore=true}={}){
+    if(overlayScrollLockDepth>0)overlayScrollLockDepth--;
+    if(overlayScrollLockDepth>0)return;
+
+    const restoreY=overlaySavedScrollY;
+    const restoreView=overlaySavedView;
+    overlaySavedScrollY=0;
+    overlaySavedView=null;
+
+    document.body.classList.remove("modal-open");
+    document.body.style.top="";
+
+    if(restore&&currentView===restoreView){
+      const previousBehavior=document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior="auto";
+      window.scrollTo(0,restoreY);
+      document.documentElement.style.scrollBehavior=previousBehavior;
+    }
+  }
+
   function resetSwipeSheet(modalId){
     const sheet=$(modalId)?.querySelector(".sheet");
     if(!sheet)return;
@@ -1885,7 +1923,7 @@
   }
   function enableSwipeRightClose(modalId,closeFunction){
     const modal=$(modalId);
-    const sheet=modal?.querySelector(".sheet");
+    const sheet=modal?.querySelector(".sheet,.mini-sheet");
     if(!modal||!sheet)return;
 
     const INTERACTIVE_SELECTOR="input,textarea,select,[contenteditable='true']";
@@ -2047,11 +2085,11 @@
     },true);
   }
 
-  function closeCategoryDetail(){
+  function closeCategoryDetail({restoreScroll=true}={}){
     $("categoryDetailModal").classList.remove("open");
-    document.body.classList.remove("modal-open");
     categoryDetailCurrent=null;
     resetSwipeSheet("categoryDetailModal");
+    unlockPageFromOverlay({restore:restoreScroll});
   }
   function openCategoryDetail(category){
     const range=analysisRange();
@@ -2076,8 +2114,8 @@
         </div>
         <div class="category-record-amount">${t.type==="income"?"+":"−"}${money(t.amount)}</div>
       </div>`).join(""):emptyHtml("No matching records","No records were found in this period.");
+    lockPageForOverlay();
     $("categoryDetailModal").classList.add("open");
-    document.body.classList.add("modal-open");
   }
   function previousAnalysisKey(){
     const key=currentAnalysisKey();
@@ -2483,9 +2521,15 @@
   function openIconPicker(type,index){
     iconPickerTarget={type,index};
     renderPalette("iconPickerGrid", categoryIcon(categoryArray(type)[index]));
+    lockPageForOverlay();
     $("iconPickerModal").classList.add("open");
   }
-  function closeIconPicker(){ $("iconPickerModal").classList.remove("open"); iconPickerTarget=null; resetSwipeSheet("iconPickerModal"); }
+  function closeIconPicker({restoreScroll=true}={}){
+    $("iconPickerModal").classList.remove("open");
+    iconPickerTarget=null;
+    resetSwipeSheet("iconPickerModal");
+    unlockPageFromOverlay({restore:restoreScroll});
+  }
   function openDeleteCategory(type,index){
     const list=categoryArray(type),cat=list[index];
     if(!cat)return;
@@ -2499,9 +2543,15 @@
       : `Delete “${cat}”? This action cannot be undone.`;
     $("deleteCategorySelectWrap").classList.toggle("hidden", !needsMove);
     pendingDeleteCategory={type,index,needsMove};
+    lockPageForOverlay();
     $("deleteCategoryModal").classList.add("open");
   }
-  function closeDeleteCategory(){ $("deleteCategoryModal").classList.remove("open"); pendingDeleteCategory=null; resetSwipeSheet("deleteCategoryModal"); }
+  function closeDeleteCategory({restoreScroll=true}={}){
+    $("deleteCategoryModal").classList.remove("open");
+    pendingDeleteCategory=null;
+    resetSwipeSheet("deleteCategoryModal");
+    unlockPageFromOverlay({restore:restoreScroll});
+  }
   async function confirmDeleteCategory(){
     if(!pendingDeleteCategory||!cloudReadyForWrite())return;
     const {type,index,needsMove}=pendingDeleteCategory;
@@ -2531,7 +2581,8 @@
     }
   }
 
-  function setView(view){
+  function setView(view,{scrollToTop=true}={}){
+    const changed=view!==currentView;
     if(currentView==="settings"&&view!=="settings")categoryEditing=false;
     currentView=view;
     qsa(".view").forEach(v=>v.classList.remove("active"));
@@ -2539,7 +2590,7 @@
     qsa(".nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
     if(view==="analysis") setTimeout(()=>{renderAnalysis();},50);
     if(view==="settings")renderCategoryManager();
-    window.scrollTo({top:0,behavior:"smooth"});
+    if(changed&&scrollToTop)window.scrollTo({top:0,behavior:"smooth"});
   }
 
   function openModal(quickCategory=null, id=null){
@@ -2553,16 +2604,16 @@
     $("txnDate").value=t?.date||todayKey();
     $("txnCategory").value=t?.category||quickCategory||$("txnCategory").options[0]?.value||"";
     $("deleteTxn").classList.toggle("hidden",!t);
+    lockPageForOverlay();
     $("txnModal").classList.add("open");
-    document.body.classList.add("modal-open");
     const formScroller=$("txnModal").querySelector(".sheet-scroll");
     if(formScroller)formScroller.scrollTop=0;
     setTimeout(()=>$("txnAmount").focus(),150);
   }
-  function closeModal(){
+  function closeModal({restoreScroll=true}={}){
     $("txnModal").classList.remove("open");
-    document.body.classList.remove("modal-open");
     resetSwipeSheet("txnModal");
+    unlockPageFromOverlay({restore:restoreScroll});
   }
   function setTxnType(type){
     $("typeExpense").classList.toggle("active",type==="expense");
@@ -2806,7 +2857,7 @@ ${error.message||"Please check your network and try again."}`);
   $("categoryDetailViewAll").addEventListener("click",()=>{
     if(!categoryDetailCurrent)return;
     const current=categoryDetailCurrent;
-    closeCategoryDetail();
+    closeCategoryDetail({restoreScroll:false});
     openRecordsForPeriod({
       from:current.range.from,
       to:current.range.to,
@@ -2947,18 +2998,29 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     const deleteBtn=e.target.closest("[data-delete-id]");
     if(deleteBtn){
       e.stopPropagation();
+      const wrapper=deleteBtn.closest(".swipe-row");
+      const txnLayer=wrapper?.querySelector(".txn");
       const id=deleteBtn.dataset.deleteId;
       const txn=state.transactions.find(x=>x.id===id);
+
+      wrapper?.classList.remove("open","swiping");
+      if(txnLayer)txnLayer.style.transform="";
+
       if(!txn||!cloudReadyForWrite())return;
-      if(confirm("Move this record to Cloud trash?")){
-        setCloudStatus("syncing");
-        try{
-          await withTimeout(cloudApi.moveToTrash(cloudUser.uid,txn));
-          state.transactions=state.transactions.filter(x=>x.id!==id);
-          saveLocalMirror();renderAll();setCloudStatus("online");toast("Moved to Cloud trash.");
-        }catch(error){
-          console.error(error);setCloudStatus("error",error.message);toast(error.message||"Delete failed.");
-        }
+      const confirmed=confirm("Move this record to Cloud trash?");
+      if(!confirmed){
+        wrapper?.classList.remove("open","swiping");
+        if(txnLayer)txnLayer.style.transform="";
+        return;
+      }
+
+      setCloudStatus("syncing");
+      try{
+        await withTimeout(cloudApi.moveToTrash(cloudUser.uid,txn));
+        state.transactions=state.transactions.filter(x=>x.id!==id);
+        saveLocalMirror();renderAll();setCloudStatus("online");toast("Moved to Cloud trash.");
+      }catch(error){
+        console.error(error);setCloudStatus("error",error.message);toast(error.message||"Delete failed.");
       }
       return;
     }
