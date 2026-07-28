@@ -720,30 +720,47 @@
     .txn-close-button:active{transform:scale(.985)}
 
 
-    /* V24 compact editor and keyboard-safe viewport */
+
+    /* V25 stable keyboard layout */
     :root{
-      --app-visual-height:100dvh;
-      --app-visual-offset:0px;
+      --keyboard-inset:0px;
     }
     .txn-modal{
-      top:var(--app-visual-offset);
-      height:var(--app-visual-height);
-      min-height:0
+      inset:0;
+      width:100%;
+      height:100%;
+      min-height:0;
+      overflow:hidden
     }
     .txn-sheet{
-      max-height:calc(var(--app-visual-height) - 4px)
+      width:min(620px,100%);
+      height:100%;
+      max-height:100%;
+      border-radius:0;
+      padding:0;
+      overflow:hidden;
+      background:#F7F7F8
     }
     .txn-sheet-head{
-      min-height:52px;
-      padding:9px 13px 8px
+      flex:0 0 auto;
+      min-height:50px;
+      padding:8px 12px 7px;
+      margin:0;
+      border-bottom:1px solid #ECEDEF
     }
     .txn-head-copy h3{font-size:15px}
     .txn-head-copy span{margin-top:1px;font-size:8px}
-    .txn-close-button{width:30px;height:30px;flex-basis:30px;border-radius:9px}
+    .txn-close-button{
+      width:30px;height:30px;flex-basis:30px;border-radius:9px
+    }
     .txn-sheet-scroll{
+      flex:1;
+      min-height:0;
       max-height:none;
-      padding:8px 11px 9px;
-      overflow-y:auto
+      overflow-y:auto;
+      overscroll-behavior:contain;
+      padding:8px 11px 84px;
+      scroll-padding-bottom:86px
     }
     .txn-type-toggle{
       margin-bottom:7px;padding:2px;border-radius:11px
@@ -855,41 +872,58 @@
       right:8px;
       font-size:13px
     }
+
+    /* Only this action dock moves above the keyboard. */
     .txn-sticky-actions{
-      gap:7px;
-      padding:7px 11px calc(7px + env(safe-area-inset-bottom))
+      position:fixed;
+      z-index:125;
+      left:max(11px,calc((100vw - 620px)/2 + 11px));
+      right:max(11px,calc((100vw - 620px)/2 + 11px));
+      bottom:calc(var(--keyboard-inset) + 8px + env(safe-area-inset-bottom));
+      display:grid;
+      grid-template-columns:minmax(78px,.72fr) minmax(148px,1.75fr);
+      gap:8px;
+      margin:0;
+      padding:6px;
+      border:1px solid rgba(218,220,224,.95);
+      border-radius:15px;
+      background:rgba(255,255,255,.96);
+      box-shadow:0 8px 28px rgba(20,23,28,.16);
+      backdrop-filter:blur(14px);
+      transition:bottom .16s ease
     }
-    .txn-delete-button,.txn-save-button{
-      min-height:41px;
+    .txn-delete-button{
+      grid-column:1;
+      min-height:44px;
       border-radius:11px;
       font-size:11px
     }
-    body.keyboard-open .txn-sheet{
-      border-radius:17px 17px 0 0
+    .txn-save-button{
+      grid-column:2;
+      min-height:44px;
+      border-radius:11px;
+      font-size:12px
     }
-    body.keyboard-open .txn-sheet-head{
-      min-height:45px;
-      padding-top:6px;
-      padding-bottom:6px
+    .txn-delete-button.hidden + .txn-save-button{
+      grid-column:2
+    }
+    .txn-save-button:focus-visible{
+      outline:3px solid rgba(230,185,0,.25);
+      outline-offset:2px
+    }
+
+    body.keyboard-open .txn-sheet{
+      border-radius:0
+    }
+    body.keyboard-open .txn-sheet-head,
+    body.keyboard-open .txn-sheet-scroll,
+    body.keyboard-open .txn-primary-row,
+    body.keyboard-open .txn-secondary-row{
+      transform:none!important
     }
     body.keyboard-open .txn-sheet-scroll{
-      padding-top:6px;
-      padding-bottom:6px
+      padding-bottom:84px
     }
-    body.keyboard-open .txn-type-toggle{margin-bottom:5px}
-    body.keyboard-open .txn-type-toggle button{min-height:28px}
-    body.keyboard-open .txn-amount-card,
-    body.keyboard-open .txn-compact-control{padding-top:6px;padding-bottom:6px}
-    body.keyboard-open .txn-compact-input,
-    body.keyboard-open .txn-compact-shell{height:36px;min-height:36px}
-    body.keyboard-open .txn-compact-shell .txn-compact-input{
-      height:34px;min-height:34px
-    }
-    body.keyboard-open .txn-sticky-actions{
-      padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom))
-    }
-    body.keyboard-open .txn-delete-button,
-    body.keyboard-open .txn-save-button{min-height:38px}
 
 </style>
 </head>
@@ -1193,7 +1227,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 24 keeps every Analysis interaction inside Analysis, opens Week/Month/Day records in an Analysis detail window, and uses a compact keyboard-aware record editor.
+            Version 25 keeps the editor fixed when the keyboard opens and moves only a floating action dock. Save record stays on the right above the keyboard, so it can be tapped without dismissing the keyboard.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -1346,8 +1380,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=24"></script>
-<script src="firebase-cloud-v17.js?v=24"></script>
+<script src="firebase-config.js?v=25"></script>
+<script src="firebase-cloud-v17.js?v=25"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2361,26 +2395,80 @@
     if($("filterSearch"))$("filterSearch").value=snapshot.filters.search;
     renderRecordFilterToolbar();
 
-    function updateVisualViewport(){
-    const viewport=window.visualViewport;
-    const height=viewport?.height||window.innerHeight;
-    const offsetTop=viewport?.offsetTop||0;
-    document.documentElement.style.setProperty("--app-visual-height",`${height}px`);
-    document.documentElement.style.setProperty("--app-visual-offset",`${offsetTop}px`);
-    const keyboardOpen=window.innerHeight-height>140;
-    document.body.classList.toggle("keyboard-open",keyboardOpen&&$("txnModal")?.classList.contains("open"));
-  }
-  if(window.visualViewport){
-    window.visualViewport.addEventListener("resize",updateVisualViewport);
-    window.visualViewport.addEventListener("scroll",updateVisualViewport);
-  }
-  window.addEventListener("resize",updateVisualViewport);
-  updateVisualViewport();
-
-  qsa("#settingsView details.settings-card").forEach(section=>{
+    qsa("#settingsView details.settings-card").forEach(section=>{
       section.open=snapshot.settingsOpenIds.includes(section.id);
     });
   }
+
+  let txnKeyboardBaseline=0;
+
+  function updateKeyboardGeometry(){
+    const modalOpen=$("txnModal")?.classList.contains("open");
+    const viewport=window.visualViewport;
+    const viewportHeight=viewport?.height||window.innerHeight;
+    const viewportOffset=Math.max(0,viewport?.offsetTop||0);
+
+    if(!modalOpen){
+      txnKeyboardBaseline=Math.max(
+        window.innerHeight||0,
+        viewportHeight||0
+      );
+      document.documentElement.style.setProperty("--keyboard-inset","0px");
+      document.body.classList.remove("keyboard-open");
+      return;
+    }
+
+    if(!txnKeyboardBaseline){
+      txnKeyboardBaseline=Math.max(window.innerHeight||0,viewportHeight||0);
+    }
+
+    const layoutInset=Math.max(
+      0,
+      (window.innerHeight||txnKeyboardBaseline)-viewportHeight-viewportOffset
+    );
+    const baselineInset=Math.max(
+      0,
+      txnKeyboardBaseline-viewportHeight-viewportOffset
+    );
+    const keyboardInset=Math.max(layoutInset,baselineInset);
+    const keyboardOpen=keyboardInset>110;
+
+    document.documentElement.style.setProperty(
+      "--keyboard-inset",
+      `${keyboardOpen?keyboardInset:0}px`
+    );
+    document.body.classList.toggle("keyboard-open",keyboardOpen);
+  }
+
+  function keepFocusedTxnControlVisible(target){
+    if(!$("txnModal")?.classList.contains("open"))return;
+    const scroller=$("txnModal").querySelector(".txn-sheet-scroll");
+    const control=target?.closest?.(
+      ".txn-amount-card,.txn-compact-control,.txn-type-toggle"
+    );
+    const actionDock=$("txnModal").querySelector(".txn-sticky-actions");
+    if(!scroller||!control||!actionDock)return;
+
+    requestAnimationFrame(()=>{
+      const controlRect=control.getBoundingClientRect();
+      const scrollerRect=scroller.getBoundingClientRect();
+      const dockRect=actionDock.getBoundingClientRect();
+      const visibleBottom=Math.min(scrollerRect.bottom,dockRect.top-8);
+
+      if(controlRect.bottom>visibleBottom){
+        scroller.scrollTop+=controlRect.bottom-visibleBottom+8;
+      }else if(controlRect.top<scrollerRect.top){
+        scroller.scrollTop-=scrollerRect.top-controlRect.top+8;
+      }
+    });
+  }
+
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize",updateKeyboardGeometry);
+    window.visualViewport.addEventListener("scroll",updateKeyboardGeometry);
+  }
+  window.addEventListener("resize",updateKeyboardGeometry);
+
 
   function restoreSavedScrollPosition(y){
     const target=Math.max(0,Number(y)||0);
@@ -3259,18 +3347,24 @@
     $("txnCategorySymbol").textContent=categoryIcon($("txnCategory").value||"Other");
     $("deleteTxn").classList.toggle("hidden",!t);
     lockPageForOverlay();
+    txnKeyboardBaseline=Math.max(
+      window.innerHeight||0,
+      window.visualViewport?.height||0
+    );
+    document.documentElement.style.setProperty("--keyboard-inset","0px");
+    document.body.classList.remove("keyboard-open");
     $("txnModal").classList.add("open");
-    updateVisualViewport();
-    const formScroller=$("txnModal").querySelector(".sheet-scroll");
+    const formScroller=$("txnModal").querySelector(".txn-sheet-scroll");
     if(formScroller)formScroller.scrollTop=0;
-    setTimeout(()=>$("txnAmount").focus(),150);
+    updateKeyboardGeometry();
   }
   function closeModal({restoreScroll=true}={}){
     $("txnModal").classList.remove("open");
     document.body.classList.remove("keyboard-open");
+    document.documentElement.style.setProperty("--keyboard-inset","0px");
     resetSwipeSheet("txnModal");
     unlockPageFromOverlay({restore:restoreScroll});
-    updateVisualViewport();
+    updateKeyboardGeometry();
   }
   function setTxnType(type){
     $("typeExpense").classList.toggle("active",type==="expense");
@@ -3615,6 +3709,13 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("txnModal").addEventListener("click",e=>{if(e.target===$("txnModal"))closeModal();});
   $("txnCategory").addEventListener("change",()=>{
     $("txnCategorySymbol").textContent=categoryIcon($("txnCategory").value||"Other");
+  });
+  $("txnModal").addEventListener("focusin",event=>{
+    updateKeyboardGeometry();
+    keepFocusedTxnControlVisible(event.target);
+  });
+  $("txnModal").addEventListener("focusout",()=>{
+    setTimeout(updateKeyboardGeometry,80);
   });
   $("typeExpense").addEventListener("click",()=>setTxnType("expense"));
   $("typeIncome").addEventListener("click",()=>setTxnType("income"));
