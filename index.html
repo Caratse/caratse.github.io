@@ -218,6 +218,21 @@
     .trash-actions{display:flex;gap:5px}
     .trash-actions button{border:0;border-radius:10px;padding:8px 9px;font-size:11px;font-weight:800}
     .cloud-config-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#F5F5F6;border-radius:10px;padding:7px 9px;font-size:11px;word-break:break-all}
+    .analysis-total-card{cursor:pointer;transition:transform .16s ease,box-shadow .16s ease}
+    .analysis-total-card:hover{transform:translateY(-1px)}
+    .analysis-total-card:active{transform:scale(.99)}
+    .analysis-total-card:focus-visible{outline:2px solid rgba(227,170,0,.45);outline-offset:2px}
+    .analysis-total-hint{font-size:11px;color:var(--muted);margin-top:6px;padding:0 2px}
+    .analysis-breakdown-panel.hidden{display:none}
+    .analysis-breakdown-list{display:grid;gap:8px}
+    .analysis-breakdown-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#FAFAFB;border:1px solid var(--line);border-radius:14px;padding:11px 12px;cursor:pointer}
+    .analysis-breakdown-row:active{transform:scale(.995)}
+    .analysis-breakdown-title{font-weight:800;font-size:13px}
+    .analysis-breakdown-sub{color:var(--muted);font-size:11px;margin-top:3px}
+    .analysis-breakdown-amount{font-weight:900;font-size:13px}
+    .ranking-row{cursor:pointer}
+    .ranking-row:active{transform:scale(.996)}
+    .ranking-help{font-size:11px;color:var(--muted);margin-top:2px}
 
     .settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .settings-actions button{min-height:48px}
@@ -414,7 +429,7 @@
           <button id="analysisYearBtn" type="button">Year</button>
         </div>
         <div id="analysisQuickTabs" class="analysis-quick-tabs"></div>
-        <div class="analysis-total-card">
+        <div id="analysisTotalCard" class="analysis-total-card" role="button" tabindex="0" aria-label="Show detailed breakdown">
           <div>
             <small id="analysisRangeLabel">This month</small>
             <strong id="analysisMainAmount">¥0.00</strong>
@@ -424,14 +439,28 @@
             <strong id="analysisCompareValue">--</strong>
           </div>
         </div>
+        <div id="analysisTotalHint" class="analysis-total-hint">Tap the total to switch to a detailed weekly or monthly breakdown.</div>
       </div>
 
       <div class="panel analysis-chart-panel">
         <canvas id="trendCanvas"></canvas>
       </div>
 
+      <div id="analysisBreakdownPanel" class="panel analysis-breakdown-panel hidden">
+        <div class="section-head" style="margin-top:0">
+          <h2 id="analysisBreakdownTitle">Breakdown</h2>
+          <span id="analysisBreakdownBadge" class="badge">Tap a row to open records</span>
+        </div>
+        <div id="analysisBreakdownList" class="analysis-breakdown-list"></div>
+      </div>
+
       <div class="panel">
-        <div class="section-head" style="margin-top:0"><h2 id="rankingTitle">Expense ranking</h2></div>
+        <div class="section-head" style="margin-top:0">
+          <div>
+            <h2 id="rankingTitle">Expense ranking</h2>
+            <div class="ranking-help">Tap a category to open matching records.</div>
+          </div>
+        </div>
         <div id="analysisRanking"></div>
       </div>
     </section>
@@ -536,7 +565,7 @@
       <div class="panel">
         <div class="section-head" style="margin-top:0"><h2>About this app</h2></div>
         <p style="margin:0;color:var(--muted);line-height:1.55;font-size:13px">
-          English interface with RMB settlement. Version 11 fixes sign-in persistence and verifies every cloud save directly against the Firestore server. Local data is never replaced by an unverified empty snapshot.
+          English interface with RMB settlement. Version 12 improves the Analysis page: tap the total for detailed weekly or monthly breakdowns, tap breakdown rows to open matching records, and tap ranking items to jump directly into filtered records.
         </p>
         <button id="installBtn" class="primary hidden" style="width:100%;margin-top:14px">Install app</button>
       </div>
@@ -609,8 +638,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=11"></script>
-<script src="firebase-cloud-v11.js?v=11"></script>
+<script src="firebase-config.js?v=12"></script>
+<script src="firebase-cloud-v11.js?v=12"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -683,6 +712,7 @@
   let cloudServerVerified = false;
   let cloudVerifiedAt = "";
   let cloudLocalCandidate = null;
+  let analysisDrilldown = false;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
@@ -1156,6 +1186,123 @@
     const key=currentAnalysisKey();
     return analysisMode==="week"?txnsForWeek(key):(analysisMode==="month"?txnsForMonth(key):txnsForYear(key));
   }
+  function analysisRange(mode=analysisMode,key=currentAnalysisKey()){
+    if(mode==="week"){
+      return {from:key,to:endOfWeekKey(key),label:weekLabel(key)};
+    }
+    if(mode==="month"){
+      return {from:`${key}-01`,to:`${key}-${String(daysInMonth(key)).padStart(2,"0")}`,label:monthLabel(key)};
+    }
+    return {from:`${key}-01-01`,to:`${key}-12-31`,label:String(key)};
+  }
+  function openRecordsForPeriod({from,to,type="",category="",search=""}){
+    qsa("#presetChips .chip").forEach(c=>c.classList.toggle("active",c.dataset.preset==="all"));
+    $("filterFrom").value=from||"";
+    $("filterTo").value=to||"";
+    $("filterType").value=type||"";
+    $("filterCategory").value=category||"";
+    $("filterSearch").value=search||"";
+    renderRecords();
+    setView("records");
+  }
+  function openAnalysisCategoryRecords(category){
+    const range=analysisRange();
+    openRecordsForPeriod({from:range.from,to:range.to,type:analysisFlow,category});
+  }
+  function monthShortName(monthKey){
+    const [y,m]=monthKey.split("-").map(Number);
+    return new Intl.DateTimeFormat("en-US",{month:"short"}).format(new Date(y,m-1,1));
+  }
+  function buildMonthWeeks(monthKey,flow){
+    const from=`${monthKey}-01`;
+    const to=`${monthKey}-${String(daysInMonth(monthKey)).padStart(2,"0")}`;
+    const rows=[];
+    let cursor=from;
+    let index=1;
+    while(cursor<=to){
+      const weekEnd=endOfWeekKey(startOfWeekKey(cursor));
+      const bucketEnd=weekEnd<to?weekEnd:to;
+      const total=state.transactions
+        .filter(t=>t.type===flow&&t.date>=cursor&&t.date<=bucketEnd)
+        .reduce((s,t)=>s+(Number(t.amount)||0),0);
+      rows.push({
+        key:`${monthKey}-W${index}`,
+        shortLabel:`W${index}`,
+        label:`Week ${index}`,
+        subLabel:`${dateLabel(cursor)} - ${dateLabel(bucketEnd)}`,
+        amount:total,
+        from:cursor,
+        to:bucketEnd
+      });
+      cursor=addDays(bucketEnd,1);
+      index++;
+    }
+    return rows;
+  }
+  function buildAnalysisBreakdown(){
+    const key=currentAnalysisKey();
+    if(analysisMode==="year"){
+      return {
+        title:`Monthly totals · ${key}`,
+        rows:Array.from({length:12},(_,i)=>{
+          const month=`${key}-${String(i+1).padStart(2,"0")}`;
+          const amount=state.transactions
+            .filter(t=>t.type===analysisFlow&&monthOf(t)===month)
+            .reduce((s,t)=>s+(Number(t.amount)||0),0);
+          return {
+            key:month,
+            shortLabel:monthShortName(month),
+            label:monthShortName(month),
+            subLabel:month,
+            amount,
+            from:`${month}-01`,
+            to:`${month}-${String(daysInMonth(month)).padStart(2,"0")}`
+          };
+        })
+      };
+    }
+    if(analysisMode==="month"){
+      return {
+        title:`Weekly totals · ${monthLabel(key)}`,
+        rows:buildMonthWeeks(key,analysisFlow)
+      };
+    }
+    const rows=Array.from({length:7},(_,i)=>{
+      const day=addDays(key,i);
+      const amount=state.transactions
+        .filter(t=>t.type===analysisFlow&&t.date===day)
+        .reduce((s,t)=>s+(Number(t.amount)||0),0);
+      return {
+        key:day,
+        shortLabel:day.slice(8),
+        label:dateLabel(day),
+        subLabel:day,
+        amount,
+        from:day,
+        to:day
+      };
+    });
+    return {title:`Daily totals · ${weekLabel(key)}`,rows};
+  }
+  function renderAnalysisBreakdown(){
+    const panel=$("analysisBreakdownPanel");
+    if(!analysisDrilldown){
+      panel.classList.add("hidden");
+      $("analysisBreakdownList").innerHTML="";
+      return;
+    }
+    const data=buildAnalysisBreakdown();
+    $("analysisBreakdownTitle").textContent=data.title;
+    const rows=data.rows.filter(row=>row.amount>0 || data.rows.length<=7 || analysisMode==="year");
+    $("analysisBreakdownList").innerHTML=rows.length?rows.map(row=>`<div class="analysis-breakdown-row" data-breakdown-from="${row.from}" data-breakdown-to="${row.to}">
+      <div>
+        <div class="analysis-breakdown-title">${escapeHtml(row.label)}</div>
+        <div class="analysis-breakdown-sub">${escapeHtml(row.subLabel)}</div>
+      </div>
+      <div class="analysis-breakdown-amount">${money(row.amount)}</div>
+    </div>`).join(""):emptyHtml("No data","Add more records to build a breakdown.");
+    panel.classList.remove("hidden");
+  }
   function previousAnalysisKey(){
     const key=currentAnalysisKey();
     if(analysisMode==="week") return previousWeekKey(key);
@@ -1301,6 +1448,11 @@
     $("analysisRangeLabel").textContent=analysisDisplayLabel(activeKey);
     $("analysisMainAmount").textContent=money(currentTotal);
     $("analysisCompareLabel").textContent=`vs ${analysisMode==="week"?"last week":analysisMode==="month"?"last month":"last year"}`;
+    $("analysisTotalHint").textContent=analysisMode==="year"
+      ? "Tap the total to see monthly totals and open a month from the list."
+      : analysisMode==="month"
+        ? "Tap the total to switch between daily and weekly views."
+        : "Tap the total to see each day in this week.";
     const compareEl=$("analysisCompareValue");
     compareEl.className="";
     if(!prevTotal){
@@ -1313,6 +1465,7 @@
     $("rankingTitle").textContent=`${analysisFlow==="expense"?"Expense":"Income"} ranking`;
 
     renderRanking(ranking,currentTotal);
+    renderAnalysisBreakdown();
     drawAnalysisTrend();
   }
 
@@ -1325,7 +1478,7 @@
     const barColor=analysisFlow==="expense"?"var(--yellow-2)":"#1E9E63";
     $("analysisRanking").innerHTML=`<div class="ranking-list">`+ranking.map(([cat,amount])=>{
       const share=total?amount/total*100:0;
-      return `<div class="ranking-row">
+      return `<div class="ranking-row" data-ranking-category="${escapeHtml(cat)}">
         <div class="ranking-icon">${categoryIcon(cat)}</div>
         <div class="ranking-main">
           <div class="ranking-topline">
@@ -1341,34 +1494,53 @@
 
   function canvasContext(id){
     const canvas=$(id),rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
-    canvas.width=Math.max(320,rect.width*ratio);canvas.height=190*ratio;
-    const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,canvas.width/ratio,canvas.height/ratio);
+    canvas.width=Math.max(320,rect.width*ratio);canvas.height=210*ratio;
+    const ctx=canvas.getContext("2d");
+    ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,canvas.width/ratio,canvas.height/ratio);
     return {canvas,ctx,w:canvas.width/ratio,h:canvas.height/ratio};
   }
   function compact(v){return v>=10000?(v/10000).toFixed(v>=100000?0:1)+"w":v>=1000?(v/1000).toFixed(1)+"k":Math.round(v);}
-  function drawSingleLine(id,labels,values,color){
-    const {ctx,w,h}=canvasContext(id);const left=36,right=10,top=16,bottom=30;const max=Math.max(...values,1);
+  function drawSingleLine(id,labels,values,color,showPointValues=false){
+    const {ctx,w,h}=canvasContext(id);const left=40,right=12,top=18,bottom=34;const max=Math.max(...values,1);
     ctx.font="10px Arial";ctx.fillStyle="#8A8D94";ctx.strokeStyle="#ECEDEF";ctx.lineWidth=1;
-    for(let i=0;i<4;i++){const y=top+(h-top-bottom)*i/3;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();ctx.fillText(compact(max*(1-i/3)),2,y+4);}
-    const points=values.map((v,i)=>({x:left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),y:top+(h-top-bottom)*(1-v/max)}));
-    ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.stroke();
-    points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2.8,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.2;ctx.stroke();});
+    for(let i=0;i<4;i++){
+      const y=top+(h-top-bottom)*i/3;
+      ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+      ctx.fillText(compact(max*(1-i/3)),2,y+4);
+    }
+    const points=values.map((v,i)=>({x:left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),y:top+(h-top-bottom)*(1-v/max),value:v}));
+    ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.stroke();
+    points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3.1,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.2;ctx.stroke();});
     const step=Math.max(1,Math.ceil(labels.length/6));ctx.textAlign="center";ctx.fillStyle="#8A8D94";ctx.font="10px Arial";
     labels.forEach((lab,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lab,left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),h-10);});
+    if(showPointValues){
+      ctx.fillStyle="#3C4043";
+      ctx.font="10px Arial";
+      points.forEach(p=>{if(!p.value)return;ctx.fillText(compact(p.value),p.x,p.y-8);});
+    }
     ctx.textAlign="start";
   }
   function drawAnalysisTrend(){
     const color=analysisFlow==="expense"?"#E3AA00":"#1E9E63";
-    const key=currentAnalysisKey();
-    let labels=[],values=[];
-    if(analysisMode==="week"){
+    let labels=[],values=[],showPointValues=false;
+
+    if(analysisDrilldown){
+      const data=buildAnalysisBreakdown();
+      labels=data.rows.map(row=>row.shortLabel);
+      values=data.rows.map(row=>row.amount);
+      showPointValues=true;
+    }else if(analysisMode==="week"){
+      const key=currentAnalysisKey();
       const list=currentAnalysisList();
       for(let i=0;i<7;i++){
         const day=addDays(key,i);
         labels.push(day.slice(8));
         values.push(list.filter(t=>t.type===analysisFlow&&t.date===day).reduce((s,t)=>s+(Number(t.amount)||0),0));
       }
+      showPointValues=true;
     }else if(analysisMode==="month"){
+      const key=currentAnalysisKey();
       const days=daysInMonth(key),list=currentAnalysisList();
       for(let d=1;d<=days;d++){
         const day=`${key}-${String(d).padStart(2,"0")}`;
@@ -1376,14 +1548,16 @@
         values.push(list.filter(t=>t.type===analysisFlow&&t.date===day).reduce((s,t)=>s+(Number(t.amount)||0),0));
       }
     }else{
+      const key=currentAnalysisKey();
       const list=currentAnalysisList();
       for(let m=1;m<=12;m++){
         const month=`${key}-${String(m).padStart(2,"0")}`;
-        labels.push(String(m).padStart(2,"0"));
+        labels.push(monthShortName(month));
         values.push(list.filter(t=>t.type===analysisFlow&&monthOf(t)===month).reduce((s,t)=>s+(Number(t.amount)||0),0));
       }
+      if(analysisDrilldown) showPointValues=true;
     }
-    drawSingleLine("trendCanvas",labels,values,color);
+    drawSingleLine("trendCanvas",labels,values,color,showPointValues);
   }
 
   function renderBudgetEditor(){
@@ -1733,20 +1907,33 @@
 
   // Events
   $("globalMonth").addEventListener("change",e=>{selectedMonth=e.target.value;selectedYear=selectedMonth.slice(0,4);$("budgetMonth").value=selectedMonth;renderAll();});
-  $("budgetMonth").addEventListener("change",renderBudgetEditor);  $("analysisExpenseBtn").addEventListener("click",()=>{analysisFlow="expense";renderAnalysis();});
-  $("analysisIncomeBtn").addEventListener("click",()=>{analysisFlow="income";renderAnalysis();});
-  $("analysisWeekBtn").addEventListener("click",()=>{analysisMode="week";selectedWeek=startOfWeekKey(todayKey());renderAnalysis();});
-  $("analysisMonthBtn").addEventListener("click",()=>{analysisMode="month";selectedMonth=currentMonthKey();renderAnalysis();});
-  $("analysisYearBtn").addEventListener("click",()=>{analysisMode="year";selectedYear=currentYearKey();renderAnalysis();});
+  $("budgetMonth").addEventListener("change",renderBudgetEditor);  $("analysisExpenseBtn").addEventListener("click",()=>{analysisFlow="expense";analysisDrilldown=false;renderAnalysis();});
+  $("analysisIncomeBtn").addEventListener("click",()=>{analysisFlow="income";analysisDrilldown=false;renderAnalysis();});
+  $("analysisWeekBtn").addEventListener("click",()=>{analysisMode="week";selectedWeek=startOfWeekKey(todayKey());analysisDrilldown=false;renderAnalysis();});
+  $("analysisMonthBtn").addEventListener("click",()=>{analysisMode="month";selectedMonth=currentMonthKey();analysisDrilldown=false;renderAnalysis();});
+  $("analysisYearBtn").addEventListener("click",()=>{analysisMode="year";selectedYear=currentYearKey();analysisDrilldown=false;renderAnalysis();});
   $("analysisQuickTabs").addEventListener("click",e=>{
     const btn=e.target.closest("[data-analysis-key]");
     if(!btn)return;
     if(analysisMode==="week")selectedWeek=btn.dataset.analysisKey;
     else if(analysisMode==="month")selectedMonth=btn.dataset.analysisKey;
     else selectedYear=btn.dataset.analysisKey;
+    analysisDrilldown=false;
     renderAnalysis();
   });
-  $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"));
+    $("analysisTotalCard").addEventListener("click",()=>{analysisDrilldown=!analysisDrilldown;renderAnalysis();});
+  $("analysisTotalCard").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();analysisDrilldown=!analysisDrilldown;renderAnalysis();}});
+  $("analysisRanking").addEventListener("click",e=>{
+    const row=e.target.closest("[data-ranking-category]");
+    if(!row)return;
+    openAnalysisCategoryRecords(row.dataset.rankingCategory);
+  });
+  $("analysisBreakdownList").addEventListener("click",e=>{
+    const row=e.target.closest("[data-breakdown-from]");
+    if(!row)return;
+    openRecordsForPeriod({from:row.dataset.breakdownFrom,to:row.dataset.breakdownTo,type:analysisFlow});
+  });
+$("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"));
   $("categoryIncomeBtn").addEventListener("click",()=>setCategoryMode("income"));
   $("addCategory").addEventListener("click",addCategory);
   $("cloudSignIn").addEventListener("click",()=>cloudAuthAction("signin"));
@@ -1896,7 +2083,7 @@
   $("importFile").addEventListener("change",e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value="";});
   $("loadDemo").addEventListener("click",loadDemo);
   $("clearAll").addEventListener("click",clearAll);
-  window.addEventListener("resize",()=>{if(currentView==="analysis"){drawTrend();drawComparison();}});
+  window.addEventListener("resize",()=>{if(currentView==="analysis"){renderAnalysis();}});
   window.addEventListener("beforeinstallprompt",e=>{
     e.preventDefault();deferredInstallPrompt=e;$("installBtn").classList.remove("hidden");
   });
