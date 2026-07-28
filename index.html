@@ -468,7 +468,8 @@
         <div id="cloudSignedIn" class="hidden">
           <div class="cloud-user">
             Signed in as <strong id="cloudUserEmail"></strong><br>
-            <span id="cloudRecordCount">0 cloud records</span>
+            <span id="cloudRecordCount">0 cloud records</span><br>
+            <span id="cloudVerificationText">Waiting for server verification…</span>
           </div>
           <div id="cloudMigrationBox" class="cloud-warning hidden">
             Local records were found, but this cloud account is empty.
@@ -476,7 +477,7 @@
             <button id="uploadLocalToCloud" class="primary" style="width:100%;margin-top:10px">Upload current data to cloud</button>
           </div>
           <div class="cloud-actions">
-            <button id="cloudRetrySync" class="secondary">Sync settings now</button>
+            <button id="cloudRetrySync" class="secondary">Verify cloud data</button>
             <button id="cloudSignOut" class="secondary">Sign out</button>
           </div>
         </div>
@@ -535,7 +536,7 @@
       <div class="panel">
         <div class="section-head" style="margin-top:0"><h2>About this app</h2></div>
         <p style="margin:0;color:var(--muted);line-height:1.55;font-size:13px">
-          English interface with RMB settlement. Version 10 uses Firebase Authentication and Cloud Firestore as the primary data store. Local browser data is only a mirror for display and migration. New saves require cloud confirmation; deleted records go to Cloud trash.
+          English interface with RMB settlement. Version 11 fixes sign-in persistence and verifies every cloud save directly against the Firestore server. Local data is never replaced by an unverified empty snapshot.
         </p>
         <button id="installBtn" class="primary hidden" style="width:100%;margin-top:14px">Install app</button>
       </div>
@@ -608,8 +609,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js"></script>
-<script src="firebase-cloud.js"></script>
+<script src="firebase-config.js?v=11"></script>
+<script src="firebase-cloud-v11.js?v=11"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -679,6 +680,9 @@
   let cloudRemoteRecordCount = 0;
   let cloudStatus = "checking";
   let cloudStatusMessage = "";
+  let cloudServerVerified = false;
+  let cloudVerifiedAt = "";
+  let cloudLocalCandidate = null;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
@@ -701,6 +705,7 @@
     if(!cloudApi?.configured){toast("Firebase is not configured.");setView("settings");return false;}
     if(!cloudUser){toast("Sign in to save securely.");setView("settings");return false;}
     if(!navigator.onLine){toast("No network. Nothing was saved.");return false;}
+    if(!cloudServerVerified){toast("Cloud is not server-verified yet. Tap Verify cloud data.");setView("settings");return false;}
     if(cloudMigrationNeeded){toast("Upload your current local data to cloud first.");setView("settings");return false;}
     return true;
   }
@@ -744,9 +749,12 @@
     }else if(cloudStatus==="error"){
       badge.textContent="Sync error";
       badge.classList.add("error");
-    }else if(cloudUser){
-      badge.textContent="Cloud saved";
+    }else if(cloudUser&&cloudServerVerified){
+      badge.textContent="Cloud verified";
       badge.classList.add("online");
+    }else if(cloudUser){
+      badge.textContent="Connected";
+      badge.classList.add("syncing");
     }else{
       badge.textContent="Signed out";
     }
@@ -754,6 +762,9 @@
     if(cloudUser){
       $("cloudUserEmail").textContent=cloudUser.email||cloudUser.uid;
       $("cloudRecordCount").textContent=`${cloudRemoteRecordCount} cloud record${cloudRemoteRecordCount===1?"":"s"}`;
+      $("cloudVerificationText").textContent=cloudServerVerified
+        ? `Server verified${cloudVerifiedAt?` · ${cloudVerifiedAt}`:""} · Sign-in remembered on this device`
+        : "Waiting for direct server verification…";
       $("cloudMigrationBox").classList.toggle("hidden",!cloudMigrationNeeded);
     }
     renderTrash();
@@ -785,14 +796,62 @@
     if(!navigator.onLine){setCloudStatus("error","Offline");return false;}
     try{
       setCloudStatus("syncing");
-      await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()));
-      setCloudStatus("online");
+      await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()),30000);
+      markServerVerified();
       if(showSuccess)toast("Settings cloud-saved.");
       return true;
     }catch(error){
       console.error(error);
       setCloudStatus("error",error.message);
       toast(error.message||"Cloud sync failed.");
+      return false;
+    }
+  }
+  function markServerVerified(){
+    cloudServerVerified=true;
+    cloudVerifiedAt=new Intl.DateTimeFormat("en-US",{hour:"2-digit",minute:"2-digit"}).format(new Date());
+    setCloudStatus("online");
+  }
+  function applyVerifiedServerState(serverState,{allowMigration=true}={}){
+    const remote=Array.isArray(serverState?.transactions)?serverState.transactions:[];
+    cloudRemoteRecordCount=remote.length;
+    cloudTrash=Array.isArray(serverState?.trash)?serverState.trash:[];
+
+    const candidate=cloudLocalCandidate||state;
+    if(allowMigration&&remote.length===0&&candidate.transactions.length>0){
+      cloudMigrationNeeded=true;
+      state=normalizeState(JSON.parse(JSON.stringify(candidate)));
+    }else{
+      cloudMigrationNeeded=false;
+      state.transactions=remote;
+      if(serverState?.settings)applyCloudSettings(serverState.settings);
+    }
+
+    saveLocalMirror();
+    renderAll();
+    renderTrash();
+    markServerVerified();
+  }
+  async function verifyCloudNow(showToast=true){
+    if(!cloudApi?.configured||!cloudUser)return false;
+    if(!navigator.onLine){
+      cloudServerVerified=false;
+      setCloudStatus("error","Offline");
+      if(showToast)toast("No network. Server verification failed.");
+      return false;
+    }
+    try{
+      cloudServerVerified=false;
+      setCloudStatus("syncing");
+      const serverState=await withTimeout(cloudApi.fetchServerState(cloudUser.uid),30000);
+      applyVerifiedServerState(serverState,{allowMigration:true});
+      if(showToast)toast(`Server verified: ${serverState.transactions.length} record${serverState.transactions.length===1?"":"s"}.`);
+      return true;
+    }catch(error){
+      console.error(error);
+      cloudServerVerified=false;
+      setCloudStatus("error",error.message);
+      if(showToast)toast(error.message||"Server verification failed.");
       return false;
     }
   }
@@ -806,12 +865,22 @@
     stopCloudSubscription();
     cloudFirstTransactionSnapshot=true;
     cloudMigrationNeeded=false;
+    cloudServerVerified=false;
+    cloudLocalCandidate=normalizeState(JSON.parse(JSON.stringify(state)));
     setCloudStatus("syncing");
+
     cloudUnsubscribe=cloudApi.subscribe(user.uid,{
-      onTransactions(items){
+      onTransactions(items,metadata={}){
+        // Local/cache snapshots are useful for UI latency, but never authoritative.
+        if(metadata.fromCache||metadata.hasPendingWrites){
+          setCloudStatus("syncing");
+          return;
+        }
         cloudRemoteRecordCount=items.length;
-        if(cloudFirstTransactionSnapshot&&items.length===0&&state.transactions.length>0){
+        const candidate=cloudLocalCandidate||state;
+        if(items.length===0&&candidate.transactions.length>0){
           cloudMigrationNeeded=true;
+          state=normalizeState(JSON.parse(JSON.stringify(candidate)));
         }else{
           state.transactions=items;
           cloudMigrationNeeded=false;
@@ -819,26 +888,33 @@
           renderAll();
         }
         cloudFirstTransactionSnapshot=false;
-        setCloudStatus("online");
+        markServerVerified();
         renderCloudPanel();
       },
-      onSettings(settings){
-        if(settings){
+      onSettings(settings,metadata={}){
+        if(metadata.fromCache||metadata.hasPendingWrites)return;
+        if(settings&&!cloudMigrationNeeded){
           applyCloudSettings(settings);
           saveLocalMirror();
           renderAll();
         }
       },
-      onTrash(items){
+      onTrash(items,metadata={}){
+        if(metadata.fromCache||metadata.hasPendingWrites)return;
         cloudTrash=items;
         renderTrash();
       },
       onError(error){
         console.error(error);
+        cloudServerVerified=false;
         setCloudStatus("error",error.message||"Cloud listener failed.");
       }
     });
+
+    // A one-time server read catches permission errors and proves what the server has.
+    verifyCloudNow(false);
   }
+
   async function initCloud(){
     try{
       cloudApi=await window.CloudBudgetReady;
@@ -855,6 +931,9 @@
           cloudTrash=[];
           cloudRemoteRecordCount=0;
           cloudMigrationNeeded=false;
+          cloudServerVerified=false;
+          cloudVerifiedAt="";
+          cloudLocalCandidate=null;
           setCloudStatus("signedout");
           renderCloudPanel();
         }
@@ -862,9 +941,11 @@
     }catch(error){
       console.error(error);
       cloudApi=null;
+      cloudServerVerified=false;
       setCloudStatus("error",error.message||"Firebase initialization failed.");
     }
   }
+
   async function cloudAuthAction(action){
     if(!cloudApi?.configured){toast("Firebase is not configured.");return;}
     const email=$("cloudEmail").value.trim();
@@ -878,26 +959,42 @@
         await cloudApi.resetPassword(email);
         toast("Password reset email sent.");
       }
-      if(action!=="reset")toast(action==="signup"?"Account created.":"Signed in.");
+      if(action!=="reset"){
+        $("cloudPassword").value="";
+        toast(action==="signup"?"Account created. Sign-in will be remembered.":"Signed in. Sign-in will be remembered.");
+      }
     }catch(error){
       console.error(error);
+      cloudServerVerified=false;
       setCloudStatus("error",error.message);
       toast(error.message||"Authentication failed.");
     }
   }
+
   async function uploadCurrentStateToCloud(){
     if(!cloudUser||!cloudApi?.configured)return;
-    if(!confirm(`Upload ${state.transactions.length} local record${state.transactions.length===1?"":"s"} to this cloud account?`))return;
+    if(!navigator.onLine){toast("No network. Nothing was uploaded.");return;}
+    const uploadState=normalizeState(JSON.parse(JSON.stringify(cloudLocalCandidate||state)));
+    if(!uploadState.transactions.length){
+      toast("No local records were found. Use Import backup to cloud instead.");
+      return;
+    }
+    if(!confirm(`Upload and server-verify ${uploadState.transactions.length} local record${uploadState.transactions.length===1?"":"s"}?`))return;
     try{
+      cloudServerVerified=false;
       setCloudStatus("syncing");
-      await withTimeout(cloudApi.importState(cloudUser.uid,state),60000);
-      cloudMigrationNeeded=false;
-      setCloudStatus("online");
-      toast("Local data uploaded to cloud.");
+      const verifiedState=await withTimeout(
+        cloudApi.importState(cloudUser.uid,uploadState),
+        120000
+      );
+      cloudLocalCandidate=null;
+      applyVerifiedServerState(verifiedState,{allowMigration:false});
+      toast(`Cloud verified: ${verifiedState.transactions.length} record${verifiedState.transactions.length===1?"":"s"} saved.`);
     }catch(error){
       console.error(error);
+      cloudServerVerified=false;
       setCloudStatus("error",error.message);
-      toast(error.message||"Cloud import failed.");
+      toast(error.message||"Cloud import was not verified.");
     }
   }
 
@@ -1499,13 +1596,13 @@
     button.disabled=true;button.textContent="Saving to cloud...";
     try{
       setCloudStatus("syncing");
-      await withTimeout(cloudApi.saveTransaction(cloudUser.uid,txn,old));
-      const index=state.transactions.findIndex(x=>x.id===txn.id);
-      if(index>=0)state.transactions[index]=txn;else state.transactions.push(txn);
+      const verifiedTxn=await withTimeout(cloudApi.saveTransaction(cloudUser.uid,txn,old),30000);
+      const index=state.transactions.findIndex(x=>x.id===verifiedTxn.id);
+      if(index>=0)state.transactions[index]=verifiedTxn;else state.transactions.push(verifiedTxn);
       saveLocalMirror();
       closeModal();renderAll();
-      setCloudStatus("online");
-      toast(editingId?"Cloud update confirmed.":"Cloud save confirmed.");
+      markServerVerified();
+      toast(editingId?"Cloud update verified.":"Cloud save verified.");
     }catch(error){
       console.error(error);
       setCloudStatus("error",error.message);
@@ -1586,8 +1683,10 @@
         const imported=normalizeState(data);
         if(!confirm(`Upload ${imported.transactions.length} backup records to the signed-in cloud account?`))return;
         setCloudStatus("syncing");
-        await withTimeout(cloudApi.importState(cloudUser.uid,imported),60000);
-        state=imported;saveLocalMirror();renderAll();setCloudStatus("online");toast("Backup uploaded to cloud.");
+        const verifiedState=await withTimeout(cloudApi.importState(cloudUser.uid,imported),120000);
+        cloudLocalCandidate=null;
+        applyVerifiedServerState(verifiedState,{allowMigration:false});
+        toast(`Backup server-verified: ${verifiedState.transactions.length} record${verifiedState.transactions.length===1?"":"s"}.`);
       }catch(error){
         console.error(error);setCloudStatus("error",error.message);alert(error.message||"This is not a valid backup file.");
       }
@@ -1657,7 +1756,7 @@
     try{await cloudApi.signOut();toast("Signed out.");}catch(error){toast(error.message||"Sign-out failed.");}
   });
   $("uploadLocalToCloud").addEventListener("click",uploadCurrentStateToCloud);
-  $("cloudRetrySync").addEventListener("click",()=>syncSettingsToCloud(true));
+  $("cloudRetrySync").addEventListener("click",()=>verifyCloudNow(true));
   $("trashList").addEventListener("click",async e=>{
     const restore=e.target.closest("[data-restore-trash]");
     const purge=e.target.closest("[data-purge-trash]");
@@ -1813,6 +1912,11 @@
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 
+  window.addEventListener("online",()=>{if(cloudUser)verifyCloudNow(false);});
+  window.addEventListener("offline",()=>{
+    cloudServerVerified=false;
+    setCloudStatus("error","Offline");
+  });
   initCloud();
   populateMonths();
   $("globalMonth").value=selectedMonth;
