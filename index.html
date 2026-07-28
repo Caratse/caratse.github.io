@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#FFD84D" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -925,6 +925,95 @@
       padding-bottom:84px
     }
 
+
+    /* V26: app-like fixed scale and stable keyboard editing */
+    html,body{
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
+      touch-action:pan-x pan-y
+    }
+    .app,.modal,.swipe-surface{
+      max-width:100%;
+      overflow-x:hidden
+    }
+    .swipe-surface{
+      touch-action:pan-y;
+      transform:none
+    }
+    .txn-modal,
+    .txn-sheet,
+    .txn-sheet-scroll{
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden
+    }
+
+    /*
+      iPhone zooms focused inputs when their computed font size is under 16px.
+      Keep every editable record control at 16px or larger.
+    */
+    .txn-modal input,
+    .txn-modal select,
+    .txn-modal textarea{
+      font-size:16px!important
+    }
+    .txn-amount-input input{
+      font-size:25px!important
+    }
+    .txn-compact-shell .txn-compact-input{
+      font-size:16px!important
+    }
+
+    /* Save stays compact and anchored above the keyboard on the right. */
+    .txn-sticky-actions{
+      left:auto!important;
+      right:max(12px,calc((100vw - 620px)/2 + 12px))!important;
+      width:max-content!important;
+      max-width:calc(100vw - 24px);
+      bottom:calc(var(--keyboard-inset) + 8px + env(safe-area-inset-bottom));
+      display:flex!important;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+      padding:5px;
+      border-radius:14px
+    }
+    .txn-delete-button{
+      flex:0 0 88px;
+      width:88px;
+      min-width:88px;
+      min-height:44px
+    }
+    .txn-save-button{
+      flex:0 0 clamp(158px,44vw,180px);
+      width:clamp(158px,44vw,180px);
+      min-width:158px;
+      min-height:44px
+    }
+    .txn-delete-button.hidden{
+      display:none!important
+    }
+    .txn-delete-button.hidden + .txn-save-button{
+      margin-left:auto
+    }
+    body.keyboard-open .txn-sticky-actions{
+      transition:none
+    }
+
+    @media (max-width:350px){
+      .txn-delete-button{
+        flex-basis:78px;
+        width:78px;
+        min-width:78px
+      }
+      .txn-save-button{
+        flex-basis:152px;
+        width:152px;
+        min-width:152px
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -1227,7 +1316,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 25 keeps the editor fixed when the keyboard opens and moves only a floating action dock. Save record stays on the right above the keyboard, so it can be tapped without dismissing the keyboard.
+            Version 26 prevents iPhone input auto-zoom, keeps Tag focus stable, anchors Save record above the keyboard on the right, and disables two-finger page zoom for an app-like fixed interface.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -1380,8 +1469,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=25"></script>
-<script src="firebase-cloud-v17.js?v=25"></script>
+<script src="firebase-config.js?v=26"></script>
+<script src="firebase-cloud-v17.js?v=26"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2402,6 +2491,22 @@
 
   let txnKeyboardBaseline=0;
 
+  function preventAppZoom(event){
+    event.preventDefault();
+  }
+
+  // Safari/Web App pinch gestures.
+  document.addEventListener("gesturestart",preventAppZoom,{capture:true,passive:false});
+  document.addEventListener("gesturechange",preventAppZoom,{capture:true,passive:false});
+  document.addEventListener("gestureend",preventAppZoom,{capture:true,passive:false});
+
+  // Multi-touch fallback: block two-finger scaling, retain one-finger scrolling/swipes.
+  document.addEventListener("touchmove",event=>{
+    if(event.touches&&event.touches.length>1){
+      event.preventDefault();
+    }
+  },{capture:true,passive:false});
+
   function updateKeyboardGeometry(){
     const modalOpen=$("txnModal")?.classList.contains("open");
     const viewport=window.visualViewport;
@@ -2463,11 +2568,19 @@
     });
   }
 
-  if(window.visualViewport){
-    window.visualViewport.addEventListener("resize",updateKeyboardGeometry);
-    window.visualViewport.addEventListener("scroll",updateKeyboardGeometry);
+  function stabilizeTxnViewport(){
+    updateKeyboardGeometry();
+    if($("txnModal")?.classList.contains("open")){
+      document.documentElement.scrollLeft=0;
+      document.body.scrollLeft=0;
+    }
   }
-  window.addEventListener("resize",updateKeyboardGeometry);
+
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize",stabilizeTxnViewport);
+    window.visualViewport.addEventListener("scroll",stabilizeTxnViewport);
+  }
+  window.addEventListener("resize",stabilizeTxnViewport);
 
 
   function restoreSavedScrollPosition(y){
@@ -3712,6 +3825,19 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   });
   $("txnModal").addEventListener("focusin",event=>{
     updateKeyboardGeometry();
+
+    // Tag is already in the top row. Do not scroll or shift the editor.
+    if(event.target?.id==="txnTag"){
+      const scroller=$("txnModal").querySelector(".txn-sheet-scroll");
+      const previousScroll=scroller?.scrollTop||0;
+      requestAnimationFrame(()=>{
+        if(scroller)scroller.scrollTop=previousScroll;
+        document.documentElement.scrollLeft=0;
+        document.body.scrollLeft=0;
+      });
+      return;
+    }
+
     keepFocusedTxnControlVisible(event.target);
   });
   $("txnModal").addEventListener("focusout",()=>{
