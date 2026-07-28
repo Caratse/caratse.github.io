@@ -233,6 +233,38 @@
     .ranking-row{cursor:pointer}
     .ranking-row:active{transform:scale(.996)}
     .ranking-help{font-size:11px;color:var(--muted);margin-top:2px}
+    .analysis-chart-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 8px}
+    .analysis-chart-head h2{margin:0;font-size:15px}
+    .analysis-chart-mode{background:#FFF4BE;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:850;color:#735A00}
+    .analysis-kpi-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
+    .analysis-kpi{background:rgba(255,255,255,.53);border-radius:13px;padding:9px 7px;text-align:center;min-width:0}
+    .analysis-kpi small{display:block;font-size:9px;color:#6D610F;margin-bottom:3px}
+    .analysis-kpi strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .top-category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .top-category-card{border:1px solid var(--line);background:linear-gradient(180deg,#fff,#FFFDF3);border-radius:16px;padding:10px 8px;text-align:center;cursor:pointer;min-width:0}
+    .top-category-card:active{transform:scale(.985)}
+    .top-category-icon{width:34px;height:34px;border-radius:13px;background:#FFF4BE;display:grid;place-items:center;margin:0 auto 7px;font-size:18px}
+    .top-category-name{font-size:11px;font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .top-category-value{font-size:12px;font-weight:900;margin-top:3px}
+    .top-category-share{font-size:9px;color:var(--muted);margin-top:2px}
+    .analysis-breakdown-row{position:relative;overflow:hidden}
+    .analysis-breakdown-copy{position:relative;z-index:2;min-width:0}
+    .analysis-breakdown-amount{position:relative;z-index:2}
+    .analysis-breakdown-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(255,216,77,.22),rgba(255,216,77,.05));pointer-events:none}
+    .category-detail-sheet{max-height:82vh}
+    .category-detail-summary{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--yellow-soft);border-radius:18px;padding:13px;margin-bottom:12px}
+    .category-detail-icon{width:50px;height:50px;border-radius:17px;background:#fff;display:grid;place-items:center;font-size:26px;box-shadow:0 5px 16px rgba(30,30,30,.07)}
+    .category-detail-summary small{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}
+    .category-detail-summary strong{font-size:20px;display:block}
+    .category-detail-meta{font-size:11px;color:var(--muted);margin-top:3px}
+    .category-record-list{display:grid;gap:7px}
+    .category-record-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 2px}
+    .category-record-row:last-child{border-bottom:0}
+    .category-record-title{font-size:12px;font-weight:800}
+    .category-record-meta{font-size:10px;color:var(--muted);margin-top:3px}
+    .category-record-amount{font-size:12px;font-weight:900}
+    .category-detail-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:12px}
+    .point-value-bubble{background:#fff}
 
     .settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .settings-actions button{min-height:48px}
@@ -440,10 +472,27 @@
           </div>
         </div>
         <div id="analysisTotalHint" class="analysis-total-hint">Tap the total to switch to a detailed weekly or monthly breakdown.</div>
+        <div class="analysis-kpi-strip">
+          <div class="analysis-kpi"><small>Average</small><strong id="analysisAverageKpi">¥0.00</strong></div>
+          <div class="analysis-kpi"><small>Active periods</small><strong id="analysisActiveKpi">0</strong></div>
+          <div class="analysis-kpi"><small>Top category</small><strong id="analysisTopKpi">—</strong></div>
+        </div>
       </div>
 
       <div class="panel analysis-chart-panel">
+        <div class="analysis-chart-head">
+          <h2 id="analysisChartTitle">Trend</h2>
+          <span id="analysisChartMode" class="analysis-chart-mode">Daily</span>
+        </div>
         <canvas id="trendCanvas"></canvas>
+      </div>
+
+      <div class="panel">
+        <div class="section-head" style="margin-top:0">
+          <h2>Top categories</h2>
+          <span class="badge">Tap for details</span>
+        </div>
+        <div id="topCategories" class="top-category-grid"></div>
       </div>
 
       <div id="analysisBreakdownPanel" class="panel analysis-breakdown-panel hidden">
@@ -565,7 +614,7 @@
       <div class="panel">
         <div class="section-head" style="margin-top:0"><h2>About this app</h2></div>
         <p style="margin:0;color:var(--muted);line-height:1.55;font-size:13px">
-          English interface with RMB settlement. Version 12 improves the Analysis page: tap the total for detailed weekly or monthly breakdowns, tap breakdown rows to open matching records, and tap ranking items to jump directly into filtered records.
+          English interface with RMB settlement. Version 13 adds a polished Analysis dashboard with KPI cards, Top 3 categories, clearer point-value labels, progress-filled period breakdowns, and a category detail sheet before opening full records.
         </p>
         <button id="installBtn" class="primary hidden" style="width:100%;margin-top:14px">Install app</button>
       </div>
@@ -579,6 +628,31 @@
     <button data-view="analysis"><span>◔</span>Analysis</button>
     <button data-view="settings"><span>⚙</span>Settings</button>
   </nav>
+</div>
+
+<div id="categoryDetailModal" class="modal">
+  <div class="sheet category-detail-sheet">
+    <div class="sheet-head">
+      <h3 id="categoryDetailTitle">Category details</h3>
+      <button id="closeCategoryDetail" class="secondary" type="button">Close</button>
+    </div>
+    <div class="sheet-scroll">
+      <div class="category-detail-summary">
+        <div id="categoryDetailIcon" class="category-detail-icon">•</div>
+        <div>
+          <small id="categoryDetailPeriod">Selected period</small>
+          <strong id="categoryDetailAmount">¥0.00</strong>
+          <div id="categoryDetailMeta" class="category-detail-meta"></div>
+        </div>
+      </div>
+      <div class="section-head" style="margin-top:0"><h2>Recent matching records</h2></div>
+      <div id="categoryDetailRecords" class="category-record-list"></div>
+      <div class="category-detail-actions">
+        <button id="categoryDetailCloseBottom" class="secondary" type="button">Close</button>
+        <button id="categoryDetailViewAll" class="primary" type="button">View all records</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="txnModal" class="modal">
@@ -638,8 +712,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=12"></script>
-<script src="firebase-cloud-v11.js?v=12"></script>
+<script src="firebase-config.js?v=13"></script>
+<script src="firebase-cloud-v11.js?v=13"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -713,6 +787,7 @@
   let cloudVerifiedAt = "";
   let cloudLocalCandidate = null;
   let analysisDrilldown = false;
+  let categoryDetailCurrent = null;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
@@ -772,7 +847,7 @@
     badge.className="cloud-badge";
     if(!configured){
       badge.textContent=cloudStatus==="checking"?"Checking":"Setup required";
-      badge.classList.add(cloudStatus==="error"?"error":"");
+      if(cloudStatus==="error")badge.classList.add("error");
     }else if(cloudStatus==="syncing"){
       badge.textContent="Syncing";
       badge.classList.add("syncing");
@@ -1294,14 +1369,62 @@
     const data=buildAnalysisBreakdown();
     $("analysisBreakdownTitle").textContent=data.title;
     const rows=data.rows.filter(row=>row.amount>0 || data.rows.length<=7 || analysisMode==="year");
+    const maxAmount=Math.max(...rows.map(row=>row.amount),1);
     $("analysisBreakdownList").innerHTML=rows.length?rows.map(row=>`<div class="analysis-breakdown-row" data-breakdown-from="${row.from}" data-breakdown-to="${row.to}">
-      <div>
+      <div class="analysis-breakdown-fill" style="width:${row.amount/maxAmount*100}%"></div>
+      <div class="analysis-breakdown-copy">
         <div class="analysis-breakdown-title">${escapeHtml(row.label)}</div>
         <div class="analysis-breakdown-sub">${escapeHtml(row.subLabel)}</div>
       </div>
       <div class="analysis-breakdown-amount">${money(row.amount)}</div>
     </div>`).join(""):emptyHtml("No data","Add more records to build a breakdown.");
     panel.classList.remove("hidden");
+  }
+  function analysisPeriodUnitCount(){
+    if(analysisMode==="week")return 7;
+    if(analysisMode==="month")return daysInMonth(currentAnalysisKey());
+    return 12;
+  }
+  function renderTopCategories(ranking,total){
+    const top=ranking.slice(0,3);
+    $("topCategories").innerHTML=top.length?top.map(([cat,amount],index)=>`
+      <div class="top-category-card" data-top-category="${escapeHtml(cat)}">
+        <div class="top-category-icon">${categoryIcon(cat)}</div>
+        <div class="top-category-name">${escapeHtml(cat)}</div>
+        <div class="top-category-value">${money(amount)}</div>
+        <div class="top-category-share">#${index+1} · ${total?(amount/total*100).toFixed(1):"0.0"}%</div>
+      </div>`).join(""):emptyHtml("No category data","Add records to see your top categories.");
+  }
+  function closeCategoryDetail(){
+    $("categoryDetailModal").classList.remove("open");
+    document.body.classList.remove("modal-open");
+    categoryDetailCurrent=null;
+  }
+  function openCategoryDetail(category){
+    const range=analysisRange();
+    const matches=sortTxns(state.transactions.filter(t=>
+      t.type===analysisFlow&&t.category===category&&t.date>=range.from&&t.date<=range.to
+    ));
+    const periodTotal=currentAnalysisList()
+      .filter(t=>t.type===analysisFlow)
+      .reduce((s,t)=>s+(Number(t.amount)||0),0);
+    const categoryTotal=matches.reduce((s,t)=>s+(Number(t.amount)||0),0);
+    categoryDetailCurrent={category,range,type:analysisFlow};
+    $("categoryDetailTitle").textContent=category;
+    $("categoryDetailIcon").textContent=categoryIcon(category);
+    $("categoryDetailPeriod").textContent=range.label;
+    $("categoryDetailAmount").textContent=money(categoryTotal);
+    $("categoryDetailMeta").textContent=`${matches.length} record${matches.length===1?"":"s"} · ${periodTotal?(categoryTotal/periodTotal*100).toFixed(1):"0.0"}% of ${analysisFlow}`;
+    $("categoryDetailRecords").innerHTML=matches.length?matches.slice(0,7).map(t=>`
+      <div class="category-record-row">
+        <div>
+          <div class="category-record-title">${escapeHtml(t.tag||t.category)}</div>
+          <div class="category-record-meta">${dateLabel(t.date)} · ${escapeHtml(t.category)}</div>
+        </div>
+        <div class="category-record-amount">${t.type==="income"?"+":"−"}${money(t.amount)}</div>
+      </div>`).join(""):emptyHtml("No matching records","No records were found in this period.");
+    $("categoryDetailModal").classList.add("open");
+    document.body.classList.add("modal-open");
   }
   function previousAnalysisKey(){
     const key=currentAnalysisKey();
@@ -1463,7 +1586,20 @@
       compareEl.classList.add(delta>=0?"positive":"negative");
     }
     $("rankingTitle").textContent=`${analysisFlow==="expense"?"Expense":"Income"} ranking`;
+    const activeUnits=new Set(list.filter(t=>t.type===analysisFlow).map(t=>
+      analysisMode==="year"?t.date.slice(0,7):analysisMode==="month"?startOfWeekKey(t.date):t.date
+    )).size;
+    $("analysisAverageKpi").textContent=money(currentTotal/Math.max(activeUnits||analysisPeriodUnitCount(),1));
+    $("analysisActiveKpi").textContent=String(activeUnits);
+    $("analysisTopKpi").textContent=ranking[0]?.[0]||"—";
+    $("analysisChartTitle").textContent=analysisDrilldown
+      ? (analysisMode==="year"?"Monthly totals":analysisMode==="month"?"Weekly totals":"Daily totals")
+      : (analysisMode==="year"?"Year trend":analysisMode==="month"?"Daily trend":"Week trend");
+    $("analysisChartMode").textContent=analysisDrilldown
+      ? (analysisMode==="year"?"Monthly":analysisMode==="month"?"Weekly":"Daily")
+      : (analysisMode==="year"?"Monthly":analysisMode==="month"?"Daily":"Daily");
 
+    renderTopCategories(ranking,currentTotal);
     renderRanking(ranking,currentTotal);
     renderAnalysisBreakdown();
     drawAnalysisTrend();
@@ -1515,9 +1651,21 @@
     const step=Math.max(1,Math.ceil(labels.length/6));ctx.textAlign="center";ctx.fillStyle="#8A8D94";ctx.font="10px Arial";
     labels.forEach((lab,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lab,left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),h-10);});
     if(showPointValues){
-      ctx.fillStyle="#3C4043";
-      ctx.font="10px Arial";
-      points.forEach(p=>{if(!p.value)return;ctx.fillText(compact(p.value),p.x,p.y-8);});
+      ctx.font="9px Arial";
+      points.forEach((p,index)=>{
+        if(!p.value)return;
+        const text=compact(p.value);
+        const width=ctx.measureText(text).width+8;
+        let x=Math.max(left+width/2,Math.min(w-right-width/2,p.x));
+        let y=Math.max(11,p.y-12-(index%2?8:0));
+        ctx.fillStyle="rgba(255,255,255,.94)";
+        ctx.beginPath();
+        ctx.roundRect(x-width/2,y-10,width,14,6);
+        ctx.fill();
+        ctx.fillStyle="#35383D";
+        ctx.textAlign="center";
+        ctx.fillText(text,x,y);
+      });
     }
     ctx.textAlign="start";
   }
@@ -1926,7 +2074,26 @@
   $("analysisRanking").addEventListener("click",e=>{
     const row=e.target.closest("[data-ranking-category]");
     if(!row)return;
-    openAnalysisCategoryRecords(row.dataset.rankingCategory);
+    openCategoryDetail(row.dataset.rankingCategory);
+  });
+  $("topCategories").addEventListener("click",e=>{
+    const card=e.target.closest("[data-top-category]");
+    if(!card)return;
+    openCategoryDetail(card.dataset.topCategory);
+  });
+  $("closeCategoryDetail").addEventListener("click",closeCategoryDetail);
+  $("categoryDetailCloseBottom").addEventListener("click",closeCategoryDetail);
+  $("categoryDetailModal").addEventListener("click",e=>{if(e.target===$("categoryDetailModal"))closeCategoryDetail();});
+  $("categoryDetailViewAll").addEventListener("click",()=>{
+    if(!categoryDetailCurrent)return;
+    const current=categoryDetailCurrent;
+    closeCategoryDetail();
+    openRecordsForPeriod({
+      from:current.range.from,
+      to:current.range.to,
+      type:current.type,
+      category:current.category
+    });
   });
   $("analysisBreakdownList").addEventListener("click",e=>{
     const row=e.target.closest("[data-breakdown-from]");
