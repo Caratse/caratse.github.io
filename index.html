@@ -305,9 +305,15 @@
       cursor:pointer;border-radius:10px;padding-left:7px;padding-right:4px;
       transition:background .12s ease,transform .12s ease
     }
-    .category-record-row[data-category-record-id]:active{background:#F6F7F8;transform:scale(.995)}
-    .category-record-edit-arrow{color:#A0A3A8;font-size:20px;line-height:1;text-align:right}
-    .category-detail-edit-note{font-size:9px;color:var(--muted);font-weight:700;margin-left:auto}
+    .category-record-row[data-category-record-id]:active{
+      background:#F6F7F8;transform:scale(.995)
+    }
+    .category-record-edit-arrow{
+      color:#A0A3A8;font-size:20px;line-height:1;text-align:right
+    }
+    .category-detail-edit-note{
+      font-size:9px;color:var(--muted);font-weight:700;margin-left:auto
+    }
     .point-value-bubble{background:#fff}
     .accuracy-summary{background:#F7F8FA;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:12px;line-height:1.55}
     .accuracy-summary.clean{background:#EAF8F0;color:#176B45;border-color:#C9EBD8}
@@ -548,6 +554,170 @@
     @keyframes pulseSave{from{opacity:.35}to{opacity:1}}
     .brand h1{margin:0;line-height:1.1}
     body.modal-open{overscroll-behavior:none}
+
+
+    /* V23: one gesture surface shared by every opened interface */
+    .swipe-surface{
+      touch-action:pan-y pinch-zoom;
+      overscroll-behavior-x:contain;
+      will-change:transform,opacity;
+      transform:translate3d(0,0,0)
+    }
+    .swipe-surface.swipe-right-active{
+      transition:none!important
+    }
+    .swipe-surface.swipe-right-reset{
+      transition:transform .16s ease,opacity .16s ease!important
+    }
+
+    /* V23 Add/Edit record redesign */
+    .txn-modal{background:rgba(18,20,24,.38)}
+    .txn-sheet{
+      width:min(620px,100%);
+      height:auto;
+      max-height:calc(100dvh - 8px);
+      border-radius:24px 24px 0 0;
+      padding:0;
+      overflow:hidden;
+      background:#F7F7F8;
+      box-shadow:0 -14px 42px rgba(17,20,26,.16)
+    }
+    .txn-sheet-head{
+      flex:0 0 auto;
+      min-height:66px;
+      margin:0;
+      padding:14px 16px 12px;
+      background:#fff;
+      border-bottom:1px solid #ECEDEF
+    }
+    .txn-head-copy{min-width:0}
+    .txn-head-copy h3{font-size:17px;line-height:1.2;margin:0}
+    .txn-head-copy span{
+      display:block;margin-top:3px;
+      color:var(--muted);font-size:9px;font-weight:700
+    }
+    .txn-close-button{
+      width:34px;height:34px;flex:0 0 34px;
+      display:grid;place-items:center;
+      border:0;border-radius:11px;
+      background:#F0F1F3;color:#60636A;
+      font-size:14px;font-weight:800;padding:0
+    }
+    .txn-sheet-scroll{
+      flex:0 1 auto;
+      max-height:calc(100dvh - 148px);
+      overflow-y:auto;
+      padding:13px 14px 14px;
+      background:#F7F7F8
+    }
+    .txn-type-toggle{
+      margin:0 0 12px;
+      padding:3px;
+      border:1px solid #E4E5E8;
+      border-radius:13px;
+      background:#ECEEF1
+    }
+    .txn-type-toggle button{
+      min-height:38px;padding:8px 10px;
+      border-radius:10px;font-size:12px
+    }
+    .txn-type-toggle button.active{
+      background:var(--yellow);
+      box-shadow:0 2px 7px rgba(198,153,0,.18)
+    }
+    .txn-amount-card{
+      padding:13px 14px 12px;
+      margin-bottom:10px;
+      border:1px solid #F0D866;
+      border-radius:17px;
+      background:linear-gradient(145deg,#FFF8D2,#FFF2A9)
+    }
+    .txn-amount-card>label{
+      display:block;margin-bottom:3px;
+      color:#756000;font-size:10px;font-weight:800
+    }
+    .txn-amount-input{display:flex;align-items:center;min-width:0}
+    .txn-amount-input>span{
+      flex:0 0 auto;margin-right:6px;
+      color:#26282D;font-size:25px;font-weight:900
+    }
+    .txn-amount-input input{
+      width:100%;min-width:0;
+      border:0;outline:0;padding:2px 0;
+      background:transparent;color:#1D2026;
+      font-size:34px;font-weight:900;line-height:1.15
+    }
+    .txn-amount-input input::placeholder{color:#B7A75D}
+    .txn-control{
+      margin-top:9px;padding:11px 12px;
+      border:1px solid #E4E5E8;
+      border-radius:16px;background:#fff;
+      box-shadow:0 2px 8px rgba(25,28,34,.025)
+    }
+    .txn-control-heading{
+      display:flex;align-items:baseline;justify-content:space-between;
+      gap:10px;margin-bottom:7px
+    }
+    .txn-control-heading label{color:#25282E;font-size:11px;font-weight:850}
+    .txn-control-heading span{color:#9A9DA3;font-size:9px;font-weight:650}
+    .txn-unified-input{
+      width:100%;height:54px;min-height:54px;box-sizing:border-box;
+      border:1px solid #E2E4E7!important;border-radius:13px!important;
+      background:#F7F7F8!important;color:#24272D!important;
+      padding:0 13px!important;font-size:14px!important;
+      line-height:54px;outline:none;box-shadow:none;
+      -webkit-appearance:none;appearance:none
+    }
+    .txn-unified-input:focus{
+      border-color:#E6B900!important;background:#fff!important;
+      box-shadow:0 0 0 3px rgba(255,210,45,.18)
+    }
+    .txn-control-shell{
+      position:relative;display:grid;
+      grid-template-columns:30px minmax(0,1fr);
+      align-items:center;height:54px;min-height:54px;
+      border:1px solid #E2E4E7;border-radius:13px;
+      background:#F7F7F8;overflow:hidden
+    }
+    .txn-control-shell:focus-within{
+      border-color:#E6B900;background:#fff;
+      box-shadow:0 0 0 3px rgba(255,210,45,.18)
+    }
+    .txn-control-symbol{
+      display:grid;place-items:center;width:30px;height:54px;
+      color:#777B82;font-size:16px;font-weight:800
+    }
+    .txn-control-shell .txn-unified-input{
+      height:52px;min-height:52px;border:0!important;
+      border-radius:0!important;background:transparent!important;
+      padding:0 36px 0 2px!important;box-shadow:none!important
+    }
+    .txn-date-shell input[type="date"]{text-align:left;color-scheme:light}
+    .txn-date-shell input[type="date"]::-webkit-date-and-time-value{text-align:left}
+    .txn-select-shell::after{
+      content:"⌄";position:absolute;right:13px;top:50%;
+      transform:translateY(-53%);
+      color:#777B82;font-size:16px;font-weight:800;pointer-events:none
+    }
+    .txn-sticky-actions{
+      position:relative;flex:0 0 auto;
+      display:grid;grid-template-columns:minmax(92px,.75fr) minmax(0,1.75fr);
+      gap:9px;margin:0;
+      padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+      border-top:1px solid #E5E6E9;background:rgba(255,255,255,.97);
+      box-shadow:0 -7px 18px rgba(20,23,28,.055)
+    }
+    .txn-delete-button,.txn-save-button{
+      min-height:48px;border:0;border-radius:14px;
+      font-size:12px;font-weight:900
+    }
+    .txn-delete-button{background:#FFF0F0;color:#C63737}
+    .txn-save-button{
+      background:var(--yellow);color:#1E2025;
+      box-shadow:0 4px 12px rgba(198,153,0,.18)
+    }
+    .txn-save-button:active,.txn-delete-button:active,
+    .txn-close-button:active{transform:scale(.985)}
 
 </style>
 </head>
@@ -851,7 +1021,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 21 lets every record inside a category detail page open the standard Edit record sheet. Saving, deleting or closing returns to the same category page and keeps its internal scroll position.
+            Version 23 unifies right-swipe closing across Category details, Add/Edit record, Choose icon and Delete category, and redesigns the record editor with consistent Tag, Date and Category controls.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -890,10 +1060,10 @@
 </div>
 
 <div id="categoryDetailModal" class="modal category-detail-modal">
-  <div class="sheet category-detail-sheet">
+  <div class="sheet category-detail-sheet swipe-surface">
     <div class="sheet-head category-detail-head">
       <h3 id="categoryDetailTitle">Category details</h3>
-      <span class="swipe-close-hint">→ Swipe right to return</span>
+      <span class="swipe-close-hint">→ → Swipe right to return</span>
     </div>
 
     <div class="category-detail-summary">
@@ -917,37 +1087,72 @@
   </div>
 </div>
 
-<div id="txnModal" class="modal">
-  <div class="sheet">
-    <div class="sheet-head">
-      <h3 id="modalTitle">Add record</h3><span class="swipe-close-hint">Swipe right to close</span>
-      <button id="closeModal" class="icon-btn">✕</button>
+<div id="txnModal" class="modal txn-modal">
+  <div class="sheet txn-sheet swipe-surface">
+    <div class="sheet-head txn-sheet-head">
+      <div class="txn-head-copy">
+        <h3 id="modalTitle">Add record</h3>
+        <span id="txnHeaderHint">→ Swipe right to close</span>
+      </div>
+      <button id="closeModal" class="txn-close-button" type="button" aria-label="Close">✕</button>
     </div>
-    <div class="sheet-scroll">
-      <div class="type-toggle">
+
+    <div class="sheet-scroll txn-sheet-scroll">
+      <div class="type-toggle txn-type-toggle">
         <button id="typeExpense" class="active" data-type="expense">Expense</button>
         <button id="typeIncome" data-type="income">Income</button>
       </div>
-      <div class="amount-tag-row">
-        <div class="amount-wrap"><span>¥</span><input id="txnAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
-        <div class="field tag-beside-amount"><label>Tag</label><input id="txnTag" maxlength="40" placeholder="Short note"></div>
+
+      <div class="txn-amount-card">
+        <label for="txnAmount">Amount</label>
+        <div class="txn-amount-input">
+          <span>¥</span>
+          <input id="txnAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+        </div>
       </div>
-      <div class="filter-grid txn-form-grid">
-        <div class="field"><label>Date</label><input id="txnDate" type="date"></div>
-        <div class="field"><label>Category</label><select id="txnCategory"></select></div>
+
+      <div class="txn-control">
+        <div class="txn-control-heading">
+          <label for="txnTag">Tag</label>
+          <span>Optional note</span>
+        </div>
+        <input id="txnTag" class="txn-unified-input" maxlength="40" placeholder="What was this for?">
+      </div>
+
+      <div class="txn-control">
+        <div class="txn-control-heading">
+          <label for="txnDate">Date</label>
+          <span>Transaction date</span>
+        </div>
+        <div class="txn-control-shell txn-date-shell">
+          <span class="txn-control-symbol" aria-hidden="true">◷</span>
+          <input id="txnDate" class="txn-unified-input" type="date">
+        </div>
+      </div>
+
+      <div class="txn-control">
+        <div class="txn-control-heading">
+          <label for="txnCategory">Category</label>
+          <span>Choose one category</span>
+        </div>
+        <div class="txn-control-shell txn-select-shell">
+          <span id="txnCategorySymbol" class="txn-control-symbol" aria-hidden="true">#</span>
+          <select id="txnCategory" class="txn-unified-input"></select>
+        </div>
       </div>
     </div>
-    <div class="modal-actions sticky-actions">
-      <button id="deleteTxn" class="danger hidden">Delete</button>
-      <button id="saveTxn" class="primary">Save record</button>
+
+    <div class="modal-actions sticky-actions txn-sticky-actions">
+      <button id="deleteTxn" class="txn-delete-button hidden">Delete</button>
+      <button id="saveTxn" class="txn-save-button">Save record</button>
     </div>
   </div>
 </div>
 
 <div id="iconPickerModal" class="modal">
-  <div class="mini-sheet">
+  <div class="mini-sheet swipe-surface">
     <div class="sheet-head">
-      <h3>Choose icon</h3><span class="swipe-close-hint">Swipe right to close</span>
+      <h3>Choose icon</h3><span class="swipe-close-hint">→ Swipe right to close</span>
       <button id="closeIconPicker" class="icon-btn">✕</button>
     </div>
     <div id="iconPickerGrid" class="icon-palette"></div>
@@ -955,9 +1160,9 @@
 </div>
 
 <div id="deleteCategoryModal" class="modal">
-  <div class="mini-sheet">
+  <div class="mini-sheet swipe-surface">
     <div class="sheet-head">
-      <h3>Delete category</h3><span class="swipe-close-hint">Swipe right to close</span>
+      <h3>Delete category</h3><span class="swipe-close-hint">→ Swipe right to close</span>
       <button id="closeDeleteCategory" class="icon-btn">✕</button>
     </div>
     <p id="deleteCategoryMessage"></p>
@@ -974,8 +1179,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=21"></script>
-<script src="firebase-cloud-v17.js?v=21"></script>
+<script src="firebase-config.js?v=23"></script>
+<script src="firebase-cloud-v17.js?v=23"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2036,160 +2241,215 @@
   }
 
   function resetSwipeSheet(modalId){
-    const sheet=$(modalId)?.querySelector(".sheet,.mini-sheet");
-    if(!sheet)return;
-    sheet.classList.remove("swipe-right-active","swipe-right-reset");
-    sheet.style.transform="";
-    sheet.style.opacity="";
+    const surface=$(modalId)?.querySelector(".swipe-surface");
+    if(!surface)return;
+    surface.classList.remove("swipe-right-active","swipe-right-reset");
+    surface.style.transform="";
+    surface.style.opacity="";
   }
-  function enableSwipeRightClose(modalId,closeFunction){
+
+  function registerRightSwipeClose(modalId,closeFunction){
     const modal=$(modalId);
-    const sheet=modal?.querySelector(".sheet,.mini-sheet");
-    if(!modal||!sheet)return;
+    const surface=modal?.querySelector(".swipe-surface");
+    if(!modal||!surface)return;
 
     const INTERACTIVE_SELECTOR="input,textarea,select,[contenteditable='true']";
     let gesture=null;
 
-    function begin(clientX,clientY,pointerId,target){
-      if(!modal.classList.contains("open"))return;
-      if(target?.closest?.(INTERACTIVE_SELECTOR))return;
+    const cleanupPointer=()=>{
+      window.removeEventListener("pointermove",onPointerMove,true);
+      window.removeEventListener("pointerup",onPointerEnd,true);
+      window.removeEventListener("pointercancel",onPointerEnd,true);
+    };
 
-      gesture={
-        pointerId,
-        startX:clientX,
-        startY:clientY,
-        lastX:clientX,
-        lastY:clientY,
-        startedAt:performance.now(),
-        directionLocked:false,
-        rightSwipe:false,
-        moved:false
-      };
-    }
+    const resetGesture=()=>{
+      gesture=null;
+      cleanupPointer();
+    };
 
-    function move(clientX,clientY,event){
+    const animateBack=()=>{
+      surface.classList.remove("swipe-right-active");
+      surface.classList.add("swipe-right-reset");
+      surface.style.transform="";
+      surface.style.opacity="";
+      setTimeout(()=>surface.classList.remove("swipe-right-reset"),180);
+    };
+
+    const finishGesture=()=>{
       if(!gesture)return;
+      const dx=gesture.lastX-gesture.startX;
+      const dy=gesture.lastY-gesture.startY;
+      const elapsed=Math.max(performance.now()-gesture.startedAt,1);
+      const velocity=dx/elapsed;
+      const horizontalEnough=Math.abs(dx)>=Math.abs(dy)*.62;
+      const shouldClose=
+        gesture.rightSwipe===true &&
+        dx>0 &&
+        horizontalEnough &&
+        (dx>=26||velocity>=.22);
 
-      const dx=clientX-gesture.startX;
-      const dy=clientY-gesture.startY;
-      gesture.lastX=clientX;
-      gesture.lastY=clientY;
+      const moved=gesture.moved;
+      resetGesture();
+
+      if(shouldClose){
+        suppressSheetClickUntil=Date.now()+420;
+        surface.classList.remove("swipe-right-active");
+        surface.classList.add("swipe-right-reset");
+        surface.style.transform=`translate3d(${Math.max(surface.clientWidth,window.innerWidth)}px,0,0)`;
+        surface.style.opacity="0";
+        setTimeout(()=>{
+          closeFunction({restoreScroll:true});
+          resetSwipeSheet(modalId);
+        },115);
+      }else{
+        if(moved)suppressSheetClickUntil=Date.now()+240;
+        animateBack();
+      }
+    };
+
+    function onPointerMove(event){
+      if(!gesture||event.pointerId!==gesture.pointerId)return;
+
+      const dx=event.clientX-gesture.startX;
+      const dy=event.clientY-gesture.startY;
+      gesture.lastX=event.clientX;
+      gesture.lastY=event.clientY;
 
       if(!gesture.directionLocked){
-        if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
+        if(Math.abs(dx)<4&&Math.abs(dy)<4)return;
 
-        if(Math.abs(dy)>Math.abs(dx)*1.55){
-          gesture=null;
-          resetSwipeSheet(modalId);
+        if(Math.abs(dy)>Math.abs(dx)*1.75){
+          resetGesture();
+          animateBack();
           return;
         }
 
         gesture.directionLocked=true;
         gesture.rightSwipe=dx>0;
 
-        // Explicitly cancel leftward swipes.
+        // Left swipe is explicitly ignored and can never close.
         if(!gesture.rightSwipe){
-          gesture=null;
-          resetSwipeSheet(modalId);
+          resetGesture();
+          animateBack();
           return;
         }
       }
 
-      if(!gesture.rightSwipe||dx<=0)return;
+      if(dx<=0)return;
 
       gesture.moved=true;
-      const distance=Math.min(dx,Math.max(sheet.clientWidth,1));
-      const progress=Math.min(distance/Math.max(sheet.clientWidth,1),1);
-
-      sheet.classList.add("swipe-right-active");
-      sheet.style.transform=`translate3d(${distance}px,0,0)`;
-      sheet.style.opacity=String(Math.max(.16,1-progress*.84));
-
-      if(event?.cancelable)event.preventDefault();
+      const distance=Math.min(dx,Math.max(surface.clientWidth,1));
+      const progress=Math.min(distance/Math.max(surface.clientWidth,1),1);
+      surface.classList.add("swipe-right-active");
+      surface.style.transform=`translate3d(${distance}px,0,0)`;
+      surface.style.opacity=String(Math.max(.16,1-progress*.84));
+      if(event.cancelable)event.preventDefault();
     }
 
-    function finish(){
-      if(!gesture)return;
+    function onPointerEnd(event){
+      if(!gesture||event.pointerId!==gesture.pointerId)return;
+      finishGesture();
+    }
 
-      const dx=gesture.lastX-gesture.startX;
-      const dy=gesture.lastY-gesture.startY;
-      const elapsed=Math.max(performance.now()-gesture.startedAt,1);
+    modal.addEventListener("pointerdown",event=>{
+      if(!modal.classList.contains("open"))return;
+      if(event.pointerType==="mouse"&&event.button!==0)return;
+      if(!event.target.closest(".swipe-surface"))return;
+      if(event.target.closest(INTERACTIVE_SELECTOR))return;
+
+      gesture={
+        pointerId:event.pointerId,
+        startX:event.clientX,
+        startY:event.clientY,
+        lastX:event.clientX,
+        lastY:event.clientY,
+        startedAt:performance.now(),
+        directionLocked:false,
+        rightSwipe:false,
+        moved:false
+      };
+
+      window.addEventListener("pointermove",onPointerMove,{capture:true,passive:false});
+      window.addEventListener("pointerup",onPointerEnd,true);
+      window.addEventListener("pointercancel",onPointerEnd,true);
+    },true);
+
+    // Touch fallback for old iOS PWA edge cases.
+    let touchGesture=null;
+    modal.addEventListener("touchstart",event=>{
+      if(typeof PointerEvent!=="undefined")return;
+      if(!modal.classList.contains("open")||event.touches.length!==1)return;
+      if(!event.target.closest(".swipe-surface"))return;
+      if(event.target.closest(INTERACTIVE_SELECTOR))return;
+      const touch=event.touches[0];
+      touchGesture={
+        startX:touch.clientX,startY:touch.clientY,
+        lastX:touch.clientX,lastY:touch.clientY,
+        startedAt:performance.now(),directionLocked:false,
+        rightSwipe:false,moved:false
+      };
+    },{capture:true,passive:true});
+
+    modal.addEventListener("touchmove",event=>{
+      if(typeof PointerEvent!=="undefined"||!touchGesture||event.touches.length!==1)return;
+      const touch=event.touches[0];
+      const dx=touch.clientX-touchGesture.startX;
+      const dy=touch.clientY-touchGesture.startY;
+      touchGesture.lastX=touch.clientX;
+      touchGesture.lastY=touch.clientY;
+
+      if(!touchGesture.directionLocked){
+        if(Math.abs(dx)<4&&Math.abs(dy)<4)return;
+        if(Math.abs(dy)>Math.abs(dx)*1.75){touchGesture=null;animateBack();return;}
+        touchGesture.directionLocked=true;
+        touchGesture.rightSwipe=dx>0;
+        if(!touchGesture.rightSwipe){touchGesture=null;animateBack();return;}
+      }
+
+      if(dx<=0)return;
+      touchGesture.moved=true;
+      const distance=Math.min(dx,Math.max(surface.clientWidth,1));
+      const progress=Math.min(distance/Math.max(surface.clientWidth,1),1);
+      surface.classList.add("swipe-right-active");
+      surface.style.transform=`translate3d(${distance}px,0,0)`;
+      surface.style.opacity=String(Math.max(.16,1-progress*.84));
+      if(event.cancelable)event.preventDefault();
+    },{capture:true,passive:false});
+
+    const finishTouch=()=>{
+      if(typeof PointerEvent!=="undefined"||!touchGesture)return;
+      const dx=touchGesture.lastX-touchGesture.startX;
+      const dy=touchGesture.lastY-touchGesture.startY;
+      const elapsed=Math.max(performance.now()-touchGesture.startedAt,1);
       const velocity=dx/elapsed;
-      const horizontalEnough=Math.abs(dx)>=Math.abs(dy)*.68;
       const shouldClose=
-        gesture.rightSwipe===true &&
+        touchGesture.rightSwipe===true &&
         dx>0 &&
-        horizontalEnough &&
-        (dx>=30||velocity>=.25);
-
-      const moved=gesture.moved;
-      gesture=null;
+        Math.abs(dx)>=Math.abs(dy)*.62 &&
+        (dx>=26||velocity>=.22);
+      const moved=touchGesture.moved;
+      touchGesture=null;
 
       if(shouldClose){
         suppressSheetClickUntil=Date.now()+420;
-        sheet.classList.remove("swipe-right-active");
-        sheet.classList.add("swipe-right-reset");
-        sheet.style.transform=`translate3d(${Math.max(sheet.clientWidth,window.innerWidth)}px,0,0)`;
-        sheet.style.opacity="0";
-
+        surface.classList.remove("swipe-right-active");
+        surface.classList.add("swipe-right-reset");
+        surface.style.transform=`translate3d(${Math.max(surface.clientWidth,window.innerWidth)}px,0,0)`;
+        surface.style.opacity="0";
         setTimeout(()=>{
           closeFunction({restoreScroll:true});
           resetSwipeSheet(modalId);
         },115);
       }else{
-        sheet.classList.remove("swipe-right-active");
-        sheet.classList.add("swipe-right-reset");
-        sheet.style.transform="";
-        sheet.style.opacity="";
         if(moved)suppressSheetClickUntil=Date.now()+240;
-        setTimeout(()=>sheet.classList.remove("swipe-right-reset"),170);
+        animateBack();
       }
-    }
-
-    sheet.addEventListener("pointerdown",event=>{
-      if(event.pointerType==="mouse"&&event.button!==0)return;
-      begin(event.clientX,event.clientY,event.pointerId,event.target);
-      if(!gesture)return;
-      try{sheet.setPointerCapture(event.pointerId);}catch(_){}
-    });
-
-    sheet.addEventListener("pointermove",event=>{
-      if(!gesture||gesture.pointerId!==event.pointerId)return;
-      move(event.clientX,event.clientY,event);
-    });
-
-    const endPointer=event=>{
-      if(!gesture||gesture.pointerId!==event.pointerId)return;
-      try{sheet.releasePointerCapture(event.pointerId);}catch(_){}
-      finish();
     };
 
-    sheet.addEventListener("pointerup",endPointer);
-    sheet.addEventListener("pointercancel",endPointer);
+    modal.addEventListener("touchend",finishTouch,{capture:true,passive:true});
+    modal.addEventListener("touchcancel",finishTouch,{capture:true,passive:true});
 
-    sheet.addEventListener("touchstart",event=>{
-      if(typeof PointerEvent!=="undefined"||event.touches.length!==1)return;
-      const touch=event.touches[0];
-      begin(touch.clientX,touch.clientY,null,event.target);
-    },{passive:true});
-
-    sheet.addEventListener("touchmove",event=>{
-      if(typeof PointerEvent!=="undefined"||!gesture||event.touches.length!==1)return;
-      const touch=event.touches[0];
-      move(touch.clientX,touch.clientY,event);
-    },{passive:false});
-
-    sheet.addEventListener("touchend",()=>{
-      if(typeof PointerEvent!=="undefined")return;
-      finish();
-    },{passive:true});
-
-    sheet.addEventListener("touchcancel",()=>{
-      if(typeof PointerEvent!=="undefined")return;
-      finish();
-    },{passive:true});
-
-    sheet.addEventListener("click",event=>{
+    modal.addEventListener("click",event=>{
       if(Date.now()<suppressSheetClickUntil){
         event.preventDefault();
         event.stopPropagation();
@@ -2216,43 +2476,92 @@
 
   function renderCategoryDetailCurrent({preserveScroll=true}={}){
     if(!categoryDetailCurrent)return;
+
     const scrollArea=$("categoryDetailModal")?.querySelector(".category-detail-scroll");
     const previousScroll=preserveScroll?(scrollArea?.scrollTop||0):0;
     const {category,range,type}=categoryDetailCurrent;
     const matches=categoryDetailMatchingRecords();
-    const periodTotal=state.transactions.filter(transaction=>transaction.type===type&&transaction.date>=range.from&&transaction.date<=range.to).reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
-    const categoryTotal=matches.reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
+
+    const periodTotal=state.transactions
+      .filter(transaction=>
+        transaction.type===type &&
+        transaction.date>=range.from &&
+        transaction.date<=range.to
+      )
+      .reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
+
+    const categoryTotal=matches
+      .reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
+
     $("categoryDetailTitle").textContent=category;
     $("categoryDetailIcon").textContent=categoryIcon(category);
     $("categoryDetailPeriod").textContent=range.label;
     $("categoryDetailAmount").textContent=money(categoryTotal);
-    $("categoryDetailMeta").textContent=`${matches.length} record${matches.length===1?"":"s"} · ${periodTotal?(categoryTotal/periodTotal*100).toFixed(1):"0.0"}% of ${type}`;
-    $("categoryDetailCount").textContent=`${matches.length} record${matches.length===1?"":"s"}`;
+    $("categoryDetailMeta").textContent=
+      `${matches.length} record${matches.length===1?"":"s"} · `+
+      `${periodTotal?(categoryTotal/periodTotal*100).toFixed(1):"0.0"}% of ${type}`;
+    $("categoryDetailCount").textContent=
+      `${matches.length} record${matches.length===1?"":"s"}`;
+
     let previousDate="";
-    $("categoryDetailRecords").innerHTML=matches.length?matches.map(transaction=>{
-      const dayHeader=transaction.date!==previousDate?`<div class="category-detail-record-day">${escapeHtml(transaction.date)} · ${dateLabel(transaction.date)}</div>`:"";
-      previousDate=transaction.date;
-      return `${dayHeader}<div class="category-record-row" data-category-record-id="${escapeHtml(transaction.id)}" role="button" tabindex="0" aria-label="Edit ${escapeHtml(transaction.tag||transaction.category)}">
-        <div><div class="category-record-title">${escapeHtml(transaction.tag||transaction.category)}</div><div class="category-record-meta">${escapeHtml(transaction.category)} · ${transaction.type==="income"?"Income":"Expense"}</div></div>
-        <div class="category-record-amount">${transaction.type==="income"?"+":"−"}${money(transaction.amount)}</div>
-        <div class="category-record-edit-arrow" aria-hidden="true">›</div>
-      </div>`;
-    }).join(""):emptyHtml("No matching records","No records were found in this period.");
-    if(scrollArea){requestAnimationFrame(()=>{scrollArea.scrollTop=Math.min(previousScroll,Math.max(0,scrollArea.scrollHeight-scrollArea.clientHeight));});}
+    $("categoryDetailRecords").innerHTML=matches.length
+      ?matches.map(transaction=>{
+          const dayHeader=transaction.date!==previousDate
+            ?`<div class="category-detail-record-day">${escapeHtml(transaction.date)} · ${dateLabel(transaction.date)}</div>`
+            :"";
+          previousDate=transaction.date;
+
+          return `${dayHeader}<div
+            class="category-record-row"
+            data-category-record-id="${escapeHtml(transaction.id)}"
+            role="button"
+            tabindex="0"
+            aria-label="Edit ${escapeHtml(transaction.tag||transaction.category)}"
+          >
+            <div>
+              <div class="category-record-title">${escapeHtml(transaction.tag||transaction.category)}</div>
+              <div class="category-record-meta">${escapeHtml(transaction.category)} · ${transaction.type==="income"?"Income":"Expense"}</div>
+            </div>
+            <div class="category-record-amount">${transaction.type==="income"?"+":"−"}${money(transaction.amount)}</div>
+            <div class="category-record-edit-arrow" aria-hidden="true">›</div>
+          </div>`;
+        }).join("")
+      :emptyHtml("No matching records","No records were found in this period.");
+
+    if(scrollArea){
+      requestAnimationFrame(()=>{
+        scrollArea.scrollTop=Math.min(
+          previousScroll,
+          Math.max(0,scrollArea.scrollHeight-scrollArea.clientHeight)
+        );
+      });
+    }
   }
 
   function refreshCategoryDetailCurrent(){
-    if(categoryDetailCurrent&&$("categoryDetailModal")?.classList.contains("open"))renderCategoryDetailCurrent({preserveScroll:true});
+    if(
+      categoryDetailCurrent &&
+      $("categoryDetailModal")?.classList.contains("open")
+    ){
+      renderCategoryDetailCurrent({preserveScroll:true});
+    }
   }
 
   function openCategoryDetail(category){
-    categoryDetailCurrent={category,range:analysisRange(),type:analysisFlow};
+    categoryDetailCurrent={
+      category,
+      range:analysisRange(),
+      type:analysisFlow
+    };
+
     renderCategoryDetailCurrent({preserveScroll:false});
     lockPageForOverlay();
     $("categoryDetailModal").classList.add("open");
+
     const scrollArea=$("categoryDetailModal").querySelector(".category-detail-scroll");
     if(scrollArea)scrollArea.scrollTop=0;
   }
+
   function previousAnalysisKey(){
     const key=currentAnalysisKey();
     if(analysisMode==="week") return previousWeekKey(key);
@@ -2735,11 +3044,13 @@
     const t=id?state.transactions.find(x=>x.id===id):null;
     const type=t?.type||"expense";
     $("modalTitle").textContent=t?"Edit record":"Add record";
+    $("txnHeaderHint").textContent=t?"→ Swipe right to return":"→ Swipe right to cancel";
     setTxnType(type);
     $("txnAmount").value=t?.amount||"";
     $("txnTag").value=t?.tag||"";
     $("txnDate").value=t?.date||todayKey();
     $("txnCategory").value=t?.category||quickCategory||$("txnCategory").options[0]?.value||"";
+    $("txnCategorySymbol").textContent=categoryIcon($("txnCategory").value||"Other");
     $("deleteTxn").classList.toggle("hidden",!t);
     lockPageForOverlay();
     $("txnModal").classList.add("open");
@@ -2759,6 +3070,7 @@
     const prev=$("txnCategory").value;
     populateTxnSelects(type);
     if([...$("txnCategory").options].some(o=>o.value===prev))$("txnCategory").value=prev;
+    if($("txnCategorySymbol"))$("txnCategorySymbol").textContent=categoryIcon($("txnCategory").value||"Other");
   }
   function currentTxnType(){return $("typeIncome").classList.contains("active")?"income":"expense";}
 
@@ -2996,7 +3308,6 @@ ${error.message||"Please check your network and try again."}`);
   $("categoryDetailRecords").addEventListener("click",event=>{
     const row=event.target.closest("[data-category-record-id]");
     if(!row)return;
-    event.stopPropagation();
     openModal(null,row.dataset.categoryRecordId);
   });
   $("categoryDetailRecords").addEventListener("keydown",event=>{
@@ -3004,7 +3315,6 @@ ${error.message||"Please check your network and try again."}`);
     const row=event.target.closest("[data-category-record-id]");
     if(!row)return;
     event.preventDefault();
-    event.stopPropagation();
     openModal(null,row.dataset.categoryRecordId);
   });
 $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"));
@@ -3089,6 +3399,9 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("quickGrid").addEventListener("click",e=>{const b=e.target.closest("[data-quick]");if(b)openModal(b.dataset.quick);});
   $("closeModal").addEventListener("click",closeModal);
   $("txnModal").addEventListener("click",e=>{if(e.target===$("txnModal"))closeModal();});
+  $("txnCategory").addEventListener("change",()=>{
+    $("txnCategorySymbol").textContent=categoryIcon($("txnCategory").value||"Other");
+  });
   $("typeExpense").addEventListener("click",()=>setTxnType("expense"));
   $("typeIncome").addEventListener("click",()=>setTxnType("income"));
   $("saveTxn").addEventListener("click",saveTxn);
@@ -3204,10 +3517,10 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     cloudServerVerified=false;
     setCloudStatus("error","Offline");
   });
-  enableSwipeRightClose("categoryDetailModal",closeCategoryDetail);
-  enableSwipeRightClose("txnModal",closeModal);
-  enableSwipeRightClose("iconPickerModal",closeIconPicker);
-  enableSwipeRightClose("deleteCategoryModal",closeDeleteCategory);
+  registerRightSwipeClose("categoryDetailModal",closeCategoryDetail);
+  registerRightSwipeClose("txnModal",closeModal);
+  registerRightSwipeClose("iconPickerModal",closeIconPicker);
+  registerRightSwipeClose("deleteCategoryModal",closeDeleteCategory);
   qsa("#settingsView details.settings-card").forEach(section=>{
     section.addEventListener("toggle",()=>{
       if(!section.open)return;
