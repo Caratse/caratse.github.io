@@ -292,7 +292,7 @@
     .trash-countdown.urgent{color:#B42323}
     .trash-retention-box{background:#FFF7D8;border-radius:13px;padding:10px 11px;font-size:11px;line-height:1.5;color:#6D5700;margin-bottom:9px}
     .swipe-close-hint{font-size:9px;color:var(--muted);font-weight:700;margin-left:auto;margin-right:8px}
-    .modal .sheet{touch-action:pan-y;will-change:transform,opacity}
+    .modal .sheet{touch-action:pan-y pinch-zoom;will-change:transform,opacity}
 
     .settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .settings-actions button{min-height:48px}
@@ -415,7 +415,95 @@
       .sticky-actions .primary,.sticky-actions .danger{min-height:44px}
       .modal-actions{margin-top:0}
     }
-  </style>
+  
+    /* V17 compact Records */
+    .records-compact-card{
+      background:#fff;border-radius:16px;padding:9px 10px;
+      box-shadow:0 4px 14px rgba(30,30,30,.045);margin-bottom:8px
+    }
+    .records-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}
+    .records-toolbar .chips{gap:5px;padding:0;min-width:0}
+    .records-toolbar .chip{padding:7px 9px;font-size:10px}
+    .compact-filter-btn{
+      min-height:32px;border:1px solid var(--line);background:#F6F6F7;
+      border-radius:11px;padding:6px 9px;font-size:10px;font-weight:850;
+      white-space:nowrap
+    }
+    .compact-filter-btn.active{background:#FFF1A6;border-color:#E9C92E}
+    .compact-filter-badge{
+      display:inline-grid;place-items:center;min-width:16px;height:16px;
+      padding:0 4px;margin-left:4px;border-radius:999px;background:#20242C;color:#fff;
+      font-size:9px
+    }
+    .record-search-compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:7px}
+    .record-search-compact input{
+      width:100%;min-height:34px;border:1px solid var(--line);background:#FAFAFB;
+      border-radius:11px;padding:7px 10px;font-size:12px;outline:none
+    }
+    .record-search-compact button{min-height:34px;padding:6px 10px;border-radius:11px;font-size:10px}
+    .record-filter-drawer{
+      display:grid;grid-template-columns:1fr 1fr;gap:7px;
+      border-top:1px solid var(--line);margin-top:8px;padding-top:8px
+    }
+    .record-filter-drawer.hidden{display:none}
+    .record-filter-drawer .field label{font-size:9px;margin-bottom:3px}
+    .record-filter-drawer .field input,
+    .record-filter-drawer .field select{
+      border-radius:10px;padding:7px 8px;min-height:34px;font-size:11px
+    }
+    .record-summary-compact{
+      display:flex;gap:7px;align-items:center;overflow:auto;
+      margin:0 0 8px;padding:0 2px;white-space:nowrap
+    }
+    .record-summary-item{
+      background:rgba(255,255,255,.86);border:1px solid #ECEDEF;
+      border-radius:999px;padding:6px 9px;font-size:10px;color:var(--muted)
+    }
+    .record-summary-item strong{font-size:11px;color:var(--ink);margin-left:3px}
+
+    /* V17 compact Settings accordion */
+    #settingsView{padding-top:2px}
+    details.settings-card{
+      background:#fff;border-radius:16px;box-shadow:0 4px 14px rgba(30,30,30,.045);
+      margin-bottom:8px;overflow:hidden
+    }
+    details.settings-card.panel{padding:0}
+    details.settings-card>summary{
+      list-style:none;display:flex;align-items:center;justify-content:space-between;
+      gap:10px;min-height:52px;padding:11px 13px;cursor:pointer;font-weight:900;
+      user-select:none
+    }
+    details.settings-card>summary::-webkit-details-marker{display:none}
+    details.settings-card>summary::after{
+      content:"›";font-size:21px;line-height:1;color:#96999F;
+      transform:rotate(0deg);transition:transform .16s ease
+    }
+    details.settings-card[open]>summary::after{transform:rotate(90deg)}
+    .settings-summary-main{display:flex;align-items:center;gap:9px;min-width:0}
+    .settings-summary-icon{
+      width:30px;height:30px;border-radius:10px;background:#F3F4F6;
+      display:grid;place-items:center;font-size:15px;flex:0 0 auto
+    }
+    .settings-summary-copy{min-width:0}
+    .settings-summary-title{font-size:13px}
+    .settings-summary-sub{
+      display:block;color:var(--muted);font-size:9px;font-weight:650;
+      margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .settings-summary-side{display:flex;align-items:center;gap:6px;margin-left:auto}
+    .settings-card-body{border-top:1px solid var(--line);padding:12px 13px 14px}
+    .settings-card-body .section-head:first-child{margin-top:0}
+    .settings-card-body .settings-actions button{min-height:40px}
+    #accuracyPanel{border:0;box-shadow:0 4px 14px rgba(30,30,30,.045)}
+    .settings-accordion-note{font-size:10px;color:var(--muted);margin:3px 3px 9px}
+    .save-pending-dot{
+      display:inline-block;width:6px;height:6px;border-radius:50%;
+      background:#E5AC00;margin-left:5px;vertical-align:middle;
+      animation:pulseSave 1s infinite alternate
+    }
+    @keyframes pulseSave{from{opacity:.35}to{opacity:1}}
+
+</style>
 </head>
 <body>
 <div class="app">
@@ -451,29 +539,38 @@
     </section>
 
     <section id="recordsView" class="view">
-      <div class="filter-card">
-        <div class="chips" id="presetChips">
-          <button class="chip active" data-preset="all">All</button>
-          <button class="chip" data-preset="today">Today</button>
-          <button class="chip" data-preset="7days">Last 7 days</button>
-          <button class="chip" data-preset="month">This month</button>
+      <div class="records-compact-card">
+        <div class="records-toolbar">
+          <div class="chips" id="presetChips">
+            <button class="chip active" data-preset="all">All</button>
+            <button class="chip" data-preset="today">Today</button>
+            <button class="chip" data-preset="7days">7 days</button>
+            <button class="chip" data-preset="month">Month</button>
+          </div>
+          <button id="toggleRecordFilters" class="compact-filter-btn" type="button">
+            Filters<span id="recordFilterBadge" class="compact-filter-badge hidden">0</span>
+          </button>
         </div>
-        <div class="filter-grid">
+
+        <div class="record-search-compact">
+          <input id="filterSearch" placeholder="Search tag">
+          <button id="clearFilters" class="secondary">Reset</button>
+        </div>
+
+        <div id="recordFilterDrawer" class="record-filter-drawer hidden">
           <div class="field"><label>From</label><input type="date" id="filterFrom"></div>
           <div class="field"><label>To</label><input type="date" id="filterTo"></div>
           <div class="field"><label>Type</label><select id="filterType"><option value="">All types</option><option value="expense">Expense</option><option value="income">Income</option></select></div>
           <div class="field"><label>Category</label><select id="filterCategory"><option value="">All categories</option></select></div>
         </div>
-        <div class="search-row">
-          <input id="filterSearch" placeholder="Search tag">
-          <button id="clearFilters" class="secondary">Reset</button>
-        </div>
       </div>
-      <div class="stats-row">
-        <div class="mini-stat"><small>Records</small><strong id="recordCount">0</strong></div>
-        <div class="mini-stat"><small>Income</small><strong id="recordIncome">¥0.00</strong></div>
-        <div class="mini-stat"><small>Expenses</small><strong id="recordExpense">¥0.00</strong></div>
+
+      <div class="record-summary-compact">
+        <span class="record-summary-item">Records <strong id="recordCount">0</strong></span>
+        <span class="record-summary-item">Income <strong id="recordIncome">¥0.00</strong></span>
+        <span class="record-summary-item">Expense <strong id="recordExpense">¥0.00</strong></span>
       </div>
+
       <div id="recordsList" class="list"></div>
     </section>
 
@@ -543,147 +640,198 @@
     </section>
 
     <section id="settingsView" class="view">
-      <div class="panel" id="cloudPanel">
-        <div class="section-head" style="margin-top:0">
-          <h2>Cloud & account</h2>
-          <span id="cloudBadge" class="cloud-badge">Checking</span>
-        </div>
+      <p class="settings-accordion-note">Tap a section to open it. Opening one section closes the others.</p>
 
-        <div id="cloudNotConfigured" class="hidden">
-          <div class="cloud-warning">
-            Firebase has not been configured. Complete <strong>firebase-config.js</strong>,
-            enable Email/Password Authentication, create Firestore, and publish the included rules.
+      <details class="settings-card panel" id="cloudPanel">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">☁️</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Cloud & account</span>
+              <span class="settings-summary-sub" id="cloudSummaryText">Account and sync status</span>
+            </span>
+          </span>
+          <span class="settings-summary-side"><span id="cloudBadge" class="cloud-badge">Checking</span></span>
+        </summary>
+        <div class="settings-card-body">
+          <div id="cloudNotConfigured" class="hidden">
+            <div class="cloud-warning">
+              Firebase has not been configured. Complete <strong>firebase-config.js</strong>,
+              enable Email/Password Authentication, create Firestore, and publish the included rules.
+            </div>
+            <p class="cloud-message">Expected project file:</p>
+            <div class="cloud-config-code">firebase-config.js</div>
           </div>
-          <p class="cloud-message">Expected project file:</p>
-          <div class="cloud-config-code">firebase-config.js</div>
-        </div>
 
-        <div id="cloudSignedOut" class="hidden">
-          <div class="cloud-auth-grid">
-            <div class="field full"><label>Email</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
-            <div class="field full"><label>Password</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters"></div>
+          <div id="cloudSignedOut" class="hidden">
+            <div class="cloud-auth-grid">
+              <div class="field full"><label>Email</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+              <div class="field full"><label>Password</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters"></div>
+            </div>
+            <div class="cloud-actions">
+              <button id="cloudSignIn" class="primary">Sign in</button>
+              <button id="cloudCreateAccount" class="secondary">Create account</button>
+              <button id="cloudResetPassword" class="secondary">Reset password</button>
+            </div>
           </div>
-          <div class="cloud-actions">
-            <button id="cloudSignIn" class="primary">Sign in</button>
-            <button id="cloudCreateAccount" class="secondary">Create account</button>
-            <button id="cloudResetPassword" class="secondary">Reset password</button>
-          </div>
-          <p class="cloud-message">After signing in, all new changes require cloud confirmation before the app reports success.</p>
-        </div>
 
-        <div id="cloudSignedIn" class="hidden">
-          <div class="cloud-user">
-            Signed in as <strong id="cloudUserEmail"></strong><br>
-            <span id="cloudRecordCount">0 cloud records</span><br>
-            <span id="cloudVerificationText">Waiting for server verification…</span>
-          </div>
-          <div id="cloudMigrationBox" class="cloud-warning hidden">
-            Local records were found, but this cloud account is empty.
-            Upload the current local data before continuing.
-            <button id="uploadLocalToCloud" class="primary" style="width:100%;margin-top:10px">Upload current data to cloud</button>
-          </div>
-          <div class="cloud-actions">
-            <button id="openAccuracy" class="secondary" style="grid-column:1/-1">Open data accuracy check</button>
-            <button id="cloudRetrySync" class="secondary">Verify cloud data</button>
-            <button id="cloudSignOut" class="secondary">Sign out</button>
+          <div id="cloudSignedIn" class="hidden">
+            <div class="cloud-user">
+              Signed in as <strong id="cloudUserEmail"></strong><br>
+              <span id="cloudRecordCount">0 cloud records</span><br>
+              <span id="cloudVerificationText">Waiting for server verification…</span>
+            </div>
+            <div id="cloudMigrationBox" class="cloud-warning hidden">
+              Local records were found, but this cloud account is empty.
+              Upload the current local data before continuing.
+              <button id="uploadLocalToCloud" class="primary" style="width:100%;margin-top:10px">Upload current data to cloud</button>
+            </div>
+            <div class="cloud-actions">
+              <button id="openAccuracy" class="secondary" style="grid-column:1/-1">Open data accuracy check</button>
+              <button id="cloudRetrySync" class="secondary">Verify cloud data</button>
+              <button id="cloudSignOut" class="secondary">Sign out</button>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
 
-
-
-      <div class="panel" id="accuracyPanel">
-        <div class="section-head" style="margin-top:0">
-          <h2>Data accuracy · Duplicate check</h2>
-          <span class="accuracy-location">Settings · near the top</span>
-        </div>
-        <div id="duplicateSummary" class="accuracy-summary">Checking the current records for exact duplicate copies…</div>
-        <div class="section-head" style="margin-top:10px">
-          <span id="duplicateBadge" class="badge">Scanning</span>
-        </div>
-        <div id="duplicateGroups" class="duplicate-groups"></div>
-        <p class="accuracy-note">
-          The scan only flags records whose Type, Date, Amount, Category and Tag are exactly the same.
-          Repair keeps one copy and moves extra copies to Cloud trash.
-        </p>
-        <div class="settings-actions" style="margin-top:10px">
-          <button id="scanDuplicates" class="secondary">Scan again</button>
-          <button id="repairDuplicates" class="danger">Move duplicates to Trash</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="section-head" style="margin-top:0">
-          <h2>Categories</h2>
-          <button id="toggleCategoryEdit" class="pill-btn" type="button">Edit categories</button>
-        </div>
-
-        <div id="categorySummary" class="category-summary"></div>
-
-        <div id="categoryEditor" class="category-editor hidden">
-          <div class="type-toggle">
-            <button id="categoryExpenseBtn" class="active" data-category-mode="expense">Expense</button>
-            <button id="categoryIncomeBtn" data-category-mode="income">Income</button>
+      <details class="settings-card panel" id="accuracyPanel">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">✅</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Data accuracy</span>
+              <span class="settings-summary-sub">Duplicate-record audit and repair</span>
+            </span>
+          </span>
+          <span class="settings-summary-side"><span id="duplicateBadge" class="badge">Scanning</span></span>
+        </summary>
+        <div class="settings-card-body">
+          <div id="duplicateSummary" class="accuracy-summary">Checking the current records for exact duplicate copies…</div>
+          <div id="duplicateGroups" class="duplicate-groups"></div>
+          <p class="accuracy-note">
+            The scan only flags records whose Type, Date, Amount, Category and Tag are exactly the same.
+            Repair keeps one copy and moves extra copies to Cloud trash.
+          </p>
+          <div class="settings-actions" style="margin-top:10px">
+            <button id="scanDuplicates" class="secondary">Scan again</button>
+            <button id="repairDuplicates" class="danger">Move duplicates to Trash</button>
           </div>
-          <div class="add-category">
-            <input id="newCategoryName" maxlength="30" placeholder="New category name">
-            <button id="addCategory" class="primary">Add category</button>
+        </div>
+      </details>
+
+      <details class="settings-card panel" id="budgetSection">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">🎯</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Monthly budget</span>
+              <span class="settings-summary-sub" id="budgetSummaryText">Set a total monthly budget</span>
+            </span>
+          </span>
+        </summary>
+        <div class="settings-card-body">
+          <div class="field"><label>Budget month</label><select id="budgetMonth"></select></div>
+          <div class="field" style="margin-top:10px"><label>Total budget (RMB)</label><input id="overallBudget" type="number" min="0" step="100" placeholder="e.g. 8000"></div>
+          <p class="helper">Set one total budget for the month.</p>
+          <button id="saveBudget" class="primary" style="width:100%;margin-top:10px">Save budget</button>
+        </div>
+      </details>
+
+      <details class="settings-card panel" id="categorySection">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">🏷️</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Categories</span>
+              <span class="settings-summary-sub">Icons, names and order</span>
+            </span>
+          </span>
+        </summary>
+        <div class="settings-card-body">
+          <div class="section-head" style="margin-top:0">
+            <h2>Categories</h2>
+            <button id="toggleCategoryEdit" class="pill-btn" type="button">Edit categories</button>
           </div>
-          <input id="newCategoryIcon" type="hidden" value="⭐">
-          <div id="newCategoryPalette" class="icon-palette compact"></div>
-          <div id="categoryList" class="category-list" style="margin-top:12px"></div>
-          <p class="helper">Tap an icon to choose it. Tap the current icon to change an existing category. Use ↑ and ↓ to reorder. Delete moves used records to another category you select.</p>
+          <div id="categorySummary" class="category-summary"></div>
+          <div id="categoryEditor" class="category-editor hidden">
+            <div class="type-toggle">
+              <button id="categoryExpenseBtn" class="active" data-category-mode="expense">Expense</button>
+              <button id="categoryIncomeBtn" data-category-mode="income">Income</button>
+            </div>
+            <div class="add-category">
+              <input id="newCategoryName" maxlength="30" placeholder="New category name">
+              <button id="addCategory" class="primary">Add category</button>
+            </div>
+            <input id="newCategoryIcon" type="hidden" value="⭐">
+            <div id="newCategoryPalette" class="icon-palette compact"></div>
+            <div id="categoryList" class="category-list" style="margin-top:12px"></div>
+            <p class="helper">Tap an icon to change it. Use ↑ and ↓ to reorder.</p>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div class="panel">
-        <div class="section-head" style="margin-top:0"><h2>Monthly budget</h2></div>
-        <div class="field"><label>Budget month</label><select id="budgetMonth"></select></div>
-        <div class="field" style="margin-top:10px"><label>Total budget (RMB)</label><input id="overallBudget" type="number" min="0" step="100" placeholder="e.g. 8000"></div>
-        <p class="helper">Set one total budget for the month. Category analysis is based only on actual recorded spending.</p>
-        <button id="saveBudget" class="primary" style="width:100%;margin-top:12px">Save budget</button>
-      </div>
-
-
-      <div class="panel">
-        <div class="section-head" style="margin-top:0"><h2>Data & backup</h2></div>
-        <div class="settings-actions">
-          <button id="exportCsv" class="secondary">Export CSV</button>
-          <button id="backupJson" class="secondary">Backup JSON</button>
-          <button id="importJson" class="secondary">Import backup to cloud</button>
-          <button id="loadDemo" class="secondary">Load demo data</button>
-          <button id="clearAll" class="danger">Delete all cloud data</button>
+      <details class="settings-card panel" id="backupSection">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">📦</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Data & backup</span>
+              <span class="settings-summary-sub">Export, import and delete data</span>
+            </span>
+          </span>
+        </summary>
+        <div class="settings-card-body">
+          <div class="settings-actions">
+            <button id="exportCsv" class="secondary">Export CSV</button>
+            <button id="backupJson" class="secondary">Backup JSON</button>
+            <button id="importJson" class="secondary">Import backup to cloud</button>
+            <button id="loadDemo" class="secondary">Load demo data</button>
+            <button id="clearAll" class="danger">Delete all cloud data</button>
+          </div>
+          <input id="importFile" class="hidden" type="file" accept=".json,application/json">
         </div>
-        <input id="importFile" class="hidden" type="file" accept=".json,application/json">
-      </div>
+      </details>
 
-      <div class="panel">
-        <div class="section-head" style="margin-top:0"><h2>About this app</h2></div>
-        <p style="margin:0;color:var(--muted);line-height:1.55;font-size:13px">
-          English interface with RMB settlement. Version 15 places Data accuracy directly below Cloud & account, adds a reliable pointer-based left-swipe close gesture, moves Cloud trash to the bottom of Settings, and applies a 30-day trash retention policy.
-        </p>
-        <button id="installBtn" class="primary hidden" style="width:100%;margin-top:14px">Install app</button>
-      </div>
+      <details class="settings-card panel" id="aboutSection">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">ℹ️</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">About this app</span>
+              <span class="settings-summary-sub">Version and installation</span>
+            </span>
+          </span>
+        </summary>
+        <div class="settings-card-body">
+          <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
+            Version 17 uses immediate local feedback with server-acknowledged background saving,
+            compact Records filters, and a collapsed Settings accordion.
+          </p>
+          <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
+        </div>
+      </details>
 
-      <div class="panel trash-panel-bottom" id="trashPanel">
-        <div class="section-head" style="margin-top:0">
-          <h2>Cloud trash</h2>
-          <span id="trashCountBadge" class="badge">0 items</span>
+      <details class="settings-card panel trash-panel-bottom" id="trashPanel">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">🗑️</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Cloud trash</span>
+              <span class="settings-summary-sub">Restorable for 30 days</span>
+            </span>
+          </span>
+          <span class="settings-summary-side"><span id="trashCountBadge" class="badge">0 items</span></span>
+        </summary>
+        <div class="settings-card-body">
+          <div class="trash-retention-box">
+            Records remain recoverable for 30 days. Expired records are removed when the app opens or synchronizes.
+          </div>
+          <div id="trashContent" class="trash-content">
+            <div id="trashList" class="trash-list"></div>
+          </div>
         </div>
-        <p class="trash-panel-location">
-          Location: <strong>Settings → very bottom of the page</strong>. This section is collapsed by default.
-        </p>
-        <div class="trash-retention-box">
-          Records remain recoverable for 30 days. Expired records are permanently removed when the app opens or synchronizes.
-          The cloud adapter also writes an <strong>expiresAt</strong> field for optional Firestore TTL cleanup.
-        </div>
-        <button id="toggleTrashPanel" class="trash-toggle" type="button">
-          <span>Show Cloud trash</span><span id="trashToggleIcon">▼</span>
-        </button>
-        <div id="trashContent" class="trash-content hidden">
-          <div id="trashList" class="trash-list"></div>
-        </div>
-      </div>
+      </details>
     </section>
   </main>
 
@@ -699,7 +847,7 @@
 <div id="categoryDetailModal" class="modal">
   <div class="sheet category-detail-sheet">
     <div class="sheet-head">
-      <h3 id="categoryDetailTitle">Category details</h3><span class="swipe-close-hint">Swipe left to close</span>
+      <h3 id="categoryDetailTitle">Category details</h3><span class="swipe-close-hint">Swipe right to close</span>
       <button id="closeCategoryDetail" class="secondary" type="button">Close</button>
     </div>
     <div class="sheet-scroll">
@@ -724,7 +872,7 @@
 <div id="txnModal" class="modal">
   <div class="sheet">
     <div class="sheet-head">
-      <h3 id="modalTitle">Add record</h3><span class="swipe-close-hint">Swipe left to close</span>
+      <h3 id="modalTitle">Add record</h3><span class="swipe-close-hint">Swipe right to close</span>
       <button id="closeModal" class="icon-btn">✕</button>
     </div>
     <div class="sheet-scroll">
@@ -751,7 +899,7 @@
 <div id="iconPickerModal" class="modal">
   <div class="mini-sheet">
     <div class="sheet-head">
-      <h3>Choose icon</h3><span class="swipe-close-hint">Swipe left to close</span>
+      <h3>Choose icon</h3><span class="swipe-close-hint">Swipe right to close</span>
       <button id="closeIconPicker" class="icon-btn">✕</button>
     </div>
     <div id="iconPickerGrid" class="icon-palette"></div>
@@ -761,7 +909,7 @@
 <div id="deleteCategoryModal" class="modal">
   <div class="mini-sheet">
     <div class="sheet-head">
-      <h3>Delete category</h3><span class="swipe-close-hint">Swipe left to close</span>
+      <h3>Delete category</h3><span class="swipe-close-hint">Swipe right to close</span>
       <button id="closeDeleteCategory" class="icon-btn">✕</button>
     </div>
     <p id="deleteCategoryMessage"></p>
@@ -778,8 +926,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=15"></script>
-<script src="firebase-cloud-v11.js?v=15"></script>
+<script src="firebase-config.js?v=17"></script>
+<script src="firebase-cloud-v17.js?v=17"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -859,6 +1007,8 @@
   let trashExpanded = false;
   let trashMaintenanceTimer = null;
   let suppressSheetClickUntil = 0;
+  let recordFiltersExpanded = false;
+  const pendingSaveOperations = new Map();
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
@@ -1054,6 +1204,14 @@
       badge.textContent="Signed out";
     }
 
+    if($("cloudSummaryText")){
+      $("cloudSummaryText").textContent=!configured
+        ?"Setup required"
+        :cloudUser
+          ?`${cloudUser.email||"Signed in"} · ${cloudRemoteRecordCount} records`
+          :"Signed out";
+    }
+
     if(cloudUser){
       $("cloudUserEmail").textContent=cloudUser.email||cloudUser.uid;
       $("cloudRecordCount").textContent=`${cloudRemoteRecordCount} cloud record${cloudRemoteRecordCount===1?"":"s"}`;
@@ -1070,15 +1228,10 @@
   }
   function renderTrash(){
     const container=$("trashList");
-    const content=$("trashContent");
     const badge=$("trashCountBadge");
-    const toggle=$("toggleTrashPanel");
-    if(!container||!content||!badge||!toggle)return;
+    if(!container||!badge)return;
 
     badge.textContent=`${cloudTrash.length} item${cloudTrash.length===1?"":"s"}`;
-    content.classList.toggle("hidden",!trashExpanded);
-    toggle.querySelector("span:first-child").textContent=trashExpanded?"Hide Cloud trash":"Show Cloud trash";
-    $("trashToggleIcon").textContent=trashExpanded?"▲":"▼";
 
     if(!cloudUser){
       container.innerHTML=emptyHtml("Sign in required","Cloud trash is available after sign-in.");
@@ -1730,85 +1883,162 @@
     sheet.style.transform="";
     sheet.style.opacity="";
   }
-  function enableSwipeLeftClose(modalId,closeFunction){
+  function enableSwipeRightClose(modalId,closeFunction){
     const modal=$(modalId);
     const sheet=modal?.querySelector(".sheet");
     if(!modal||!sheet)return;
 
+    const INTERACTIVE_SELECTOR="input,textarea,select,[contenteditable='true']";
     let gesture=null;
+    let lastTouchTime=0;
 
-    sheet.addEventListener("pointerdown",event=>{
-      if(!modal.classList.contains("open")||event.pointerType==="mouse"&&event.button!==0)return;
-      if(event.target.closest("input,textarea,select"))return;
+    function startGesture(clientX,clientY,pointerId=null,target=null){
+      if(!modal.classList.contains("open"))return;
+      if(target?.closest?.(INTERACTIVE_SELECTOR))return;
+
       gesture={
-        pointerId:event.pointerId,
-        startX:event.clientX,
-        startY:event.clientY,
-        lastX:event.clientX,
+        pointerId,
+        startX:clientX,
+        startY:clientY,
+        lastX:clientX,
+        lastY:clientY,
         startedAt:performance.now(),
         horizontal:false,
         moved:false
       };
-      try{sheet.setPointerCapture(event.pointerId);}catch(_){}
-    });
+    }
 
-    sheet.addEventListener("pointermove",event=>{
-      if(!gesture||event.pointerId!==gesture.pointerId)return;
-      const dx=event.clientX-gesture.startX;
-      const dy=event.clientY-gesture.startY;
-      gesture.lastX=event.clientX;
+    function moveGesture(clientX,clientY,event){
+      if(!gesture)return;
+
+      const dx=clientX-gesture.startX;
+      const dy=clientY-gesture.startY;
+      gesture.lastX=clientX;
+      gesture.lastY=clientY;
 
       if(!gesture.horizontal){
-        if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
-        if(Math.abs(dy)>Math.abs(dx)*1.1){
+        if(Math.abs(dx)<5&&Math.abs(dy)<5)return;
+
+        // Clear vertical gestures remain normal scrolling.
+        if(Math.abs(dy)>Math.abs(dx)*1.65){
           gesture=null;
           resetSwipeSheet(modalId);
           return;
         }
+
+        // Only a rightward gesture starts closing.
+        if(dx<=0){
+          if(Math.abs(dx)>18)gesture=null;
+          return;
+        }
+
         gesture.horizontal=true;
       }
 
-      if(dx>=0)return;
-      gesture.moved=true;
-      sheet.classList.add("swipe-left-active");
-      sheet.style.transform=`translate3d(${Math.max(dx,-sheet.clientWidth)}px,0,0)`;
-      sheet.style.opacity=String(Math.max(.25,1-Math.abs(dx)/sheet.clientWidth));
-      event.preventDefault();
-    });
+      if(dx<=0)return;
 
-    const finish=event=>{
-      if(!gesture||event.pointerId!==gesture.pointerId)return;
+      gesture.moved=true;
+      const distance=Math.min(dx,sheet.clientWidth);
+      const progress=Math.min(distance/Math.max(sheet.clientWidth,1),1);
+
+      sheet.classList.add("swipe-left-active");
+      sheet.style.transform=`translate3d(${distance}px,0,0)`;
+      sheet.style.opacity=String(Math.max(.22,1-progress*.78));
+
+      if(event?.cancelable)event.preventDefault();
+    }
+
+    function finishGesture(){
+      if(!gesture)return;
+
       const dx=gesture.lastX-gesture.startX;
+      const dy=gesture.lastY-gesture.startY;
       const elapsed=Math.max(performance.now()-gesture.startedAt,1);
-      const velocity=Math.abs(dx)/elapsed;
-      const shouldClose=gesture.horizontal&&(dx<-55||velocity>.65);
+      const velocity=dx/elapsed;
+      const mostlyHorizontal=Math.abs(dx)>=Math.abs(dy)*.72;
+
+      // Lower distance and velocity thresholds make closing more sensitive.
+      const shouldClose=
+        gesture.horizontal &&
+        mostlyHorizontal &&
+        (dx>=32 || velocity>=.28);
+
       const moved=gesture.moved;
       gesture=null;
 
-      try{sheet.releasePointerCapture(event.pointerId);}catch(_){}
-
       if(shouldClose){
-        suppressSheetClickUntil=Date.now()+350;
+        suppressSheetClickUntil=Date.now()+420;
         sheet.classList.remove("swipe-left-active");
         sheet.classList.add("swipe-left-reset");
-        sheet.style.transform=`translate3d(-${sheet.clientWidth}px,0,0)`;
+        sheet.style.transform=`translate3d(${Math.max(sheet.clientWidth,window.innerWidth)}px,0,0)`;
         sheet.style.opacity="0";
+
         setTimeout(()=>{
           closeFunction();
           resetSwipeSheet(modalId);
-        },130);
+        },120);
       }else{
         sheet.classList.remove("swipe-left-active");
         sheet.classList.add("swipe-left-reset");
         sheet.style.transform="";
         sheet.style.opacity="";
-        if(moved)suppressSheetClickUntil=Date.now()+250;
-        setTimeout(()=>sheet.classList.remove("swipe-left-reset"),180);
+
+        if(moved)suppressSheetClickUntil=Date.now()+260;
+        setTimeout(()=>sheet.classList.remove("swipe-left-reset"),170);
       }
+    }
+
+    // Modern iPhone Safari / installed PWA.
+    sheet.addEventListener("pointerdown",event=>{
+      if(event.pointerType==="mouse"&&event.button!==0)return;
+      if(Date.now()-lastTouchTime<500&&event.pointerType==="mouse")return;
+
+      startGesture(event.clientX,event.clientY,event.pointerId,event.target);
+      if(!gesture)return;
+
+      try{sheet.setPointerCapture(event.pointerId);}catch(_){}
+    });
+
+    sheet.addEventListener("pointermove",event=>{
+      if(!gesture||gesture.pointerId!==event.pointerId)return;
+      moveGesture(event.clientX,event.clientY,event);
+    });
+
+    const finishPointer=event=>{
+      if(!gesture||gesture.pointerId!==event.pointerId)return;
+      try{sheet.releasePointerCapture(event.pointerId);}catch(_){}
+      finishGesture();
     };
 
-    sheet.addEventListener("pointerup",finish);
-    sheet.addEventListener("pointercancel",finish);
+    sheet.addEventListener("pointerup",finishPointer);
+    sheet.addEventListener("pointercancel",finishPointer);
+
+    // Touch fallback for iOS edge cases.
+    sheet.addEventListener("touchstart",event=>{
+      if(typeof PointerEvent!=="undefined")return;
+      if(event.touches.length!==1)return;
+      lastTouchTime=Date.now();
+      const touch=event.touches[0];
+      startGesture(touch.clientX,touch.clientY,null,event.target);
+    },{passive:true});
+
+    sheet.addEventListener("touchmove",event=>{
+      if(typeof PointerEvent!=="undefined")return;
+      if(!gesture||event.touches.length!==1)return;
+      const touch=event.touches[0];
+      moveGesture(touch.clientX,touch.clientY,event);
+    },{passive:false});
+
+    sheet.addEventListener("touchend",()=>{
+      if(typeof PointerEvent!=="undefined")return;
+      finishGesture();
+    },{passive:true});
+
+    sheet.addEventListener("touchcancel",()=>{
+      if(typeof PointerEvent!=="undefined")return;
+      finishGesture();
+    },{passive:true});
+
     sheet.addEventListener("click",event=>{
       if(Date.now()<suppressSheetClickUntil){
         event.preventDefault();
@@ -1944,7 +2174,7 @@
       <div class="txn" data-id="${t.id}">
         <div class="txn-icon">${icon}</div>
         <div>
-          <div class="txn-title">${escapeHtml(t.category)}</div>
+          <div class="txn-title">${escapeHtml(t.category)}${pendingSaveOperations.has(t.id)?'<span class="save-pending-dot" title="Syncing"></span>':""}</div>
           <div class="txn-meta">${dateLabel(t.date)}${t.tag?` · ${escapeHtml(t.tag)}`:""}</div>
         </div>
         <div class="txn-amount ${cls}">${sign}${money(t.amount)}</div>
@@ -1952,6 +2182,22 @@
     </div>`;
   }
   function emptyHtml(title,sub){ return `<div class="empty"><strong>${title}</strong>${sub}</div>`; }
+
+  function activeRecordFilterCount(){
+    return ["filterFrom","filterTo","filterType","filterCategory"]
+      .reduce((count,id)=>count+($(id)?.value?1:0),0);
+  }
+  function renderRecordFilterToolbar(){
+    const drawer=$("recordFilterDrawer");
+    const button=$("toggleRecordFilters");
+    const badge=$("recordFilterBadge");
+    if(!drawer||!button||!badge)return;
+    const count=activeRecordFilterCount();
+    drawer.classList.toggle("hidden",!recordFiltersExpanded);
+    button.classList.toggle("active",recordFiltersExpanded||count>0);
+    badge.classList.toggle("hidden",count===0);
+    badge.textContent=String(count);
+  }
 
   function filteredRecords(){
     let list=[...state.transactions];
@@ -1971,6 +2217,7 @@
     $("recordIncome").textContent=money(t.income);
     $("recordExpense").textContent=money(t.expense);
     $("recordsList").innerHTML=list.length?list.map(txnHtml).join(""):emptyHtml("No matching records","Change your filters or add a new transaction.");
+    renderRecordFilterToolbar();
   }
 
   function renderAnalysis(){
@@ -2134,7 +2381,9 @@
 
   function renderBudgetEditor(){
     const key=$("budgetMonth").value||selectedMonth;
-    $("overallBudget").value=getBudget(key).overall||"";
+    const budget=Number(getBudget(key).overall)||0;
+    $("overallBudget").value=budget||"";
+    if($("budgetSummaryText"))$("budgetSummaryText").textContent=budget?`${monthLabel(key)} · ${money(budget)}`:"Set a total monthly budget";
   }
 
   function iconValues(){ return ICON_OPTIONS.map(opt=>opt.value); }
@@ -2329,6 +2578,7 @@
     if(!cloudReadyForWrite())return;
     const amount=Number($("txnAmount").value);
     if(!amount||amount<=0){toast("Enter a valid amount.");return;}
+
     const old=editingId?state.transactions.find(x=>x.id===editingId):null;
     const txn={
       id:editingId||uid(),
@@ -2339,23 +2589,64 @@
       tag:$("txnTag").value.trim(),
       createdAt:Number(old?.createdAt)||Date.now()
     };
-    const button=$("saveTxn"),original=button.textContent;
-    button.disabled=true;button.textContent="Saving to cloud...";
+
+    const operationId=uid();
+    pendingSaveOperations.set(txn.id,operationId);
+
+    // Immediate UI response: update the local mirror and close the sheet first.
+    const localIndex=state.transactions.findIndex(item=>item.id===txn.id);
+    if(localIndex>=0)state.transactions[localIndex]=txn;
+    else state.transactions.push(txn);
+    saveLocalMirror();
+    closeModal();
+    renderAll();
+    setCloudStatus("syncing");
+    toast("Record added · syncing to cloud…");
+
     try{
-      setCloudStatus("syncing");
-      const verifiedTxn=await withTimeout(cloudApi.saveTransaction(cloudUser.uid,txn,old),30000);
-      const index=state.transactions.findIndex(x=>x.id===verifiedTxn.id);
-      if(index>=0)state.transactions[index]=verifiedTxn;else state.transactions.push(verifiedTxn);
+      const acknowledged=await withTimeout(
+        cloudApi.saveTransaction(cloudUser.uid,txn,old),
+        20000
+      );
+
+      if(pendingSaveOperations.get(txn.id)!==operationId)return;
+      pendingSaveOperations.delete(txn.id);
+
+      const index=state.transactions.findIndex(item=>item.id===acknowledged.id);
+      if(index>=0)state.transactions[index]=acknowledged;
+      else state.transactions.push(acknowledged);
       saveLocalMirror();
-      closeModal();renderAll();
+      renderAll();
       markServerVerified();
-      toast(editingId?"Cloud update verified.":"Cloud save verified.");
+      toast(old?"Update saved to cloud.":"Record saved to cloud.");
+
+      // Extra verification runs in the background and does not block the user.
+      if(typeof cloudApi.verifyTransaction==="function"){
+        cloudApi.verifyTransaction(cloudUser.uid,txn.id).catch(error=>{
+          console.error("Background save verification failed",error);
+          verifyCloudNow(false);
+        });
+      }
     }catch(error){
       console.error(error);
+
+      if(pendingSaveOperations.get(txn.id)===operationId){
+        pendingSaveOperations.delete(txn.id);
+        const currentIndex=state.transactions.findIndex(item=>item.id===txn.id);
+        if(old){
+          if(currentIndex>=0)state.transactions[currentIndex]=old;
+          else state.transactions.push(old);
+        }else if(currentIndex>=0){
+          state.transactions.splice(currentIndex,1);
+        }
+        saveLocalMirror();
+        renderAll();
+      }
+
       setCloudStatus("error",error.message);
-      toast(error.message||"Nothing was saved.");
-    }finally{
-      button.disabled=false;button.textContent=original;
+      alert(`Cloud save failed. The visible record was rolled back.
+
+${error.message||"Please check your network and try again."}`);
     }
   }
   async function deleteTxn(){
@@ -2393,6 +2684,7 @@
   function clearFilters(){
     ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>$(id).value="");
     qsa("#presetChips .chip").forEach(c=>c.classList.toggle("active",c.dataset.preset==="all"));
+    recordFiltersExpanded=false;
     renderRecords();
   }
 
@@ -2532,12 +2824,12 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("addCategory").addEventListener("click",addCategory);
   $("openAccuracy").addEventListener("click",()=>{
     setView("settings");
+    $("accuracyPanel").open=true;
     setTimeout(()=>$("accuracyPanel").scrollIntoView({behavior:"smooth",block:"start"}),100);
   });
-  $("toggleTrashPanel").addEventListener("click",()=>{
-    trashExpanded=!trashExpanded;
-    renderTrash();
-    if(trashExpanded)setTimeout(()=>$("trashPanel").scrollIntoView({behavior:"smooth",block:"start"}),50);
+  $("toggleRecordFilters").addEventListener("click",()=>{
+    recordFiltersExpanded=!recordFiltersExpanded;
+    renderRecordFilterToolbar();
   });
   $("scanDuplicates").addEventListener("click",()=>{
     renderDuplicateAudit();
@@ -2713,10 +3005,18 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     cloudServerVerified=false;
     setCloudStatus("error","Offline");
   });
-  enableSwipeLeftClose("categoryDetailModal",closeCategoryDetail);
-  enableSwipeLeftClose("txnModal",closeModal);
-  enableSwipeLeftClose("iconPickerModal",closeIconPicker);
-  enableSwipeLeftClose("deleteCategoryModal",closeDeleteCategory);
+  enableSwipeRightClose("categoryDetailModal",closeCategoryDetail);
+  enableSwipeRightClose("txnModal",closeModal);
+  enableSwipeRightClose("iconPickerModal",closeIconPicker);
+  enableSwipeRightClose("deleteCategoryModal",closeDeleteCategory);
+  qsa("#settingsView details.settings-card").forEach(section=>{
+    section.addEventListener("toggle",()=>{
+      if(!section.open)return;
+      qsa("#settingsView details.settings-card").forEach(other=>{
+        if(other!==section)other.open=false;
+      });
+    });
+  });
   initCloud();
   populateMonths();
   $("globalMonth").value=selectedMonth;
