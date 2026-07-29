@@ -2046,7 +2046,7 @@
               Signed in as <strong id="cloudUserEmail"></strong><br>
               <span id="cloudRecordCount">0 cloud records</span><br>
               <span id="cloudVerificationText">Waiting for server verification…</span>
-              <span class="cloud-transport-note">Direct Firestore REST connection enabled</span>
+              <span class="cloud-transport-note">Firestore REST POST connection enabled</span>
             </div>
             <div id="cloudMigrationBox" class="cloud-warning hidden">
               Local records were found, but this cloud account is empty.
@@ -2259,7 +2259,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 36 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
+            Version 37 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2480,8 +2480,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=36"></script>
-<script src="firebase-cloud-v36.js?v=36"></script>
+<script src="firebase-config.js?v=37"></script>
+<script src="firebase-cloud-v37.js?v=37"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
