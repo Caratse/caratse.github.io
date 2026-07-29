@@ -1850,78 +1850,24 @@
       font-size:8px;
       font-weight:700
     }
-    
-    /* V38 — Home shows current-month and all-cloud data */
-    .home-data-overview{
-      margin:10px 0 14px;
-      padding:12px;
-      border:1px solid rgba(35,37,43,.07);
-      border-radius:17px;
-      background:var(--card);
-      box-shadow:0 5px 15px rgba(30,34,40,.04)
-    }
-    .home-data-overview-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:9px
-    }
-    .home-data-overview-head small{
-      display:block;
-      margin-bottom:2px;
-      color:var(--muted);
-      font-size:8px;
-      font-weight:750;
-      text-transform:uppercase;
-      letter-spacing:.04em
-    }
-    .home-data-overview-head strong{
-      display:block;
-      font-size:12px
-    }
-    .home-data-sync-badge{
-      flex:0 0 auto;
-      border-radius:999px;
-      padding:5px 8px;
-      background:var(--yellow-soft);
-      color:var(--accent-ink);
-      font-size:8px;
-      font-weight:850
-    }
-    .home-data-sync-badge.verified{
-      background:#E5F4E9;
-      color:#39714A
-    }
-    .home-data-sync-badge.error{
-      background:#FBE7E7;
-      color:#A13C3C
-    }
-    .home-data-overview-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:7px
-    }
-    .home-data-stat{
-      min-width:0;
-      padding:8px 9px;
-      border-radius:12px;
-      background:var(--field-bg)
-    }
-    .home-data-stat small{
-      display:block;
-      margin-bottom:4px;
-      color:var(--muted);
-      font-size:8px;
-      font-weight:700
-    }
-    .home-data-stat strong{
-      display:block;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-size:11px
-    }
+
+
+    /* V40 — user-controlled duplicate comparison */
+    .duplicate-group{padding:0;overflow:hidden}
+    .duplicate-group-summary{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:11px;border:0;background:var(--card);width:100%;text-align:left}
+    .duplicate-group-body{padding:0 10px 10px;border-top:1px solid var(--line)}
+    .duplicate-control-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0}
+    .duplicate-skip-label{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:750}
+    .duplicate-record-list{display:grid;gap:7px}
+    .duplicate-record-choice{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:12px;background:var(--field-bg)}
+    .duplicate-record-choice.keep{border-color:var(--yellow-2);background:var(--yellow-soft)}
+    .duplicate-record-choice.delete{opacity:.76}
+    .duplicate-record-main strong{display:block;font-size:11px;margin-bottom:3px}
+    .duplicate-record-main small{display:block;color:var(--muted);font-size:8px;line-height:1.45;word-break:break-all}
+    .duplicate-record-action{min-width:72px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:7px 8px;font-size:9px;font-weight:800}
+    .duplicate-record-choice.keep .duplicate-record-action{border-color:var(--yellow-2);background:var(--yellow);color:var(--accent-ink)}
+    .duplicate-plan{margin-top:8px;padding:7px 8px;border-radius:10px;background:var(--sheet-bg);font-size:9px;color:var(--muted)}
+    .duplicate-plan.skip{background:#F2F3F5}
 
 </style>
 </head>
@@ -1970,40 +1916,9 @@
         </div>
       </div>
 
-      <div class="home-data-overview">
-        <div class="home-data-overview-head">
-          <div>
-            <small>Data overview</small>
-            <strong id="homeDataSyncTitle">Cloud data</strong>
-          </div>
-          <span id="homeDataSyncBadge" class="home-data-sync-badge">Checking</span>
-        </div>
-
-        <div class="home-data-overview-grid">
-          <div class="home-data-stat">
-            <small id="homeMonthDataLabel">Selected month</small>
-            <strong id="homeMonthRecordCount">0 records</strong>
-          </div>
-          <div class="home-data-stat">
-            <small>All cloud records</small>
-            <strong id="homeAllRecordCount">0 records</strong>
-          </div>
-          <div class="home-data-stat">
-            <small>All-time income</small>
-            <strong id="homeAllIncome" class="income">¥0.00</strong>
-          </div>
-          <div class="home-data-stat">
-            <small>All-time expense</small>
-            <strong id="homeAllExpense" class="expense">¥0.00</strong>
-          </div>
-        </div>
-      </div>
-
       <div class="section-head"><h2>Quick entry</h2><span class="badge">Your first 4 expense categories</span></div>
       <div id="quickGrid" class="quick-grid"></div>
 
-      <div class="section-head"><h2>Recent records</h2><button data-go="records">View all</button></div>
-      <div id="recentList" class="list"></div>
     </section>
 
     <section id="recordsView" class="view">
@@ -2179,12 +2094,11 @@
           <div id="duplicateSummary" class="accuracy-summary">Checking the current records for exact duplicate copies…</div>
           <div id="duplicateGroups" class="duplicate-groups"></div>
           <p class="accuracy-note">
-            The scan only flags records whose Type, Date, Amount, Category and Tag are exactly the same.
-            Repair keeps one copy and moves extra copies to Cloud trash.
+            Exact matches are grouped by Type, Date, Amount, Category and Tag. Open each group, choose which copy to keep, or mark the whole group as Do not delete.
           </p>
           <div class="settings-actions" style="margin-top:10px">
             <button id="scanDuplicates" class="secondary">Scan again</button>
-            <button id="repairDuplicates" class="danger">Move duplicates to Trash</button>
+            <button id="repairDuplicates" class="danger">Move selected copies to Trash</button>
           </div>
         </div>
       </details>
@@ -2361,7 +2275,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 38 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
+            Version 40 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2582,8 +2496,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=38"></script>
-<script src="firebase-cloud-v37.js?v=38"></script>
+<script src="firebase-config.js?v=40"></script>
+<script src="firebase-cloud-v37.js?v=40"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2761,6 +2675,8 @@
   let categoryDetailCurrent = null;
   let duplicateRepairRunning = false;
   let duplicateWarningShown = false;
+  const duplicateKeepChoices = new Map();
+  const duplicateSkippedGroups = new Set();
   let trashExpanded = false;
   let trashMaintenanceTimer = null;
   let suppressSheetClickUntil = 0;
@@ -2847,55 +2763,72 @@
     const topCategory=Object.entries(categories).sort((a,b)=>b[1]-a[1])[0];
     return {extras,topMonth,topCategory};
   }
+  function duplicateChoiceForGroup(group){
+    const validIds=new Set(group.items.map(item=>item.id));
+    const saved=duplicateKeepChoices.get(group.fingerprint);
+    if(saved&&validIds.has(saved))return saved;
+    const fallback=group.keep.id;
+    duplicateKeepChoices.set(group.fingerprint,fallback);
+    return fallback;
+  }
+  function selectedDuplicatePlan(groups=findExactDuplicateGroups()){
+    const selected=[];
+    groups.forEach(group=>{
+      if(duplicateSkippedGroups.has(group.fingerprint))return;
+      const keepId=duplicateChoiceForGroup(group);
+      group.items.forEach(item=>{if(item.id!==keepId)selected.push(item);});
+    });
+    return selected;
+  }
   function renderDuplicateAudit(){
-    const badge=$("duplicateBadge");
-    const summary=$("duplicateSummary");
-    const list=$("duplicateGroups");
-    const repair=$("repairDuplicates");
+    const badge=$("duplicateBadge"),summary=$("duplicateSummary"),list=$("duplicateGroups"),repair=$("repairDuplicates");
     if(!badge||!summary||!list||!repair)return;
-
     const groups=findExactDuplicateGroups();
-    const {extras,topMonth,topCategory}=duplicateImpactSummary(groups);
-    const extraAmount=extras.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
-
-    repair.disabled=!groups.length||!cloudUser||duplicateRepairRunning;
+    const selected=selectedDuplicatePlan(groups);
+    const selectedAmount=selected.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
+    repair.disabled=!selected.length||!cloudUser||duplicateRepairRunning;
+    repair.textContent=duplicateRepairRunning?"Moving selected…":`Move selected (${selected.length}) to Trash`;
     $("scanDuplicates").disabled=duplicateRepairRunning;
-
     if(!groups.length){
       badge.textContent="No exact duplicates";
       summary.className="accuracy-summary clean";
-      summary.innerHTML="<strong>Accuracy check passed.</strong><br>No records with the same Type, Date, Amount, Category and Tag were found.";
-      list.innerHTML="";
-      return;
+      summary.innerHTML="<strong>Accuracy check passed.</strong><br>No exact-match duplicate records were found.";
+      list.innerHTML="";return;
     }
-
-    badge.textContent=`${extras.length} suspected`;
+    badge.textContent=`${groups.length} group${groups.length===1?"":"s"}`;
     summary.className="accuracy-summary warning";
-    summary.innerHTML=`<strong>${extras.length} suspected duplicate cop${extras.length===1?"y":"ies"} found in ${groups.length} group${groups.length===1?"":"s"}.</strong>
-      <br>These extra copies currently add <strong>${money(extraAmount)}</strong> to totals.
-      <div class="duplicate-impact">
-        <div class="duplicate-impact-card"><small>Largest month impact</small><strong>${topMonth?`${escapeHtml(topMonth[0])} · ${money(topMonth[1])}`:"—"}</strong></div>
-        <div class="duplicate-impact-card"><small>Largest category impact</small><strong>${topCategory?`${escapeHtml(topCategory[0])} · ${money(topCategory[1])}`:"—"}</strong></div>
-      </div>`;
-
-    list.innerHTML=groups.slice(0,10).map(group=>{
-      const item=group.keep;
-      return `<div class="duplicate-group">
-        <div class="duplicate-group-top">
-          <div>
-            <div class="duplicate-group-title">${categoryIcon(item.category)} ${escapeHtml(item.category)} · ${money(item.amount)}</div>
-            <div class="duplicate-group-meta">${escapeHtml(item.date)}${item.tag?` · ${escapeHtml(item.tag)}`:""}<br>One copy will remain; ${group.duplicates.length} extra cop${group.duplicates.length===1?"y":"ies"} will move to Trash.</div>
+    summary.innerHTML=`<strong>${groups.length} duplicate group${groups.length===1?"":"s"} found.</strong><br>${selected.length} record${selected.length===1?" is":"s are"} currently selected for Trash, totalling <strong>${money(selectedAmount)}</strong>. Nothing is deleted until you press the red button.`;
+    list.innerHTML=groups.map((group,index)=>{
+      const first=group.items[0];
+      const keepId=duplicateChoiceForGroup(group);
+      const skipped=duplicateSkippedGroups.has(group.fingerprint);
+      const rows=group.items.map((item,itemIndex)=>{
+        const keep=item.id===keepId;
+        const created=Number(item.createdAt)||0;
+        const createdText=created?new Date(created).toLocaleString("zh-CN",{hour12:false}):"Unknown";
+        return `<div class="duplicate-record-choice ${keep?"keep":"delete"}">
+          <div class="duplicate-record-main">
+            <strong>${keep?"Keep this copy":"Move to Trash"} · Copy ${itemIndex+1}</strong>
+            <small>Date ${escapeHtml(item.date)} · ${escapeHtml(item.type)} · ${money(item.amount)}<br>Category ${escapeHtml(item.category)} · Tag ${escapeHtml(item.tag||"—")}<br>Created ${escapeHtml(createdText)} · ID ${escapeHtml(String(item.id))}</small>
           </div>
+          <button class="duplicate-record-action" type="button" data-duplicate-keep="${escapeHtml(group.fingerprint)}" data-record-id="${escapeHtml(item.id)}">${keep?"Keeping":"Keep this"}</button>
+        </div>`;
+      }).join("");
+      return `<details class="duplicate-group" ${index===0?"open":""}>
+        <summary class="duplicate-group-summary">
+          <div><div class="duplicate-group-title">${categoryIcon(first.category)} ${escapeHtml(first.category)} · ${money(first.amount)}</div><div class="duplicate-group-meta">${escapeHtml(first.date)}${first.tag?` · ${escapeHtml(first.tag)}`:""}</div></div>
           <span class="duplicate-group-count">${group.items.length} copies</span>
+        </summary>
+        <div class="duplicate-group-body">
+          <div class="duplicate-control-row"><span class="accuracy-note">Choose exactly one copy to keep</span><label class="duplicate-skip-label"><input type="checkbox" data-duplicate-skip="${escapeHtml(group.fingerprint)}" ${skipped?"checked":""}> Do not delete this group</label></div>
+          <div class="duplicate-record-list">${rows}</div>
+          <div class="duplicate-plan ${skipped?"skip":""}">${skipped?"This group will not be changed.":`${group.items.length-1} copy${group.items.length-1===1?"":"ies"} will move to Trash; the selected copy will remain.`}</div>
         </div>
-      </div>`;
-    }).join("")+(groups.length>10?`<div class="accuracy-note">Showing the first 10 of ${groups.length} duplicate groups.</div>`:"");
-
-    if(!duplicateWarningShown){
-      duplicateWarningShown=true;
-      setTimeout(()=>toast("Potential duplicate records found. Open Settings → Data accuracy."),500);
-    }
+      </details>`;
+    }).join("");
+    if(!duplicateWarningShown){duplicateWarningShown=true;setTimeout(()=>toast("Potential duplicate records found. Open Settings → Data accuracy."),500);}
   }
+
   function datedBackupName(prefix){
     const d=new Date();
     const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
@@ -2904,54 +2837,23 @@
   async function repairExactDuplicates(){
     if(!cloudReadyForWrite())return;
     const groups=findExactDuplicateGroups();
-    if(!groups.length){toast("No exact duplicates found.");return;}
-
-    const duplicates=groups.flatMap(group=>group.duplicates);
+    const duplicates=selectedDuplicatePlan(groups);
+    if(!duplicates.length){toast("No records are selected for deletion.");return;}
     const total=duplicates.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
-    const confirmed=confirm(
-      `Move ${duplicates.length} exact-match duplicate cop${duplicates.length===1?"y":"ies"} totalling ${money(total)} to Cloud trash?\n\n`+
-      "One copy in every group will remain. A JSON backup will download first, and Trash items can be restored."
-    );
-    if(!confirmed)return;
-
-    downloadFile(
-      datedBackupName("daily-budget-before-duplicate-repair"),
-      JSON.stringify(state,null,2),
-      "application/json"
-    );
-
-    duplicateRepairRunning=true;
-    renderDuplicateAudit();
-    const button=$("repairDuplicates");
-    const original=button.textContent;
-    let moved=0;
-
+    if(!confirm(`Move ${duplicates.length} selected record${duplicates.length===1?"":"s"} totalling ${money(total)} to Cloud trash?\n\nOnly the copies you selected will be moved. Groups marked Do not delete will remain unchanged.`))return;
+    downloadFile(datedBackupName("daily-budget-before-duplicate-repair"),JSON.stringify(state,null,2),"application/json");
+    duplicateRepairRunning=true;renderDuplicateAudit();let moved=0;
     try{
       setCloudStatus("syncing");
       for(const transaction of duplicates){
-        button.textContent=`Repairing ${moved+1}/${duplicates.length}…`;
-        await withTimeout(cloudApi.moveToTrash(cloudUser.uid,transaction),30000);
-        state.transactions=state.transactions.filter(item=>item.id!==transaction.id);
+        await optimisticallyDeleteTransaction(transaction,{closeEditor:false,preserveRecordsPosition:false});
         moved++;
-        saveLocalMirror();
       }
-      await verifyCloudNow(false);
-      markServerVerified();
-      toast(`${moved} duplicate cop${moved===1?"y":"ies"} moved to Cloud trash.`);
-    }catch(error){
-      console.error(error);
-      await verifyCloudNow(false);
-      setCloudStatus("error",error.message);
-      alert(
-        `${moved} duplicate cop${moved===1?"y was":"ies were"} moved before the process stopped.\n\n`+
-        `${error.message||"Repair failed."}\n\nThe app has reloaded the server state.`
-      );
-    }finally{
-      duplicateRepairRunning=false;
-      button.textContent=original;
-      renderAll();
-    }
+      await verifyCloudNow(false);markServerVerified();toast(`${moved} selected record${moved===1?"":"s"} moved to Cloud trash.`);
+    }catch(error){console.error(error);alert(`${moved} record${moved===1?" was":"s were"} moved before the process stopped.\n\n${error.message||"Repair failed."}`);}
+    finally{duplicateRepairRunning=false;renderAll();}
   }
+
 
   function renderCloudPanel(){
     const badge=$("cloudBadge");
@@ -3052,6 +2954,14 @@
       toast(error.message||"Cloud sync failed.");
       return false;
     }
+  }
+  function browserWriteTransportRestricted(){
+    const transport=String(cloudApi?.transport||cloudApi?.persistence||"");
+    return transport.includes("REST_POST_COMMIT");
+  }
+  function scheduleAutomaticRecurringGeneration(){
+    if(browserWriteTransportRestricted())return;
+    scheduleAutomaticRecurringGeneration();
   }
   function markServerVerified(){
     cloudServerVerified=true;
@@ -4687,7 +4597,13 @@
     return Number(budgetResolution(key).budget.overall)||0;
   }
   function sortTxns(list){
-    return [...list].sort((a,b)=>b.date.localeCompare(a.date)||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
+    return [...list].sort((a,b)=>{
+      const dateOrder=String(b.date||"").localeCompare(String(a.date||""));
+      if(dateOrder)return dateOrder;
+      const createdOrder=(Number(b.createdAt)||0)-(Number(a.createdAt)||0);
+      if(createdOrder)return createdOrder;
+      return String(b.id||"").localeCompare(String(a.id||""));
+    });
   }
 
   function fullMonthLabel(key){
@@ -4996,24 +4912,6 @@
   function renderDashboard(){
     const list=txnsForMonth(selectedMonth);
     const t=totals(list);
-    const allTotals=totals(state.transactions);
-    $("homeIncome").textContent=money(t.income);
-    $("homeExpense").textContent=money(t.expense);
-    $("homeBalance").textContent=money(t.income-t.expense);
-
-    $("homeMonthDataLabel").textContent=fullMonthLabel(selectedMonth);
-    $("homeMonthRecordCount").textContent=`${list.length} record${list.length===1?"":"s"}`;
-    $("homeAllRecordCount").textContent=`${state.transactions.length} record${state.transactions.length===1?"":"s"}`;
-    $("homeAllIncome").textContent=money(allTotals.income);
-    $("homeAllExpense").textContent=money(allTotals.expense);
-
-    const syncBadge=$("homeDataSyncBadge");
-    const verified=Boolean(cloudServerVerified);
-    syncBadge.textContent=verified?"Server verified":cloudStatus==="error"?"Sync error":"Checking";
-    syncBadge.className=`home-data-sync-badge ${verified?"verified":cloudStatus==="error"?"error":""}`;
-    $("homeDataSyncTitle").textContent=verified
-      ?`${cloudRemoteRecordCount} cloud record${cloudRemoteRecordCount===1?"":"s"} loaded`
-      :"Showing current local mirror";
 
     const b=effectiveBudget(selectedMonth);
     const rate=b?Math.min((t.expense/b)*100,100):0;
@@ -5022,9 +4920,6 @@
       ?"#E45151"
       :`linear-gradient(90deg,${themeCssColor("--yellow-2","#D8AE36")},${themeCssColor("--yellow","#E9C86B")})`;
     $("budgetText").textContent=b ? `${money(t.expense)} / ${money(b)} · ${Math.round((t.expense/b)*100)}%` : "Not set";
-
-    const recent=sortTxns(state.transactions).slice(0,8);
-    $("recentList").innerHTML=recent.length?recent.map(txnHtml).join(""):emptyHtml("No records yet","Tap + to record your first transaction.");
     const quick=state.expenseCategories.slice(0,4);
     $("quickGrid").innerHTML=quick.map(cat=>`<button class="quick" data-quick="${escapeHtml(cat)}"><span>${categoryIcon(cat)}</span>${escapeHtml(cat)}</button>`).join("");
   }
@@ -6097,6 +5992,22 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     recordFiltersExpanded=!recordFiltersExpanded;
     renderRecordFilterToolbar();
   });
+  $("duplicateGroups").addEventListener("click",event=>{
+    const keepButton=event.target.closest("[data-duplicate-keep]");
+    if(keepButton){
+      duplicateKeepChoices.set(keepButton.dataset.duplicateKeep,keepButton.dataset.recordId);
+      duplicateSkippedGroups.delete(keepButton.dataset.duplicateKeep);
+      renderDuplicateAudit();
+    }
+  });
+  $("duplicateGroups").addEventListener("change",event=>{
+    const checkbox=event.target.closest("[data-duplicate-skip]");
+    if(!checkbox)return;
+    if(checkbox.checked)duplicateSkippedGroups.add(checkbox.dataset.duplicateSkip);
+    else duplicateSkippedGroups.delete(checkbox.dataset.duplicateSkip);
+    renderDuplicateAudit();
+  });
+
   $("scanDuplicates").addEventListener("click",()=>{
     renderDuplicateAudit();
     const groups=findExactDuplicateGroups();
