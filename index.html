@@ -1885,6 +1885,25 @@
       .pending-cloud-delete-box{border-color:#D9D3B7}
     }
 
+
+    .trash-local-badge,.trash-cloud-badge{
+      display:inline-flex;align-items:center;width:max-content;margin-top:5px;
+      padding:3px 6px;border-radius:999px;font-size:7px;font-weight:850
+    }
+    .trash-local-badge{background:var(--yellow-soft);color:var(--accent-ink)}
+    .trash-cloud-badge{background:#E7F3EA;color:#39714A}
+    .trash-pending-error{margin-top:4px;color:var(--muted);font-size:7px;line-height:1.35}
+    .trash-actions .pending-retry{background:var(--yellow-soft);color:var(--accent-ink)}
+    .reviewed-duplicate-notice{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-top:10px;padding:9px 10px;border:1px solid rgba(51,117,73,.14);
+      border-radius:13px;background:#EDF7F0;color:#45634D;font-size:8px;line-height:1.45
+    }
+    .reviewed-duplicate-notice button{flex:0 0 auto;padding:6px 8px;font-size:8px}
+    .duplicate-reviewed-label{
+      display:flex;align-items:center;gap:6px;color:#45634D;font-size:8px;font-weight:800
+    }
+
 </style>
 </head>
 <body>
@@ -2119,11 +2138,15 @@
           <div id="duplicateSummary" class="accuracy-summary">Checking the current records for exact duplicate copies…</div>
           <div id="duplicateGroups" class="duplicate-groups"></div>
           <p class="accuracy-note">
-            Exact matches are grouped by Type, Date, Amount, Category and Tag. Open each group, choose which copy to keep, or mark the whole group as Do not delete.
+            Exact matches are grouped by Type, Date, Amount, Category and Tag. Choose one copy to keep and delete the others, or keep every copy and mark the group reviewed.
           </p>
+          <div id="reviewedDuplicateNotice" class="reviewed-duplicate-notice hidden">
+            <span><strong id="reviewedDuplicateCount">0</strong> reviewed group<span id="reviewedDuplicatePlural">s</span> are kept by your decision and no longer counted as issues.</span>
+            <button id="resetReviewedDuplicates" type="button" class="secondary">Review again</button>
+          </div>
           <div class="settings-actions" style="margin-top:10px">
-            <button id="scanDuplicates" class="secondary">Scan again</button>
-            <button id="repairDuplicates" class="danger">Move selected copies to Trash</button>
+            <button id="scanDuplicates" class="secondary">Scan unresolved</button>
+            <button id="repairDuplicates" class="danger">Delete selected copies</button>
           </div>
         </div>
       </details>
@@ -2300,7 +2323,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 41 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
+            Version 42 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2311,15 +2334,15 @@
           <span class="settings-summary-main">
             <span class="settings-summary-icon">🗑️</span>
             <span class="settings-summary-copy">
-              <span class="settings-summary-title">Cloud trash</span>
-              <span class="settings-summary-sub">Restorable for 30 days</span>
+              <span class="settings-summary-title">Trash</span>
+              <span class="settings-summary-sub">Local and cloud deletions</span>
             </span>
           </span>
           <span class="settings-summary-side"><span id="trashCountBadge" class="badge">0 items</span></span>
         </summary>
         <div class="settings-card-body">
           <div class="trash-retention-box">
-            Records remain recoverable for 30 days. Expired records are removed when the app opens or synchronizes.
+            Deleted records are saved here immediately. Cloud-synced items remain recoverable for 30 days; pending items stay available locally until cloud cleanup succeeds or you restore them.
           </div>
           <div id="trashContent" class="trash-content">
             <div id="trashList" class="trash-list"></div>
@@ -2521,8 +2544,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=41"></script>
-<script src="firebase-cloud-v37.js?v=41"></script>
+<script src="firebase-config.js?v=42"></script>
+<script src="firebase-cloud-v37.js?v=42"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2703,7 +2726,11 @@
   let duplicateRepairRunning = false;
   let duplicateWarningShown = false;
   const duplicateKeepChoices = new Map();
-  const duplicateSkippedGroups = new Set();
+  const duplicateSkippedGroups = new Set(
+    Array.isArray(state.reviewedDuplicateGroups)
+      ?state.reviewedDuplicateGroups.map(String)
+      :[]
+  );
   let trashExpanded = false;
   let trashMaintenanceTimer = null;
   let suppressSheetClickUntil = 0;
@@ -2738,6 +2765,7 @@
     try{localStorage.setItem(PENDING_DELETE_STORAGE_KEY,JSON.stringify([...pendingCloudDeletes.values()]));}
     catch(error){console.error("Pending delete queue could not be saved",error);}
     renderPendingCloudDeletes();
+    renderTrash();
   }
   function setCloudRecordCount(count){
     cloudRemoteRecordCount=Math.max(0,Number(count)||0);
@@ -2787,6 +2815,7 @@
       categoryIcons:{...state.categoryIcons},
       budgets:JSON.parse(JSON.stringify(state.budgets||{})),
       recurringExpenses:JSON.parse(JSON.stringify(state.recurringExpenses||[])),
+      reviewedDuplicateGroups:[...duplicateSkippedGroups],
       appearanceTheme:normalizeAppearanceTheme(state.appearanceTheme)
     };
   }
@@ -2796,6 +2825,11 @@
     state.categoryIcons={...(payload.categoryIcons||{})};
     state.budgets=JSON.parse(JSON.stringify(payload.budgets||{}));
     state.recurringExpenses=JSON.parse(JSON.stringify(payload.recurringExpenses||[]));
+    duplicateSkippedGroups.clear();
+    (payload.reviewedDuplicateGroups||[]).forEach(fingerprint=>
+      duplicateSkippedGroups.add(String(fingerprint))
+    );
+    state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
     state.appearanceTheme=normalizeAppearanceTheme(payload.appearanceTheme);
     applyAppearanceTheme(state.appearanceTheme);
   }
@@ -2835,6 +2869,17 @@
       applyAppearanceTheme(state.appearanceTheme);
     }
   }
+  function saveReviewedDuplicateGroups(){
+    state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
+    saveLocalMirror();
+  }
+  function unresolvedDuplicateGroups(groups=findExactDuplicateGroups()){
+    return groups.filter(group=>!duplicateSkippedGroups.has(group.fingerprint));
+  }
+  function reviewedDuplicateGroups(groups=findExactDuplicateGroups()){
+    return groups.filter(group=>duplicateSkippedGroups.has(group.fingerprint));
+  }
+
   function duplicateImpactSummary(groups){
     const extras=groups.flatMap(group=>group.duplicates);
     const months={};
@@ -2856,7 +2901,7 @@
     duplicateKeepChoices.set(group.fingerprint,fallback);
     return fallback;
   }
-  function selectedDuplicatePlan(groups=findExactDuplicateGroups()){
+  function selectedDuplicatePlan(groups=unresolvedDuplicateGroups()){
     const selected=[];
     groups.forEach(group=>{
       if(duplicateSkippedGroups.has(group.fingerprint))return;
@@ -2866,52 +2911,100 @@
     return selected;
   }
   function renderDuplicateAudit(){
-    const badge=$("duplicateBadge"),summary=$("duplicateSummary"),list=$("duplicateGroups"),repair=$("repairDuplicates");
-    if(!badge||!summary||!list||!repair)return;
-    const groups=findExactDuplicateGroups();
+    const badge=$("duplicateBadge");
+    const summary=$("duplicateSummary");
+    const list=$("duplicateGroups");
+    const repair=$("repairDuplicates");
+    const reviewedNotice=$("reviewedDuplicateNotice");
+    if(!badge||!summary||!list||!repair||!reviewedNotice)return;
+
+    const allGroups=findExactDuplicateGroups();
+    const groups=unresolvedDuplicateGroups(allGroups);
+    const reviewed=reviewedDuplicateGroups(allGroups);
     const selected=selectedDuplicatePlan(groups);
     const selectedAmount=selected.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
-    repair.disabled=!selected.length||!cloudUser||duplicateRepairRunning;
-    repair.textContent=duplicateRepairRunning?"Deleting selected…":`Delete selected (${selected.length})`;
+
+    repair.disabled=!selected.length||duplicateRepairRunning;
+    repair.textContent=duplicateRepairRunning
+      ?"Deleting selected…"
+      :`Delete selected (${selected.length})`;
     $("scanDuplicates").disabled=duplicateRepairRunning;
+
+    reviewedNotice.classList.toggle("hidden",reviewed.length===0);
+    $("reviewedDuplicateCount").textContent=String(reviewed.length);
+    $("reviewedDuplicatePlural").textContent=reviewed.length===1?"":"s";
+
     if(!groups.length){
-      badge.textContent="No exact duplicates";
+      badge.textContent=reviewed.length?"No unresolved issues":"No exact duplicates";
       summary.className="accuracy-summary clean";
-      summary.innerHTML="<strong>Accuracy check passed.</strong><br>No exact-match duplicate records were found.";
-      list.innerHTML="";return;
+      summary.innerHTML=reviewed.length
+        ?`<strong>Accuracy check completed.</strong><br>${reviewed.length} duplicate group${reviewed.length===1?" was":"s were"} intentionally kept and no longer counted as an issue.`
+        :"<strong>Accuracy check passed.</strong><br>No exact-match duplicate records were found.";
+      list.innerHTML="";
+      return;
     }
-    badge.textContent=`${groups.length} group${groups.length===1?"":"s"}`;
+
+    badge.textContent=`${groups.length} unresolved`;
     summary.className="accuracy-summary warning";
-    summary.innerHTML=`<strong>${groups.length} duplicate group${groups.length===1?"":"s"} found.</strong><br>${selected.length} record${selected.length===1?" is":"s are"} currently selected for deletion, totalling <strong>${money(selectedAmount)}</strong>. Nothing is deleted until you press the red button.`;
+    summary.innerHTML=
+      `<strong>${groups.length} unresolved duplicate group${groups.length===1?"":"s"}.</strong><br>`+
+      `${selected.length} record${selected.length===1?" is":"s are"} selected for deletion, `+
+      `totalling <strong>${money(selectedAmount)}</strong>. `+
+      `${reviewed.length?`${reviewed.length} reviewed group${reviewed.length===1?" is":"s are"} excluded from this count. `:""}`+
+      `Nothing is deleted until you press the red button.`;
+
     list.innerHTML=groups.map((group,index)=>{
       const first=group.items[0];
       const keepId=duplicateChoiceForGroup(group);
-      const skipped=duplicateSkippedGroups.has(group.fingerprint);
       const rows=group.items.map((item,itemIndex)=>{
         const keep=item.id===keepId;
         const created=Number(item.createdAt)||0;
-        const createdText=created?new Date(created).toLocaleString("zh-CN",{hour12:false}):"Unknown";
+        const createdText=created
+          ?new Date(created).toLocaleString("zh-CN",{hour12:false})
+          :"Unknown";
+
         return `<div class="duplicate-record-choice ${keep?"keep":"delete"}">
           <div class="duplicate-record-main">
-            <strong>${keep?"Keep this copy":"Delete this copy"} · Copy ${itemIndex+1}</strong>
-            <small>Date ${escapeHtml(item.date)} · ${escapeHtml(item.type)} · ${money(item.amount)}<br>Category ${escapeHtml(item.category)} · Tag ${escapeHtml(item.tag||"—")}<br>Created ${escapeHtml(createdText)} · ID ${escapeHtml(String(item.id))}</small>
+            <strong>${keep?"Will keep":"Will delete"} · Copy ${itemIndex+1}</strong>
+            <small>Date ${escapeHtml(item.date)} · ${escapeHtml(item.type)} · ${money(item.amount)}<br>
+            Category ${escapeHtml(item.category)} · Tag ${escapeHtml(item.tag||"—")}<br>
+            Created ${escapeHtml(createdText)} · ID ${escapeHtml(String(item.id))}</small>
           </div>
-          <button class="duplicate-record-action" type="button" data-duplicate-keep="${escapeHtml(group.fingerprint)}" data-record-id="${escapeHtml(item.id)}">${keep?"Keeping":"Keep this"}</button>
+          <button class="duplicate-record-action" type="button"
+            data-duplicate-keep="${escapeHtml(group.fingerprint)}"
+            data-record-id="${escapeHtml(item.id)}"
+          >${keep?"Keeping this":"Keep this instead"}</button>
         </div>`;
       }).join("");
+
       return `<details class="duplicate-group" ${index===0?"open":""}>
         <summary class="duplicate-group-summary">
-          <div><div class="duplicate-group-title">${categoryIcon(first.category)} ${escapeHtml(first.category)} · ${money(first.amount)}</div><div class="duplicate-group-meta">${escapeHtml(first.date)}${first.tag?` · ${escapeHtml(first.tag)}`:""}</div></div>
+          <div>
+            <div class="duplicate-group-title">${categoryIcon(first.category)} ${escapeHtml(first.category)} · ${money(first.amount)}</div>
+            <div class="duplicate-group-meta">${escapeHtml(first.date)}${first.tag?` · ${escapeHtml(first.tag)}`:""}</div>
+          </div>
           <span class="duplicate-group-count">${group.items.length} copies</span>
         </summary>
         <div class="duplicate-group-body">
-          <div class="duplicate-control-row"><span class="accuracy-note">Choose exactly one copy to keep</span><label class="duplicate-skip-label"><input type="checkbox" data-duplicate-skip="${escapeHtml(group.fingerprint)}" ${skipped?"checked":""}> Do not delete this group</label></div>
+          <div class="duplicate-control-row">
+            <span class="accuracy-note">Choose one copy to keep and delete the others</span>
+            <label class="duplicate-reviewed-label">
+              <input type="checkbox" data-duplicate-skip="${escapeHtml(group.fingerprint)}">
+              Keep all copies & mark reviewed
+            </label>
+          </div>
           <div class="duplicate-record-list">${rows}</div>
-          <div class="duplicate-plan ${skipped?"skip":""}">${skipped?"This group will not be changed.":`${group.items.length-1} copy${group.items.length-1===1?"":"ies"} will be deleted; the selected copy will remain.`}</div>
+          <div class="duplicate-plan">
+            ${group.items.length-1} cop${group.items.length-1===1?"y":"ies"} will be moved to Trash; the selected copy will remain.
+          </div>
         </div>
       </details>`;
     }).join("");
-    if(!duplicateWarningShown){duplicateWarningShown=true;setTimeout(()=>toast("Potential duplicate records found. Open Settings → Data accuracy."),500);}
+
+    if(!duplicateWarningShown){
+      duplicateWarningShown=true;
+      setTimeout(()=>toast("Unresolved duplicate records found. Open Settings → Data accuracy."),500);
+    }
   }
 
   function datedBackupName(prefix){
@@ -2920,7 +3013,7 @@
     return `${prefix}_${stamp}.json`;
   }
   async function repairExactDuplicates(){
-    const groups=findExactDuplicateGroups();
+    const groups=unresolvedDuplicateGroups();
     const duplicates=selectedDuplicatePlan(groups);
     if(!duplicates.length){toast("No records are selected for deletion.");return;}
     const total=duplicates.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
@@ -2985,6 +3078,35 @@
     }
     renderTrash();
   }
+  function localPendingTrashItems(){
+    return [...pendingCloudDeletes.values()].map(entry=>{
+      const deletedAtMs=Number(entry.requestedAt)||Date.now();
+      return {
+        ...entry.transaction,
+        deletedAtMs,
+        expiresAtMs:deletedAtMs+30*24*60*60*1000,
+        localPending:true,
+        lastError:entry.lastError||""
+      };
+    });
+  }
+  function reconcilePendingCloudTrash(items){
+    const cloudIds=new Set((Array.isArray(items)?items:[]).map(item=>String(item.id)));
+    let changed=false;
+    cloudIds.forEach(id=>{
+      if(pendingCloudDeletes.delete(id))changed=true;
+    });
+    if(changed)savePendingCloudDeletes();
+  }
+  function combinedTrashItems(){
+    const items=new Map();
+    cloudTrash.forEach(item=>items.set(String(item.id),{...item,localPending:false}));
+    localPendingTrashItems().forEach(item=>{
+      if(!items.has(String(item.id)))items.set(String(item.id),item);
+    });
+    return [...items.values()];
+  }
+
   function trashDaysRemaining(item){
     const expiresAtMs=Number(item.expiresAtMs)||Date.now()+30*24*60*60*1000;
     return Math.max(0,Math.ceil((expiresAtMs-Date.now())/(24*60*60*1000)));
@@ -2994,34 +3116,45 @@
     const badge=$("trashCountBadge");
     if(!container||!badge)return;
 
-    badge.textContent=`${cloudTrash.length} item${cloudTrash.length===1?"":"s"}`;
+    const items=combinedTrashItems();
+    badge.textContent=`${items.length} item${items.length===1?"":"s"}`;
 
-    if(!cloudUser){
-      container.innerHTML=emptyHtml("Sign in required","Cloud trash is available after sign-in.");
-      return;
-    }
-    if(!cloudTrash.length){
-      container.innerHTML=emptyHtml("Trash is empty","Deleted records will appear here for up to 30 days.");
+    if(!items.length){
+      container.innerHTML=emptyHtml("Trash is empty","Deleted records will appear here immediately.");
       return;
     }
 
-    container.innerHTML=[...cloudTrash]
+    container.innerHTML=items
       .sort((a,b)=>(Number(b.deletedAtMs)||0)-(Number(a.deletedAtMs)||0))
       .map(item=>{
         const days=trashDaysRemaining(item);
+        const pending=Boolean(item.localPending);
         return `<div class="trash-row">
           <div>
             <div class="trash-title">${categoryIcon(item.category)} ${escapeHtml(item.category)} · ${money(item.amount)}</div>
             <div class="trash-meta">${dateLabel(item.date)}${item.tag?` · ${escapeHtml(item.tag)}`:""}</div>
-            <div class="trash-countdown ${days<=3?"urgent":""}">${days===0?"Expired · pending automatic cleanup":`Auto-deletes in ${days} day${days===1?"":"s"}`}</div>
+            ${
+              pending
+                ?`<span class="trash-local-badge">Saved in local Trash · cloud cleanup pending</span>
+                  ${item.lastError?`<div class="trash-pending-error">${escapeHtml(item.lastError)}</div>`:""}`
+                :`<span class="trash-cloud-badge">Cloud Trash</span>
+                  <div class="trash-countdown ${days<=3?"urgent":""}">
+                    ${days===0?"Expired · pending automatic cleanup":`Auto-deletes in ${days} day${days===1?"":"s"}`}
+                  </div>`
+            }
           </div>
           <div class="trash-actions">
-            <button type="button" data-restore-trash="${item.id}" class="secondary">Restore</button>
-            <button type="button" data-purge-trash="${item.id}" class="danger">Remove now</button>
+            <button type="button" data-restore-trash="${escapeHtml(String(item.id))}" class="secondary">Restore</button>
+            ${
+              pending
+                ?`<button type="button" data-retry-trash="${escapeHtml(String(item.id))}" class="secondary pending-retry">Retry cloud</button>`
+                :`<button type="button" data-purge-trash="${escapeHtml(String(item.id))}" class="danger">Remove now</button>`
+            }
           </div>
         </div>`;
       }).join("");
   }
+
   async function syncSettingsToCloud(showSuccess=false){
     if(!cloudApi?.configured||!cloudUser||cloudMigrationNeeded)return false;
     if(!navigator.onLine){setCloudStatus("error","Offline");return false;}
@@ -3053,9 +3186,11 @@
   }
   function applyVerifiedServerState(serverState,{allowMigration=true}={}){
     const remoteRaw=Array.isArray(serverState?.transactions)?serverState.transactions:[];
+    const serverTrash=Array.isArray(serverState?.trash)?serverState.trash:[];
+    reconcilePendingCloudTrash(serverTrash);
     setCloudRecordCount(remoteRaw.length);
     const remote=filterLocallyDeleted(remoteRaw);
-    cloudTrash=Array.isArray(serverState?.trash)?serverState.trash:[];
+    cloudTrash=serverTrash;
 
     const candidate=cloudLocalCandidate||state;
     if(allowMigration&&remote.length===0&&candidate.transactions.length>0){
@@ -3187,7 +3322,9 @@
       },
       onTrash(items,metadata={}){
         if(metadata.fromCache||metadata.hasPendingWrites)return;
-        cloudTrash=items;renderTrash();
+        reconcilePendingCloudTrash(items);
+        cloudTrash=items;
+        renderTrash();
       },
       onError(error){
         console.error(error);
@@ -3295,6 +3432,7 @@
       categoryIcons: {...ICONS},
       payments: [...PAYMENTS],
       recurringExpenses: [],
+      reviewedDuplicateGroups: [],
       appearanceTheme:"warm"
     };
   }
@@ -3436,6 +3574,9 @@
     out.payments=Array.isArray(out.payments)&&out.payments.length?out.payments:[...PAYMENTS];
     out.recurringExpenses=Array.isArray(out.recurringExpenses)
       ?out.recurringExpenses.map(normalizeRecurringExpense)
+      :[];
+    out.reviewedDuplicateGroups=Array.isArray(out.reviewedDuplicateGroups)
+      ?[...new Set(out.reviewedDuplicateGroups.map(String))]
       :[];
     out.appearanceTheme=normalizeAppearanceTheme(out.appearanceTheme);
     return out;
@@ -5642,7 +5783,13 @@ ${error.message||"Please check your network and try again."}`);
       const trashed=await withTimeout(cloudApi.moveToTrash(cloudUser.uid,pending.transaction),15000);
       clearPendingCloudDelete(id);
       setCloudRecordCount(Math.max(0,cloudRemoteRecordCount-1));
-      if(trashed){cloudTrash=[trashed,...cloudTrash.filter(item=>item.id!==trashed.id)];renderTrash();}
+      if(trashed){
+        cloudTrash=[
+          {...trashed,localPending:false},
+          ...cloudTrash.filter(item=>item.id!==trashed.id)
+        ];
+      }
+      renderTrash();
       markServerVerified();renderCloudPanel();
       if(showToast)toast("Cloud cleanup completed.");
       return true;
@@ -6076,23 +6223,47 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("duplicateGroups").addEventListener("click",event=>{
     const keepButton=event.target.closest("[data-duplicate-keep]");
     if(keepButton){
-      duplicateKeepChoices.set(keepButton.dataset.duplicateKeep,keepButton.dataset.recordId);
-      duplicateSkippedGroups.delete(keepButton.dataset.duplicateKeep);
+      duplicateKeepChoices.set(
+        keepButton.dataset.duplicateKeep,
+        keepButton.dataset.recordId
+      );
       renderDuplicateAudit();
     }
   });
   $("duplicateGroups").addEventListener("change",event=>{
     const checkbox=event.target.closest("[data-duplicate-skip]");
     if(!checkbox)return;
-    if(checkbox.checked)duplicateSkippedGroups.add(checkbox.dataset.duplicateSkip);
-    else duplicateSkippedGroups.delete(checkbox.dataset.duplicateSkip);
+    if(checkbox.checked){
+      duplicateSkippedGroups.add(checkbox.dataset.duplicateSkip);
+      saveReviewedDuplicateGroups();
+      toast("Group marked reviewed and removed from unresolved issues.");
+    }else{
+      duplicateSkippedGroups.delete(checkbox.dataset.duplicateSkip);
+      saveReviewedDuplicateGroups();
+    }
     renderDuplicateAudit();
+  });
+
+  $("resetReviewedDuplicates").addEventListener("click",()=>{
+    if(!duplicateSkippedGroups.size)return;
+    if(!confirm("Review all previously kept duplicate groups again?"))return;
+    duplicateSkippedGroups.clear();
+    saveReviewedDuplicateGroups();
+    renderDuplicateAudit();
+    toast("Reviewed duplicate groups returned to the unresolved list.");
   });
 
   $("scanDuplicates").addEventListener("click",()=>{
     renderDuplicateAudit();
-    const groups=findExactDuplicateGroups();
-    toast(groups.length?`${groups.length} duplicate group${groups.length===1?"":"s"} found.`:"No exact duplicates found.");
+    const groups=unresolvedDuplicateGroups();
+    const reviewed=reviewedDuplicateGroups();
+    toast(
+      groups.length
+        ?`${groups.length} unresolved duplicate group${groups.length===1?"":"s"}.`
+        :reviewed.length
+          ?`No unresolved duplicates. ${reviewed.length} reviewed group${reviewed.length===1?" is":"s are"} kept.`
+          :"No exact duplicates found."
+    );
   });
   $("repairDuplicates").addEventListener("click",repairExactDuplicates);
   $("cloudSignIn").addEventListener("click",()=>cloudAuthAction("signin"));
@@ -6105,27 +6276,70 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     $("cloudRetrySync").addEventListener("click",()=>quickVerifyCloudNow(true));
   $("cloudFullRefresh").addEventListener("click",()=>verifyCloudNow(true));
   $("retryPendingCloudDeletes").addEventListener("click",retryPendingCloudDeletes);
-  $("trashList").addEventListener("click",async e=>{
-    const restore=e.target.closest("[data-restore-trash]");
-    const purge=e.target.closest("[data-purge-trash]");
+  $("trashList").addEventListener("click",async event=>{
+    const restore=event.target.closest("[data-restore-trash]");
+    const retry=event.target.closest("[data-retry-trash]");
+    const purge=event.target.closest("[data-purge-trash]");
+
     if(restore){
-      const txn=cloudTrash.find(x=>x.id===restore.dataset.restoreTrash);
-      if(!txn||!cloudReadyForWrite())return;
+      const id=String(restore.dataset.restoreTrash);
+      const pending=pendingCloudDeletes.get(id);
+
+      if(pending){
+        clearPendingCloudDelete(id);
+        if(!state.transactions.some(item=>String(item.id)===id)){
+          state.transactions.push({...pending.transaction});
+        }
+        saveLocalMirror();
+        renderAll();
+        toast("Record restored from local Trash.");
+        return;
+      }
+
+      const transaction=cloudTrash.find(item=>String(item.id)===id);
+      if(!transaction||!cloudReadyForWrite())return;
+
       try{
         setCloudStatus("syncing");
-        await withTimeout(cloudApi.restoreFromTrash(cloudUser.uid,txn));
-        setCloudStatus("online");toast("Record restored.");
-      }catch(error){setCloudStatus("error",error.message);toast(error.message||"Restore failed.");}
+        const restored=await withTimeout(cloudApi.restoreFromTrash(cloudUser.uid,transaction));
+        cloudTrash=cloudTrash.filter(item=>String(item.id)!==id);
+        if(restored&&!state.transactions.some(item=>String(item.id)===id)){
+          state.transactions.push(restored);
+        }
+        saveLocalMirror();
+        renderAll();
+        markServerVerified();
+        toast("Record restored from Cloud Trash.");
+      }catch(error){
+        setCloudStatus("error",error.message);
+        toast(error.message||"Restore failed.");
+      }
+      return;
     }
+
+    if(retry){
+      await syncOnePendingCloudDelete(String(retry.dataset.retryTrash),{showToast:true});
+      renderTrash();
+      return;
+    }
+
     if(purge){
-      const txn=cloudTrash.find(x=>x.id===purge.dataset.purgeTrash);
-      if(!txn||!cloudReadyForWrite())return;
-      if(!confirm("Permanently remove this trash item?"))return;
+      const id=String(purge.dataset.purgeTrash);
+      const transaction=cloudTrash.find(item=>String(item.id)===id);
+      if(!transaction||!cloudReadyForWrite())return;
+      if(!confirm("Permanently remove this Cloud Trash item?"))return;
+
       try{
         setCloudStatus("syncing");
-        await withTimeout(cloudApi.permanentlyDeleteTrash(cloudUser.uid,txn.id));
-        setCloudStatus("online");toast("Trash item permanently removed.");
-      }catch(error){setCloudStatus("error",error.message);toast(error.message||"Removal failed.");}
+        await withTimeout(cloudApi.permanentlyDeleteTrash(cloudUser.uid,id));
+        cloudTrash=cloudTrash.filter(item=>String(item.id)!==id);
+        renderTrash();
+        markServerVerified();
+        toast("Trash item permanently removed.");
+      }catch(error){
+        setCloudStatus("error",error.message);
+        toast(error.message||"Removal failed.");
+      }
     }
   });
   $("toggleCategoryEdit").addEventListener("click",toggleCategoryEditing);
