@@ -27,20 +27,138 @@
     .app{max-width:760px;margin:0 auto;min-height:100vh;background:var(--bg)}
     .top{
       position:sticky;top:0;z-index:20;
-      background:linear-gradient(145deg,var(--yellow),#FFE374);
-      padding:calc(16px + env(safe-area-inset-top)) 18px 18px;
-      border-radius:0 0 28px 28px;
-      box-shadow:0 8px 20px rgba(190,145,0,.12)
+      background:#FFD84D;
+      padding:calc(12px + env(safe-area-inset-top)) 14px 13px;
+      border-radius:0 0 24px 24px;
+      box-shadow:0 7px 18px rgba(54,48,20,.10)
     }
-    .top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .brand{display:flex;align-items:center;gap:10px}
-    .logo{width:42px;height:42px;border-radius:14px;background:#fff;display:grid;place-items:center;font-weight:900;font-size:22px;box-shadow:0 5px 14px rgba(0,0,0,.08)}
-    .brand h1{font-size:18px;margin:0 0 2px}
-    .brand p{font-size:12px;margin:0;color:#6F5D00}
-    .month-select,.icon-btn,.pill-btn{
+    .top-row{
+      display:flex;align-items:center;justify-content:space-between;gap:10px
+    }
+    .brand{
+      min-width:0;display:flex;align-items:center;gap:9px
+    }
+    .brand-copy{min-width:0}
+    .brand h1{
+      margin:0;
+      font-size:16px;
+      line-height:1.15;
+      letter-spacing:-.02em;
+      white-space:nowrap
+    }
+    .brand p{
+      margin:3px 0 0;
+      color:#6F5D00;
+      font-size:9px;
+      font-weight:750;
+      letter-spacing:.01em
+    }
+    .logo{
+      width:39px;height:39px;flex:0 0 39px;
+      display:grid;place-items:center;
+      border-radius:13px;
+      background:#fff;
+      box-shadow:0 5px 13px rgba(55,47,12,.11)
+    }
+    .logo-ledger{
+      position:relative;
+      width:22px;height:20px;
+      display:flex;align-items:flex-end;justify-content:center;gap:3px;
+      padding:4px 4px 3px;
+      border:2px solid #25282E;
+      border-radius:6px
+    }
+    .logo-ledger::before{
+      content:"";
+      position:absolute;
+      left:4px;right:4px;top:4px;
+      height:2px;border-radius:999px;
+      background:#25282E
+    }
+    .logo-ledger i{
+      display:block;width:3px;
+      border-radius:3px 3px 1px 1px;
+      background:#25282E
+    }
+    .logo-ledger i:nth-child(1){height:4px}
+    .logo-ledger i:nth-child(2){height:7px}
+    .logo-ledger i:nth-child(3){height:10px}
+
+    .month-button{
+      min-width:142px;
+      max-width:168px;
+      min-height:46px;
+      display:grid;
+      grid-template-columns:28px minmax(0,1fr) 15px;
+      align-items:center;
+      gap:6px;
+      border:1px solid rgba(90,74,0,.08);
+      border-radius:14px;
+      background:rgba(255,255,255,.88);
+      color:var(--ink);
+      padding:5px 8px 5px 7px;
+      text-align:left;
+      box-shadow:0 3px 10px rgba(82,65,0,.07)
+    }
+    .month-button:active{
+      transform:scale(.985);
+      background:#fff
+    }
+    .month-button-calendar{
+      position:relative;
+      width:28px;height:28px;
+      display:grid;place-items:center;
+      border-radius:9px;
+      background:#FFF5BE
+    }
+    .month-button-calendar::before{
+      content:"";
+      width:13px;height:12px;
+      border:1.8px solid #625400;
+      border-radius:3px
+    }
+    .month-button-calendar::after{
+      content:"";
+      position:absolute;
+      left:8px;right:8px;top:10px;
+      height:1.8px;border-radius:99px;
+      background:#625400
+    }
+    .month-button-calendar i::before,
+    .month-button-calendar i::after{
+      content:"";
+      position:absolute;
+      top:6px;width:2px;height:4px;
+      border-radius:2px;background:#625400
+    }
+    .month-button-calendar i::before{left:9px}
+    .month-button-calendar i::after{right:9px}
+    .month-button-copy{min-width:0}
+    .month-button-copy small{
+      display:block;
+      margin-bottom:2px;
+      color:#8A8C91;
+      font-size:7px;
+      font-weight:750;
+      text-transform:uppercase;
+      letter-spacing:.04em
+    }
+    .month-button-copy strong{
+      display:block;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:11px;
+      line-height:1.15
+    }
+    .month-button-chevron{
+      color:#777A80;
+      font-size:15px;
+      text-align:right
+    }
+    .icon-btn,.pill-btn{
       border:0;background:rgba(255,255,255,.78);color:var(--ink);border-radius:14px;padding:10px 12px;font-weight:700
     }
-    .month-select{min-width:135px}
     main{padding:16px}
     .view{display:none;animation:fade .18s ease}
     .view.active{display:block}
@@ -1383,6 +1501,139 @@
       .icon-group-grid{grid-template-columns:repeat(5,1fr)}
     }
 
+
+    /* V29 custom month picker */
+    .month-picker-modal{align-items:flex-end}
+    .month-picker-sheet{
+      width:min(520px,100%);
+      max-height:calc(100dvh - env(safe-area-inset-top));
+      padding:0 14px calc(14px + env(safe-area-inset-bottom));
+      border-radius:24px 24px 0 0;
+      background:var(--bg)
+    }
+    .month-picker-head{
+      margin:0 -14px 8px;
+      padding:13px 14px 11px;
+      border-bottom:1px solid var(--line);
+      background:#fff
+    }
+    .month-picker-head>div{min-width:0}
+    .month-picker-head h3{margin:0;font-size:16px}
+    .month-picker-head .swipe-close-hint{
+      display:block;margin-top:3px;
+      color:var(--muted);font-size:8px;font-weight:700
+    }
+    .month-picker-year-row{
+      display:grid;
+      grid-template-columns:40px minmax(0,1fr) 40px;
+      align-items:center;
+      gap:8px;
+      margin:11px 0 10px
+    }
+    .month-picker-year-row>strong{
+      text-align:center;
+      font-size:19px;
+      letter-spacing:-.02em
+    }
+    .month-picker-year-button{
+      width:40px;height:38px;
+      border:1px solid #E3E4E7;
+      border-radius:12px;
+      background:#fff;
+      color:#4D5056;
+      font-size:24px;
+      line-height:1
+    }
+    .month-picker-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px
+    }
+    .month-picker-option{
+      min-height:56px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      border:1px solid #E4E5E8;
+      border-radius:14px;
+      background:#fff;
+      color:var(--ink)
+    }
+    .month-picker-option strong{
+      font-size:12px
+    }
+    .month-picker-option small{
+      color:var(--muted);
+      font-size:8px;
+      font-weight:700
+    }
+    .month-picker-option.has-data::after{
+      content:"";
+      width:4px;height:4px;
+      border-radius:50%;
+      background:#A9ACB2
+    }
+    .month-picker-option.current{
+      border-color:#E4C22F
+    }
+    .month-picker-option.selected{
+      border-color:#DDB600;
+      background:#FFF5BE;
+      box-shadow:inset 0 0 0 1px #DDB600
+    }
+    .month-picker-option.selected small{color:#746000}
+    .month-picker-current{
+      width:100%;
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:11px;
+      border:1px solid #E4E5E8;
+      border-radius:14px;
+      background:#fff;
+      padding:9px 12px;
+      color:var(--ink);
+      text-align:left
+    }
+    .month-picker-current span{
+      color:var(--muted);
+      font-size:10px;
+      font-weight:750
+    }
+    .month-picker-current strong{font-size:11px}
+
+    /* Appearance themes change only the page background. */
+    .top{background:#FFD84D!important}
+    .appearance-choice.active{
+      border-color:#FFCB2F;
+      box-shadow:inset 0 0 0 1px #FFCB2F
+    }
+    .appearance-swatch{
+      position:relative;
+      overflow:hidden;
+      background-image:none!important
+    }
+    .appearance-swatch::after{
+      content:"";
+      position:absolute;
+      left:5px;right:5px;bottom:5px;
+      height:5px;border-radius:999px;
+      background:#FFD84D
+    }
+
+    @media (max-width:360px){
+      .top{padding-left:11px;padding-right:11px}
+      .logo{width:36px;height:36px;flex-basis:36px}
+      .brand{gap:7px}
+      .brand h1{font-size:14px}
+      .month-button{min-width:132px;max-width:146px}
+      .month-button-copy strong{font-size:10px}
+    }
+
 </style>
 </head>
 <body>
@@ -1390,10 +1641,29 @@
   <header class="top">
     <div class="top-row">
       <div class="brand">
-        <div class="logo">¥</div>
-        <div><h1>Daily Budget</h1></div>
+        <div class="logo" aria-hidden="true">
+          <span class="logo-ledger">
+            <i></i><i></i><i></i>
+          </span>
+        </div>
+        <div class="brand-copy">
+          <h1>Daily Budget</h1>
+          <p id="brandSubtitle">Overview</p>
+        </div>
       </div>
-      <select id="globalMonth" class="month-select" aria-label="Analysis month"></select>
+
+      <button id="globalMonthButton" class="month-button" type="button" aria-label="Choose month">
+        <span class="month-button-calendar" aria-hidden="true">
+          <i></i>
+        </span>
+        <span class="month-button-copy">
+          <small>Selected month</small>
+          <strong id="globalMonthLabel">July 2026</strong>
+        </span>
+        <span class="month-button-chevron" aria-hidden="true">⌄</span>
+      </button>
+
+      <select id="globalMonth" class="hidden" aria-hidden="true" tabindex="-1"></select>
     </div>
   </header>
 
@@ -1768,7 +2038,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 28 integrates Smart Tag habits, a searchable category picker, generic grouped icons, automatic monthly budget inheritance, adjustable app colors, and a cleaner Settings page.
+            Version 29 replaces the mixed gradient and native month dropdown with a clean solid header, custom calendar month picker, refined title and a ledger-style logo.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -1899,6 +2169,32 @@
 </div>
 
 
+
+<div id="monthPickerModal" class="modal month-picker-modal">
+  <div class="mini-sheet month-picker-sheet swipe-surface">
+    <div class="sheet-head month-picker-head">
+      <div>
+        <h3>Choose month</h3>
+        <span class="swipe-close-hint">→ Swipe right to return</span>
+      </div>
+      <button id="closeMonthPicker" class="icon-btn" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <div class="month-picker-year-row">
+      <button id="previousMonthPickerYear" class="month-picker-year-button" type="button" aria-label="Previous year">‹</button>
+      <strong id="monthPickerYear">2026</strong>
+      <button id="nextMonthPickerYear" class="month-picker-year-button" type="button" aria-label="Next year">›</button>
+    </div>
+
+    <div id="monthPickerGrid" class="month-picker-grid"></div>
+
+    <button id="selectCurrentMonth" class="month-picker-current" type="button">
+      <span>Jump to current month</span>
+      <strong id="currentMonthPickerLabel">July 2026</strong>
+    </button>
+  </div>
+</div>
+
 <div id="categoryPickerModal" class="modal category-picker-modal">
   <div class="sheet category-picker-sheet swipe-surface">
     <div class="sheet-head category-picker-head">
@@ -1963,8 +2259,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=28"></script>
-<script src="firebase-cloud-v28.js?v=28"></script>
+<script src="firebase-config.js?v=29"></script>
+<script src="firebase-cloud-v28.js?v=29"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2050,12 +2346,12 @@
   };
   const COLORS = ["#FFD84D","#6FB1FF","#FF8D8D","#7ED6A5","#A98BFF","#FFB36B","#62CAD6","#D2A878","#EC7FB6","#8FA7C8","#A6D66D","#C6A6FF","#B8BDC8"];
   const THEME_PRESETS = {
-    warm:{name:"Warm yellow",bg:"#F7F7F8",accent:"#FFD84D",accent2:"#FFCB2F",soft:"#FFF7D6"},
-    cream:{name:"Soft cream",bg:"#FFF9ED",accent:"#F5C85B",accent2:"#EFB63A",soft:"#FFF2CF"},
-    mint:{name:"Fresh mint",bg:"#EFF8F2",accent:"#8BD0A6",accent2:"#62BE86",soft:"#E2F5E9"},
-    sky:{name:"Clear sky",bg:"#EFF6FF",accent:"#86BDF4",accent2:"#5BA3EA",soft:"#E2F0FF"},
-    rose:{name:"Soft rose",bg:"#FFF1F4",accent:"#F3A7B8",accent2:"#E9829A",soft:"#FFE3EA"},
-    lavender:{name:"Lavender",bg:"#F5F1FF",accent:"#B7A3E9",accent2:"#9D83DC",soft:"#ECE5FF"}
+    warm:{name:"Classic gray",bg:"#F7F7F8"},
+    cream:{name:"Soft cream",bg:"#FFF9ED"},
+    mint:{name:"Fresh mint",bg:"#EFF8F2"},
+    sky:{name:"Clear sky",bg:"#EFF6FF"},
+    rose:{name:"Soft rose",bg:"#FFF1F4"},
+    lavender:{name:"Lavender",bg:"#F5F1FF"}
   };
 
   let state = loadState();
@@ -2094,6 +2390,7 @@
   let recordFiltersExpanded = false;
   let editingRecurringId = null;
   let budgetSelectedMonth = currentMonthKey();
+  let monthPickerYear = Number(currentMonthKey().slice(0,4));
   let categoryPickerTarget = "transaction";
   let recurringProcessRunning = false;
   const pendingSaveOperations = new Map();
@@ -2640,14 +2937,16 @@
     const id=normalizeAppearanceTheme(themeId);
     const theme=THEME_PRESETS[id];
     const root=document.documentElement;
+
     root.style.setProperty("--bg",theme.bg);
-    root.style.setProperty("--yellow",theme.accent);
-    root.style.setProperty("--yellow-2",theme.accent2);
-    root.style.setProperty("--yellow-soft",theme.soft);
-    root.style.setProperty("--theme-accent",theme.accent2);
+    root.style.setProperty("--yellow","#FFD84D");
+    root.style.setProperty("--yellow-2","#FFCB2F");
+    root.style.setProperty("--yellow-soft","#FFF7D6");
+    root.style.setProperty("--theme-accent","#FFCB2F");
+
     document.body.dataset.appTheme=id;
     const meta=document.querySelector('meta[name="theme-color"]');
-    if(meta)meta.setAttribute("content",theme.accent);
+    if(meta)meta.setAttribute("content","#FFD84D");
   }
 
   function normalizeRecurringExpense(rule,index=0){
@@ -2813,8 +3112,8 @@
     const current=normalizeAppearanceTheme(state.appearanceTheme);
     $("appearanceSummaryText").textContent=THEME_PRESETS[current].name;
     $("appearanceChoices").innerHTML=Object.entries(THEME_PRESETS).map(([id,theme])=>`
-      <button class="appearance-choice ${id===current?"active":""}" type="button" data-appearance-theme="${id}" style="--theme-accent:${theme.accent2}">
-        <span class="appearance-swatch" style="background:linear-gradient(145deg,${theme.bg},${theme.accent})"></span>
+      <button class="appearance-choice ${id===current?"active":""}" type="button" data-appearance-theme="${id}">
+        <span class="appearance-swatch" style="background:${theme.bg}"></span>
         <span class="appearance-name">${escapeHtml(theme.name)}</span>
         <span class="appearance-check">${id===current?"✓":""}</span>
       </button>
@@ -3976,6 +4275,87 @@
     return [...list].sort((a,b)=>b.date.localeCompare(a.date)||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
   }
 
+  function fullMonthLabel(key){
+    return new Intl.DateTimeFormat("en-US",{
+      month:"long",
+      year:"numeric"
+    }).format(dateFromKey(`${key}-01`));
+  }
+
+  function updateGlobalMonthButton(){
+    if($("globalMonthLabel")){
+      $("globalMonthLabel").textContent=fullMonthLabel(selectedMonth||currentMonthKey());
+    }
+  }
+
+  function recordedMonthSet(){
+    return new Set([
+      ...state.transactions.map(transaction=>monthOf(transaction)),
+      ...Object.keys(state.budgets||{})
+    ]);
+  }
+
+  function renderMonthPicker(){
+    const selected=selectedMonth||currentMonthKey();
+    const current=currentMonthKey();
+    const recorded=recordedMonthSet();
+    const monthNames=Array.from({length:12},(_,index)=>
+      new Intl.DateTimeFormat("en-US",{month:"short"}).format(new Date(2026,index,1))
+    );
+
+    $("monthPickerYear").textContent=String(monthPickerYear);
+    $("currentMonthPickerLabel").textContent=fullMonthLabel(current);
+
+    $("monthPickerGrid").innerHTML=monthNames.map((name,index)=>{
+      const key=`${monthPickerYear}-${String(index+1).padStart(2,"0")}`;
+      const classes=[
+        "month-picker-option",
+        key===selected?"selected":"",
+        key===current?"current":"",
+        recorded.has(key)?"has-data":""
+      ].filter(Boolean).join(" ");
+
+      let status="";
+      if(key===selected)status="Selected";
+      else if(key===current)status="Current month";
+      else if(recorded.has(key))status="Has records";
+
+      return `<button class="${classes}" type="button" data-month-picker-value="${key}">
+        <strong>${name}</strong>
+        <small>${status||monthPickerYear}</small>
+      </button>`;
+    }).join("");
+  }
+
+  function openMonthPicker(){
+    monthPickerYear=Number((selectedMonth||currentMonthKey()).slice(0,4));
+    renderMonthPicker();
+    lockPageForOverlay();
+    $("monthPickerModal").classList.add("open");
+  }
+
+  function closeMonthPicker({restoreScroll=true}={}){
+    $("monthPickerModal").classList.remove("open");
+    resetSwipeSheet("monthPickerModal");
+    unlockPageFromOverlay({restore:restoreScroll});
+  }
+
+  function selectGlobalMonth(month){
+    if(!/^\d{4}-\d{2}$/.test(month))return;
+    selectedMonth=month;
+    selectedYear=month.slice(0,4);
+
+    if(currentView==="analysis"){
+      analysisMode="month";
+      analysisDrilldown=true;
+    }
+
+    populateMonths();
+    renderAll();
+    updateGlobalMonthButton();
+    closeMonthPicker();
+  }
+
   function populateMonths(){
     const months=[...new Set([
       ...monthRange(currentMonthKey(),36,36),
@@ -3989,6 +4369,7 @@
     const global=$("globalMonth");
     global.innerHTML=months.map(month=>`<option value="${month}">${monthLabel(month)}</option>`).join("");
     global.value=months.includes(selectedMonth)?selectedMonth:currentMonthKey();
+    updateGlobalMonthButton();
 
     const budgetMonth=$("budgetMonth");
     budgetMonth.innerHTML=months.map(month=>`<option value="${month}">${monthLabel(month)}</option>`).join("");
@@ -4646,6 +5027,14 @@
     if(currentView==="settings"&&view!=="settings")categoryEditing=false;
     currentView=view;
     document.body.classList.toggle("settings-view",view==="settings");
+    if($("brandSubtitle")){
+      $("brandSubtitle").textContent={
+        home:"Overview",
+        records:"Transactions",
+        analysis:"Spending insights",
+        settings:"Settings"
+      }[view]||"Overview";
+    }
     qsa(".view").forEach(v=>v.classList.remove("active"));
     $(view+"View").classList.add("active");
     qsa(".nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
@@ -4903,14 +5292,25 @@ ${error.message||"Please check your network and try again."}`);
   }
 
   // Events
-  $("globalMonth").addEventListener("change",e=>{
-    selectedMonth=e.target.value;
-    selectedYear=selectedMonth.slice(0,4);
-    if(currentView==="analysis"){
-      analysisMode="month";
-      analysisDrilldown=true;
-    }
-    renderAll();
+  $("globalMonthButton").addEventListener("click",openMonthPicker);
+  $("closeMonthPicker").addEventListener("click",closeMonthPicker);
+  $("monthPickerModal").addEventListener("click",event=>{
+    if(event.target===$("monthPickerModal"))closeMonthPicker();
+  });
+  $("previousMonthPickerYear").addEventListener("click",()=>{
+    monthPickerYear--;
+    renderMonthPicker();
+  });
+  $("nextMonthPickerYear").addEventListener("click",()=>{
+    monthPickerYear++;
+    renderMonthPicker();
+  });
+  $("monthPickerGrid").addEventListener("click",event=>{
+    const option=event.target.closest("[data-month-picker-value]");
+    if(option)selectGlobalMonth(option.dataset.monthPickerValue);
+  });
+  $("selectCurrentMonth").addEventListener("click",()=>{
+    selectGlobalMonth(currentMonthKey());
   });
   $("budgetMonth").addEventListener("change",renderBudgetEditor);  $("analysisExpenseBtn").addEventListener("click",()=>{analysisFlow="expense";analysisDrilldown=false;renderAnalysis();});
   $("analysisIncomeBtn").addEventListener("click",()=>{analysisFlow="income";analysisDrilldown=false;renderAnalysis();});
@@ -5226,6 +5626,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   });
   registerRightSwipeClose("categoryDetailModal",closeCategoryDetail);
   registerRightSwipeClose("txnModal",closeModal);
+  registerRightSwipeClose("monthPickerModal",closeMonthPicker);
   registerRightSwipeClose("categoryPickerModal",closeCategoryPicker);
   registerRightSwipeClose("iconPickerModal",closeIconPicker);
   registerRightSwipeClose("deleteCategoryModal",closeDeleteCategory);
