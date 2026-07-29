@@ -1692,6 +1692,148 @@
     .brand p,.badge,.month-picker-option.selected small{color:var(--accent-ink)}
     .appearance-swatch{background:linear-gradient(180deg,var(--yellow) 0 45%, var(--bg) 45% 100%)!important}
 
+
+    /* V32 — premium theme previews */
+    .appearance-choices{
+      grid-template-columns:1fr 1fr;
+      gap:10px
+    }
+    .appearance-choice{
+      min-height:132px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 22px;
+      align-items:start;
+      gap:8px;
+      padding:8px;
+      border-radius:16px;
+      background:var(--card);
+      overflow:hidden
+    }
+    .appearance-choice.active{
+      border-color:var(--yellow-2);
+      box-shadow:inset 0 0 0 1px var(--yellow-2),0 6px 16px rgba(25,28,33,.06)
+    }
+    .appearance-mini-app{
+      grid-column:1/-1;
+      display:block;
+      height:76px;
+      overflow:hidden;
+      border:1px solid rgba(40,44,50,.08);
+      border-radius:12px;
+      background:var(--preview-bg);
+      box-shadow:0 3px 10px rgba(30,34,40,.05)
+    }
+    .appearance-mini-header{
+      height:24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 7px;
+      background:var(--preview-accent)
+    }
+    .appearance-mini-header i{
+      width:10px;height:10px;border-radius:4px;
+      background:rgba(255,255,255,.86)
+    }
+    .appearance-mini-header b{
+      width:30px;height:9px;border-radius:5px;
+      background:rgba(255,255,255,.72)
+    }
+    .appearance-mini-content{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:5px;
+      height:52px;
+      padding:6px;
+      box-sizing:border-box
+    }
+    .appearance-mini-summary,
+    .appearance-mini-chart{
+      position:relative;
+      display:block;
+      border-radius:7px;
+      background:var(--preview-card)
+    }
+    .appearance-mini-summary{padding:6px}
+    .appearance-mini-summary i{
+      display:block;height:3px;margin-bottom:4px;border-radius:4px;
+      background:color-mix(in srgb,var(--preview-ink) 22%,transparent)
+    }
+    .appearance-mini-summary i:nth-child(1){width:68%}
+    .appearance-mini-summary i:nth-child(2){width:92%}
+    .appearance-mini-summary i:nth-child(3){width:48%}
+    .appearance-mini-chart::before{
+      content:"";
+      position:absolute;left:7px;right:7px;bottom:10px;
+      height:1px;
+      background:color-mix(in srgb,var(--preview-ink) 12%,transparent)
+    }
+    .appearance-mini-chart i{
+      position:absolute;left:8px;right:8px;top:22px;
+      height:2px;border-radius:3px;
+      background:var(--preview-line);
+      transform:rotate(-12deg);
+      transform-origin:center
+    }
+    .appearance-mini-chart i::after{
+      content:"";
+      position:absolute;right:-1px;top:-2px;
+      width:6px;height:6px;border-radius:50%;
+      background:var(--preview-line)
+    }
+    .appearance-choice-copy{
+      min-width:0;display:block;text-align:left
+    }
+    .appearance-choice-copy small{
+      display:block;margin-top:3px;
+      color:var(--muted);
+      font-size:8px;font-weight:650
+    }
+    .appearance-check{
+      align-self:center;
+      color:var(--accent-ink);
+      font-size:15px
+    }
+
+    /* V32 — month picker follows the active theme */
+    .month-picker-sheet{background:var(--sheet-bg)}
+    .month-picker-year-button{
+      background:var(--card);
+      border-color:color-mix(in srgb,var(--yellow-2) 32%,#E4E5E8);
+      color:var(--accent-ink)
+    }
+    .month-picker-year-row>strong{color:var(--accent-ink)}
+    .month-picker-option{
+      background:var(--card);
+      border-color:color-mix(in srgb,var(--accent-ink) 12%,transparent)
+    }
+    .month-picker-option.current{
+      border-color:var(--yellow-2);
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--yellow-2) 25%,transparent)
+    }
+    .month-picker-option.selected{
+      border-color:var(--yellow-2);
+      background:var(--yellow-soft);
+      box-shadow:inset 0 0 0 1px var(--yellow-2)
+    }
+    .month-picker-option.has-data::after{background:var(--yellow-2)}
+    .month-picker-current{
+      background:var(--yellow-soft);
+      border-color:color-mix(in srgb,var(--yellow-2) 45%,transparent)
+    }
+    .month-picker-current span,
+    .month-picker-current strong{color:var(--accent-ink)}
+    .month-button-calendar{background:var(--yellow-soft)}
+
+    @supports not (background:color-mix(in srgb,#fff 50%,#000)){
+      .appearance-mini-summary i{background:#D9D9D9}
+      .month-picker-option{border-color:#E4E5E8}
+      .month-picker-year-button{border-color:#E4E5E8}
+    }
+    @media (max-width:350px){
+      .appearance-choices{grid-template-columns:1fr}
+    }
+
 </style>
 </head>
 <body>
@@ -2096,7 +2238,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 31 adds gentle accent themes that also recolor the top banner, analysis hero and primary controls, with more soft palette options.
+            Version 32 adds premium theme previews, a fully coordinated month picker and Analysis chart colors that adapt automatically to every selected palette.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2317,8 +2459,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=31"></script>
-<script src="firebase-cloud-v28.js?v=31"></script>
+<script src="firebase-config.js?v=32"></script>
+<script src="firebase-cloud-v28.js?v=32"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2404,16 +2546,66 @@
   };
   const COLORS = ["#FFD84D","#6FB1FF","#FF8D8D","#7ED6A5","#A98BFF","#FFB36B","#62CAD6","#D2A878","#EC7FB6","#8FA7C8","#A6D66D","#C6A6FF","#B8BDC8"];
   const THEME_PRESETS = {
-    warm:{name:"Soft amber",bg:"#F6F4EF",card:"#FFFDFC",nav:"#FBF8F2",sheet:"#F8F5EF",field:"#F8F4EC",accent:"#E9C86B",accent2:"#D8AE36",soft:"#FFF5D5",ink:"#6B5621"},
-    cream:{name:"Oat cream",bg:"#FFF5E8",card:"#FFFDF9",nav:"#FFF9F0",sheet:"#FFF7ED",field:"#FFF8F1",accent:"#EAC8A2",accent2:"#D7A978",soft:"#FFF1DE",ink:"#765338"},
-    sage:{name:"Sage",bg:"#EEF5EE",card:"#FBFEFB",nav:"#F3F8F3",sheet:"#F1F7F1",field:"#F4F9F4",accent:"#BDD8BE",accent2:"#8FB692",soft:"#E8F5E8",ink:"#49624C"},
-    sky:{name:"Powder blue",bg:"#EDF4FD",card:"#FBFDFF",nav:"#F2F7FD",sheet:"#F0F6FD",field:"#F4F8FD",accent:"#AFCBF2",accent2:"#7FAAE4",soft:"#E8F2FF",ink:"#46648B"},
-    rose:{name:"Blush",bg:"#FDF0F3",card:"#FFF9FB",nav:"#FFF4F6",sheet:"#FFF3F6",field:"#FFF5F7",accent:"#E9B8C6",accent2:"#D68CA0",soft:"#FCEAF0",ink:"#7A5060"},
-    lavender:{name:"Lavender",bg:"#F4F0FD",card:"#FCFBFF",nav:"#F8F5FF",sheet:"#F6F2FE",field:"#F8F5FD",accent:"#C8B7ED",accent2:"#A58EDB",soft:"#EFE8FF",ink:"#5D4E84"},
-    peach:{name:"Peach",bg:"#FFF1EA",card:"#FFF9F6",nav:"#FFF5F1",sheet:"#FFF3EE",field:"#FFF6F2",accent:"#F3C5B1",accent2:"#E49A79",soft:"#FDE9E0",ink:"#825844"},
-    mist:{name:"Silver mist",bg:"#F1F4F7",card:"#FBFCFD",nav:"#F5F7F9",sheet:"#F4F6F8",field:"#F6F8FA",accent:"#CBD3DE",accent2:"#9AA6B8",soft:"#E9EEF4",ink:"#566273"},
-    seafoam:{name:"Seafoam",bg:"#ECF7F4",card:"#FBFEFD",nav:"#F1FAF8",sheet:"#EEF8F6",field:"#F3FAF8",accent:"#B6DDD6",accent2:"#76BBAF",soft:"#E6F5F1",ink:"#447068"},
-    sand:{name:"Sand",bg:"#F7F1EA",card:"#FDFBF9",nav:"#FAF6F1",sheet:"#F8F3EE",field:"#FBF7F2",accent:"#DCC7B0",accent2:"#BE9D78",soft:"#F3E7D8",ink:"#6D5845"}
+    warm:{
+      name:"Soft amber",
+      bg:"#F6F4EF",card:"#FFFDFC",nav:"#FBF8F2",sheet:"#F8F5EF",field:"#F8F4EC",
+      accent:"#E9C86B",accent2:"#D8AE36",soft:"#FFF5D5",ink:"#6B5621",
+      chartExpense:"#C79A27",chartIncome:"#6FA486",chartGrid:"#E9E3D6",chartLabel:"#817867"
+    },
+    cream:{
+      name:"Oat cream",
+      bg:"#FFF5E8",card:"#FFFDF9",nav:"#FFF9F0",sheet:"#FFF7ED",field:"#FFF8F1",
+      accent:"#EAC8A2",accent2:"#D7A978",soft:"#FFF1DE",ink:"#765338",
+      chartExpense:"#C58B58",chartIncome:"#73A58A",chartGrid:"#EFE0D0",chartLabel:"#8A7462"
+    },
+    sage:{
+      name:"Sage",
+      bg:"#EEF5EE",card:"#FBFEFB",nav:"#F3F8F3",sheet:"#F1F7F1",field:"#F4F9F4",
+      accent:"#BDD8BE",accent2:"#8FB692",soft:"#E8F5E8",ink:"#49624C",
+      chartExpense:"#7FA383",chartIncome:"#4F9874",chartGrid:"#DDE9DE",chartLabel:"#687B6A"
+    },
+    sky:{
+      name:"Powder blue",
+      bg:"#EDF4FD",card:"#FBFDFF",nav:"#F2F7FD",sheet:"#F0F6FD",field:"#F4F8FD",
+      accent:"#AFCBF2",accent2:"#7FAAE4",soft:"#E8F2FF",ink:"#46648B",
+      chartExpense:"#6E9EDC",chartIncome:"#55A19A",chartGrid:"#DCE8F6",chartLabel:"#657991"
+    },
+    rose:{
+      name:"Blush",
+      bg:"#FDF0F3",card:"#FFF9FB",nav:"#FFF4F6",sheet:"#FFF3F6",field:"#FFF5F7",
+      accent:"#E9B8C6",accent2:"#D68CA0",soft:"#FCEAF0",ink:"#7A5060",
+      chartExpense:"#C97990",chartIncome:"#6DA18A",chartGrid:"#F0DDE3",chartLabel:"#896E78"
+    },
+    lavender:{
+      name:"Lavender",
+      bg:"#F4F0FD",card:"#FCFBFF",nav:"#F8F5FF",sheet:"#F6F2FE",field:"#F8F5FD",
+      accent:"#C8B7ED",accent2:"#A58EDB",soft:"#EFE8FF",ink:"#5D4E84",
+      chartExpense:"#9278CC",chartIncome:"#629D8E",chartGrid:"#E5DDF5",chartLabel:"#766D88"
+    },
+    peach:{
+      name:"Peach",
+      bg:"#FFF1EA",card:"#FFF9F6",nav:"#FFF5F1",sheet:"#FFF3EE",field:"#FFF6F2",
+      accent:"#F3C5B1",accent2:"#E49A79",soft:"#FDE9E0",ink:"#825844",
+      chartExpense:"#D88362",chartIncome:"#6FA28A",chartGrid:"#F1DDD3",chartLabel:"#8B7063"
+    },
+    mist:{
+      name:"Silver mist",
+      bg:"#F1F4F7",card:"#FBFCFD",nav:"#F5F7F9",sheet:"#F4F6F8",field:"#F6F8FA",
+      accent:"#CBD3DE",accent2:"#9AA6B8",soft:"#E9EEF4",ink:"#566273",
+      chartExpense:"#8290A5",chartIncome:"#638F86",chartGrid:"#DDE3E9",chartLabel:"#737D8A"
+    },
+    seafoam:{
+      name:"Seafoam",
+      bg:"#ECF7F4",card:"#FBFEFD",nav:"#F1FAF8",sheet:"#EEF8F6",field:"#F3FAF8",
+      accent:"#B6DDD6",accent2:"#76BBAF",soft:"#E6F5F1",ink:"#447068",
+      chartExpense:"#62A79B",chartIncome:"#4B9676",chartGrid:"#D8EBE7",chartLabel:"#617C76"
+    },
+    sand:{
+      name:"Sand",
+      bg:"#F7F1EA",card:"#FDFBF9",nav:"#FAF6F1",sheet:"#F8F3EE",field:"#FBF7F2",
+      accent:"#DCC7B0",accent2:"#BE9D78",soft:"#F3E7D8",ink:"#6D5845",
+      chartExpense:"#AD8964",chartIncome:"#6E9B80",chartGrid:"#E8DED3",chartLabel:"#7E7165"
+    }
   };
 
   let state = loadState();
@@ -2992,7 +3184,9 @@
     return base+(index*1000)+occurrence;
   }
   function normalizeAppearanceTheme(value){
-    return THEME_PRESETS[value]?value:"warm";
+    const aliases={mint:"sage"};
+    const normalized=aliases[value]||value;
+    return THEME_PRESETS[normalized]?normalized:"warm";
   }
 
   function applyAppearanceTheme(themeId){
@@ -3010,6 +3204,10 @@
     root.style.setProperty("--yellow-soft",theme.soft);
     root.style.setProperty("--theme-accent",theme.accent2);
     root.style.setProperty("--accent-ink",theme.ink);
+    root.style.setProperty("--chart-expense",theme.chartExpense);
+    root.style.setProperty("--chart-income",theme.chartIncome);
+    root.style.setProperty("--chart-grid",theme.chartGrid);
+    root.style.setProperty("--chart-label",theme.chartLabel);
 
     document.body.dataset.appTheme=id;
     const meta=document.querySelector('meta[name="theme-color"]');
@@ -3179,9 +3377,29 @@
     const current=normalizeAppearanceTheme(state.appearanceTheme);
     $("appearanceSummaryText").textContent=THEME_PRESETS[current].name;
     $("appearanceChoices").innerHTML=Object.entries(THEME_PRESETS).map(([id,theme])=>`
-      <button class="appearance-choice ${id===current?"active":""}" type="button" data-appearance-theme="${id}">
-        <span class="appearance-swatch" style="background:${theme.bg}"></span>
-        <span class="appearance-name">${escapeHtml(theme.name)}</span>
+      <button
+        class="appearance-choice ${id===current?"active":""}"
+        type="button"
+        data-appearance-theme="${id}"
+        style="
+          --preview-bg:${theme.bg};
+          --preview-card:${theme.card};
+          --preview-accent:${theme.accent};
+          --preview-line:${theme.chartExpense};
+          --preview-ink:${theme.ink};
+        "
+      >
+        <span class="appearance-mini-app" aria-hidden="true">
+          <span class="appearance-mini-header"><i></i><b></b></span>
+          <span class="appearance-mini-content">
+            <span class="appearance-mini-summary"><i></i><i></i><i></i></span>
+            <span class="appearance-mini-chart"><i></i></span>
+          </span>
+        </span>
+        <span class="appearance-choice-copy">
+          <span class="appearance-name">${escapeHtml(theme.name)}</span>
+          <small>${id===current?"Currently applied":"Tap to apply"}</small>
+        </span>
         <span class="appearance-check">${id===current?"✓":""}</span>
       </button>
     `).join("");
@@ -3196,6 +3414,9 @@
     applyAppearanceTheme(id);
     saveLocalMirror();
     renderAppearanceSettings();
+    if(currentView==="analysis"){
+      requestAnimationFrame(()=>renderAnalysis());
+    }
 
     if(!cloudReadyForWrite())return;
     if(!(await syncSettingsToCloud(false))){
@@ -4641,7 +4862,9 @@
     const b=effectiveBudget(selectedMonth);
     const rate=b?Math.min((t.expense/b)*100,100):0;
     $("budgetProgress").style.width=rate+"%";
-    $("budgetProgress").style.background=t.expense>b?"#E45151":"linear-gradient(90deg,#FFCB2F,#E89124)";
+    $("budgetProgress").style.background=t.expense>b
+      ?"#E45151"
+      :`linear-gradient(90deg,${themeCssColor("--yellow-2","#D8AE36")},${themeCssColor("--yellow","#E9C86B")})`;
     $("budgetText").textContent=b ? `${money(t.expense)} / ${money(b)} · ${Math.round((t.expense/b)*100)}%` : "Not set";
 
     const recent=sortTxns(state.transactions).slice(0,6);
@@ -4798,9 +5021,16 @@
     return {canvas,ctx,w:canvas.width/ratio,h:canvas.height/ratio};
   }
   function compact(v){return v>=10000?(v/10000).toFixed(v>=100000?0:1)+"w":v>=1000?(v/1000).toFixed(1)+"k":Math.round(v);}
+  function themeCssColor(variable,fallback){
+    return getComputedStyle(document.documentElement).getPropertyValue(variable).trim()||fallback;
+  }
   function drawSingleLine(id,labels,values,color,showPointValues=false){
     const {ctx,w,h}=canvasContext(id);const left=40,right=12,top=18,bottom=34;const max=Math.max(...values,1);
-    ctx.font="10px Arial";ctx.fillStyle="#8A8D94";ctx.strokeStyle="#ECEDEF";ctx.lineWidth=1;
+    const gridColor=themeCssColor("--chart-grid","#ECEDEF");
+    const labelColor=themeCssColor("--chart-label","#8A8D94");
+    const tooltipBackground=themeCssColor("--card","#FFFFFF");
+    const tooltipInk=themeCssColor("--ink","#35383D");
+    ctx.font="10px Arial";ctx.fillStyle=labelColor;ctx.strokeStyle=gridColor;ctx.lineWidth=1;
     for(let i=0;i<4;i++){
       const y=top+(h-top-bottom)*i/3;
       ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
@@ -4810,7 +5040,7 @@
     ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
     ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.stroke();
     points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3.1,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.2;ctx.stroke();});
-    const step=Math.max(1,Math.ceil(labels.length/6));ctx.textAlign="center";ctx.fillStyle="#8A8D94";ctx.font="10px Arial";
+    const step=Math.max(1,Math.ceil(labels.length/6));ctx.textAlign="center";ctx.fillStyle=labelColor;ctx.font="10px Arial";
     labels.forEach((lab,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lab,left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),h-10);});
     if(showPointValues){
       ctx.font="9px Arial";
@@ -4820,11 +5050,11 @@
         const width=ctx.measureText(text).width+8;
         let x=Math.max(left+width/2,Math.min(w-right-width/2,p.x));
         let y=Math.max(11,p.y-12-(index%2?8:0));
-        ctx.fillStyle="rgba(255,255,255,.94)";
+        ctx.fillStyle=tooltipBackground;
         ctx.beginPath();
         ctx.roundRect(x-width/2,y-10,width,14,6);
         ctx.fill();
-        ctx.fillStyle="#35383D";
+        ctx.fillStyle=tooltipInk;
         ctx.textAlign="center";
         ctx.fillText(text,x,y);
       });
@@ -4832,7 +5062,10 @@
     ctx.textAlign="start";
   }
   function drawAnalysisTrend(){
-    const color=analysisFlow==="expense"?"#E3AA00":"#1E9E63";
+    const color=analysisFlow==="expense"
+      ?themeCssColor("--chart-expense","#C79A27")
+      :themeCssColor("--chart-income","#4F9874");
+    $("trendCanvas").dataset.lineColor=color;
     let labels=[],values=[],showPointValues=false;
 
     if(analysisDrilldown){
