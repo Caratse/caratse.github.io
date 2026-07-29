@@ -1869,6 +1869,22 @@
     .duplicate-plan{margin-top:8px;padding:7px 8px;border-radius:10px;background:var(--sheet-bg);font-size:9px;color:var(--muted)}
     .duplicate-plan.skip{background:#F2F3F5}
 
+
+    .pending-cloud-delete-box{
+      display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;
+      margin-top:9px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--yellow-2) 32%,transparent);
+      border-radius:13px;background:var(--yellow-soft)
+    }
+    .pending-cloud-delete-box strong{display:block;color:var(--accent-ink);font-size:10px}
+    .pending-cloud-delete-box small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}
+    .pending-cloud-delete-box button{white-space:nowrap;padding:7px 9px;font-size:8px}
+    #homeView .summary-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+    #homeView .metric{min-width:0;display:block!important}
+    #homeView .metric .value{display:block!important;min-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    @supports not (background:color-mix(in srgb,#fff 50%,#000)){
+      .pending-cloud-delete-box{border-color:#D9D3B7}
+    }
+
 </style>
 </head>
 <body>
@@ -2063,7 +2079,15 @@
               Signed in as <strong id="cloudUserEmail"></strong><br>
               <span id="cloudRecordCount">0 cloud records</span><br>
               <span id="cloudVerificationText">Waiting for server verification…</span>
-              <span class="cloud-transport-note">Firestore REST POST connection enabled</span>
+              <span class="cloud-transport-note">Fast cloud check enabled</span>
+            </div>
+
+            <div id="pendingCloudDeleteBox" class="pending-cloud-delete-box hidden">
+              <div>
+                <strong><span id="pendingCloudDeleteCount">0</span> deletion<span id="pendingCloudDeletePlural">s</span> hidden locally</strong>
+                <small>They will not reappear on this device. Cloud cleanup can be retried separately.</small>
+              </div>
+              <button id="retryPendingCloudDeletes" type="button" class="secondary">Retry cleanup</button>
             </div>
             <div id="cloudMigrationBox" class="cloud-warning hidden">
               Local records were found, but this cloud account is empty.
@@ -2072,8 +2096,9 @@
             </div>
             <div class="cloud-actions">
               <button id="openAccuracy" class="secondary" style="grid-column:1/-1">Open data accuracy check</button>
-              <button id="cloudRetrySync" class="secondary">Verify cloud data</button>
-              <button id="cloudSignOut" class="secondary">Sign out</button>
+              <button id="cloudRetrySync" class="secondary">Quick cloud check</button>
+              <button id="cloudFullRefresh" class="secondary">Refresh records</button>
+              <button id="cloudSignOut" class="secondary" style="grid-column:1/-1">Sign out</button>
             </div>
           </div>
         </div>
@@ -2275,7 +2300,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 40 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
+            Version 41 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2496,11 +2521,13 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=40"></script>
-<script src="firebase-cloud-v37.js?v=40"></script>
+<script src="firebase-config.js?v=41"></script>
+<script src="firebase-cloud-v37.js?v=41"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
+  const PENDING_DELETE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_deletes_v1`;
+  const CLOUD_COUNT_STORAGE_KEY = `${STORAGE_KEY}_last_cloud_count_v1`;
   const DEFAULT_EXPENSE = ["Dining","Transportation","Shopping","Housing","Entertainment","Household","Medical","Communication","Education","Travel","Gifts","Pets","Other"];
   const DEFAULT_INCOME = ["Salary","Bonus","Freelance","Investment","Refund","Other Income"];
   const PAYMENTS = ["WeChat Pay","Alipay","Debit Card","Credit Card","Cash","Transit Card","Other"];
@@ -2665,7 +2692,7 @@
   let cloudTrash = [];
   let cloudMigrationNeeded = false;
   let cloudFirstTransactionSnapshot = true;
-  let cloudRemoteRecordCount = 0;
+  let cloudRemoteRecordCount = Number(localStorage.getItem(CLOUD_COUNT_STORAGE_KEY)) || 0;
   let cloudStatus = "checking";
   let cloudStatusMessage = "";
   let cloudServerVerified = false;
@@ -2688,12 +2715,70 @@
   let recurringProcessRunning = false;
   const pendingSaveOperations = new Map();
   const pendingDeleteOperations = new Map();
+  const pendingCloudDeletes = loadPendingCloudDeletes();
+  let pendingDeleteCleanupRunning = false;
   let recordsScrollTop = 0;
   let overlayScrollLockDepth = 0;
   let overlayViewSnapshot = null;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
+
+  function loadPendingCloudDeletes(){
+    try{
+      const parsed=JSON.parse(localStorage.getItem(PENDING_DELETE_STORAGE_KEY)||"[]");
+      if(!Array.isArray(parsed))return new Map();
+      return new Map(parsed.filter(item=>item&&item.id&&item.transaction).map(item=>[String(item.id),item]));
+    }catch(error){
+      console.error("Pending delete queue could not be loaded",error);
+      return new Map();
+    }
+  }
+  function savePendingCloudDeletes(){
+    try{localStorage.setItem(PENDING_DELETE_STORAGE_KEY,JSON.stringify([...pendingCloudDeletes.values()]));}
+    catch(error){console.error("Pending delete queue could not be saved",error);}
+    renderPendingCloudDeletes();
+  }
+  function setCloudRecordCount(count){
+    cloudRemoteRecordCount=Math.max(0,Number(count)||0);
+    try{localStorage.setItem(CLOUD_COUNT_STORAGE_KEY,String(cloudRemoteRecordCount));}catch(_){}
+  }
+  function isLocallyDeleted(id){
+    return pendingCloudDeletes.has(String(id))||pendingDeleteOperations.has(String(id));
+  }
+  function filterLocallyDeleted(transactions){
+    return (Array.isArray(transactions)?transactions:[]).filter(transaction=>!isLocallyDeleted(transaction.id));
+  }
+  function queuePendingCloudDelete(transaction,errorMessage=""){
+    const id=String(transaction.id);
+    const previous=pendingCloudDeletes.get(id);
+    pendingCloudDeletes.set(id,{
+      id,transaction:{...transaction},requestedAt:previous?.requestedAt||Date.now(),
+      attempts:(Number(previous?.attempts)||0)+(errorMessage?1:0),
+      lastAttemptAt:errorMessage?Date.now():(previous?.lastAttemptAt||0),
+      lastError:errorMessage||previous?.lastError||""
+    });
+    savePendingCloudDeletes();
+  }
+  function clearPendingCloudDelete(id){
+    pendingCloudDeletes.delete(String(id));
+    savePendingCloudDeletes();
+  }
+  function applyLocalDeleteQueue(){
+    if(!pendingCloudDeletes.size)return;
+    state.transactions=state.transactions.filter(transaction=>!pendingCloudDeletes.has(String(transaction.id)));
+  }
+  function renderPendingCloudDeletes(){
+    const box=$("pendingCloudDeleteBox");
+    if(!box)return;
+    const count=pendingCloudDeletes.size;
+    box.classList.toggle("hidden",count===0);
+    $("pendingCloudDeleteCount").textContent=String(count);
+    $("pendingCloudDeletePlural").textContent=count===1?"":"s";
+    const button=$("retryPendingCloudDeletes");
+    button.disabled=pendingDeleteCleanupRunning||count===0;
+    button.textContent=pendingDeleteCleanupRunning?"Retrying…":"Retry cleanup";
+  }
 
   function appSettingsPayload(){
     return {
@@ -2787,7 +2872,7 @@
     const selected=selectedDuplicatePlan(groups);
     const selectedAmount=selected.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
     repair.disabled=!selected.length||!cloudUser||duplicateRepairRunning;
-    repair.textContent=duplicateRepairRunning?"Moving selected…":`Move selected (${selected.length}) to Trash`;
+    repair.textContent=duplicateRepairRunning?"Deleting selected…":`Delete selected (${selected.length})`;
     $("scanDuplicates").disabled=duplicateRepairRunning;
     if(!groups.length){
       badge.textContent="No exact duplicates";
@@ -2797,7 +2882,7 @@
     }
     badge.textContent=`${groups.length} group${groups.length===1?"":"s"}`;
     summary.className="accuracy-summary warning";
-    summary.innerHTML=`<strong>${groups.length} duplicate group${groups.length===1?"":"s"} found.</strong><br>${selected.length} record${selected.length===1?" is":"s are"} currently selected for Trash, totalling <strong>${money(selectedAmount)}</strong>. Nothing is deleted until you press the red button.`;
+    summary.innerHTML=`<strong>${groups.length} duplicate group${groups.length===1?"":"s"} found.</strong><br>${selected.length} record${selected.length===1?" is":"s are"} currently selected for deletion, totalling <strong>${money(selectedAmount)}</strong>. Nothing is deleted until you press the red button.`;
     list.innerHTML=groups.map((group,index)=>{
       const first=group.items[0];
       const keepId=duplicateChoiceForGroup(group);
@@ -2808,7 +2893,7 @@
         const createdText=created?new Date(created).toLocaleString("zh-CN",{hour12:false}):"Unknown";
         return `<div class="duplicate-record-choice ${keep?"keep":"delete"}">
           <div class="duplicate-record-main">
-            <strong>${keep?"Keep this copy":"Move to Trash"} · Copy ${itemIndex+1}</strong>
+            <strong>${keep?"Keep this copy":"Delete this copy"} · Copy ${itemIndex+1}</strong>
             <small>Date ${escapeHtml(item.date)} · ${escapeHtml(item.type)} · ${money(item.amount)}<br>Category ${escapeHtml(item.category)} · Tag ${escapeHtml(item.tag||"—")}<br>Created ${escapeHtml(createdText)} · ID ${escapeHtml(String(item.id))}</small>
           </div>
           <button class="duplicate-record-action" type="button" data-duplicate-keep="${escapeHtml(group.fingerprint)}" data-record-id="${escapeHtml(item.id)}">${keep?"Keeping":"Keep this"}</button>
@@ -2822,7 +2907,7 @@
         <div class="duplicate-group-body">
           <div class="duplicate-control-row"><span class="accuracy-note">Choose exactly one copy to keep</span><label class="duplicate-skip-label"><input type="checkbox" data-duplicate-skip="${escapeHtml(group.fingerprint)}" ${skipped?"checked":""}> Do not delete this group</label></div>
           <div class="duplicate-record-list">${rows}</div>
-          <div class="duplicate-plan ${skipped?"skip":""}">${skipped?"This group will not be changed.":`${group.items.length-1} copy${group.items.length-1===1?"":"ies"} will move to Trash; the selected copy will remain.`}</div>
+          <div class="duplicate-plan ${skipped?"skip":""}">${skipped?"This group will not be changed.":`${group.items.length-1} copy${group.items.length-1===1?"":"ies"} will be deleted; the selected copy will remain.`}</div>
         </div>
       </details>`;
     }).join("");
@@ -2835,23 +2920,19 @@
     return `${prefix}_${stamp}.json`;
   }
   async function repairExactDuplicates(){
-    if(!cloudReadyForWrite())return;
     const groups=findExactDuplicateGroups();
     const duplicates=selectedDuplicatePlan(groups);
     if(!duplicates.length){toast("No records are selected for deletion.");return;}
     const total=duplicates.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
-    if(!confirm(`Move ${duplicates.length} selected record${duplicates.length===1?"":"s"} totalling ${money(total)} to Cloud trash?\n\nOnly the copies you selected will be moved. Groups marked Do not delete will remain unchanged.`))return;
+    if(!confirm(`Delete ${duplicates.length} selected record${duplicates.length===1?"":"s"} totalling ${money(total)}?\n\nOnly the copies you selected will be hidden. Groups marked Do not delete will remain unchanged.`))return;
     downloadFile(datedBackupName("daily-budget-before-duplicate-repair"),JSON.stringify(state,null,2),"application/json");
-    duplicateRepairRunning=true;renderDuplicateAudit();let moved=0;
-    try{
-      setCloudStatus("syncing");
-      for(const transaction of duplicates){
-        await optimisticallyDeleteTransaction(transaction,{closeEditor:false,preserveRecordsPosition:false});
-        moved++;
-      }
-      await verifyCloudNow(false);markServerVerified();toast(`${moved} selected record${moved===1?"":"s"} moved to Cloud trash.`);
-    }catch(error){console.error(error);alert(`${moved} record${moved===1?" was":"s were"} moved before the process stopped.\n\n${error.message||"Repair failed."}`);}
-    finally{duplicateRepairRunning=false;renderAll();}
+    duplicateRepairRunning=true;renderDuplicateAudit();
+    let moved=0;
+    for(const transaction of duplicates){
+      if(await optimisticallyDeleteTransaction(transaction,{closeEditor:false,preserveRecordsPosition:false}))moved++;
+    }
+    duplicateRepairRunning=false;renderAll();
+    toast(pendingCloudDeletes.size?`${moved} deleted · ${pendingCloudDeletes.size} cloud cleanup pending`:`${moved} selected record${moved===1?"":"s"} deleted`);
   }
 
 
@@ -2891,6 +2972,8 @@
           ?`${cloudUser.email||"Signed in"} · ${cloudRemoteRecordCount} records`
           :"Signed out";
     }
+
+    renderPendingCloudDeletes();
 
     if(cloudUser){
       $("cloudUserEmail").textContent=cloudUser.email||cloudUser.uid;
@@ -2961,7 +3044,7 @@
   }
   function scheduleAutomaticRecurringGeneration(){
     if(browserWriteTransportRestricted())return;
-    scheduleAutomaticRecurringGeneration();
+    setTimeout(()=>processRecurringExpenses({showToast:false}),0);
   }
   function markServerVerified(){
     cloudServerVerified=true;
@@ -2970,8 +3053,8 @@
   }
   function applyVerifiedServerState(serverState,{allowMigration=true}={}){
     const remoteRaw=Array.isArray(serverState?.transactions)?serverState.transactions:[];
-    cloudRemoteRecordCount=remoteRaw.length;
-    const remote=remoteRaw.filter(transaction=>!pendingDeleteOperations.has(transaction.id));
+    setCloudRecordCount(remoteRaw.length);
+    const remote=filterLocallyDeleted(remoteRaw);
     cloudTrash=Array.isArray(serverState?.trash)?serverState.trash:[];
 
     const candidate=cloudLocalCandidate||state;
@@ -2988,7 +3071,7 @@
     renderAll();
     renderTrash();
     markServerVerified();
-    setTimeout(()=>processRecurringExpenses({showToast:false}),0);
+    scheduleAutomaticRecurringGeneration();
   }
   async function runTrashMaintenance(showToast=false){
     if(!cloudApi?.configured||!cloudUser||!navigator.onLine||typeof cloudApi.purgeExpiredTrash!=="function")return null;
@@ -3004,27 +3087,52 @@
       return null;
     }
   }
-  async function verifyCloudNow(showToast=true){
+  async function quickVerifyCloudNow(showToast=true){
     if(!cloudApi?.configured||!cloudUser)return false;
+    if(typeof cloudApi.testConnection!=="function")return verifyCloudNow(showToast);
+    const previouslyVerified=cloudServerVerified;
     if(!navigator.onLine){
-      cloudServerVerified=false;
-      setCloudStatus("error","Offline");
-      if(showToast)toast("No network. Server verification failed.");
+      if(showToast){setCloudStatus("error","Offline");toast("No network. Cloud check failed.");}
+      else if(previouslyVerified)setCloudStatus("online");
       return false;
     }
     try{
-      cloudServerVerified=false;
-      setCloudStatus("syncing");
-      const serverState=await withTimeout(cloudApi.fetchServerState(cloudUser.uid),120000);
-      applyVerifiedServerState(serverState,{allowMigration:true});
-      const purged=Number(serverState?.trashMaintenance?.purged)||0;
-      if(showToast)toast(`Server verified: ${serverState.transactions.length} record${serverState.transactions.length===1?"":"s"}.${purged?` ${purged} expired trash item${purged===1?"":"s"} removed.`:""}`);
+      if(showToast)setCloudStatus("syncing");
+      await withTimeout(cloudApi.testConnection(),15000);
+      markServerVerified();
+      if(!cloudRemoteRecordCount)setCloudRecordCount(state.transactions.length+pendingCloudDeletes.size);
+      renderCloudPanel();
+      if(showToast)toast("Cloud connection verified.");
       return true;
     }catch(error){
       console.error(error);
-      cloudServerVerified=false;
-      setCloudStatus("error",error.message);
-      if(showToast)toast(error.message||"Server verification failed.");
+      if(showToast){cloudServerVerified=false;setCloudStatus("error",error.message);toast(error.message||"Cloud check failed.");}
+      else if(previouslyVerified){cloudServerVerified=true;setCloudStatus("online");}
+      else setCloudStatus("online");
+      return false;
+    }
+  }
+
+  async function verifyCloudNow(showToast=true){
+    if(!cloudApi?.configured||!cloudUser)return false;
+    const previouslyVerified=cloudServerVerified;
+    if(!navigator.onLine){
+      if(showToast){cloudServerVerified=false;setCloudStatus("error","Offline");toast("No network. Server refresh failed.");}
+      else if(previouslyVerified)setCloudStatus("online");
+      return false;
+    }
+    try{
+      if(showToast)setCloudStatus("syncing");
+      const serverState=await withTimeout(cloudApi.fetchServerState(cloudUser.uid),120000);
+      applyVerifiedServerState(serverState,{allowMigration:true});
+      const purged=Number(serverState?.trashMaintenance?.purged)||0;
+      if(showToast)toast(`Records refreshed: ${serverState.transactions.length}${purged?` · ${purged} expired trash item${purged===1?"":"s"} removed`:""}`);
+      return true;
+    }catch(error){
+      console.error(error);
+      if(showToast){cloudServerVerified=false;setCloudStatus("error",error.message);toast(error.message||"Server refresh failed.");}
+      else if(previouslyVerified){cloudServerVerified=true;setCloudStatus("online");}
+      else setCloudStatus("online");
       return false;
     }
   }
@@ -3038,19 +3146,27 @@
     stopCloudSubscription();
     cloudFirstTransactionSnapshot=true;
     cloudMigrationNeeded=false;
-    cloudServerVerified=false;
     cloudLocalCandidate=normalizeState(JSON.parse(JSON.stringify(state)));
-    setCloudStatus("syncing");
+    applyLocalDeleteQueue();
+    saveLocalMirror();
 
+    if(browserWriteTransportRestricted()){
+      setCloudRecordCount(cloudRemoteRecordCount||state.transactions.length+pendingCloudDeletes.size);
+      setCloudStatus("online");
+      renderAll();
+      renderCloudPanel();
+      if(state.transactions.length)quickVerifyCloudNow(false);
+      else verifyCloudNow(false);
+      return;
+    }
+
+    cloudServerVerified=false;
+    setCloudStatus("syncing");
     cloudUnsubscribe=cloudApi.subscribe(user.uid,{
       onTransactions(items,metadata={}){
-        // Local/cache snapshots are useful for UI latency, but never authoritative.
-        if(metadata.fromCache||metadata.hasPendingWrites){
-          setCloudStatus("syncing");
-          return;
-        }
-        cloudRemoteRecordCount=items.length;
-        const visibleItems=items.filter(transaction=>!pendingDeleteOperations.has(transaction.id));
+        if(metadata.fromCache||metadata.hasPendingWrites){setCloudStatus("syncing");return;}
+        setCloudRecordCount(items.length);
+        const visibleItems=filterLocallyDeleted(items);
         const candidate=cloudLocalCandidate||state;
         if(visibleItems.length===0&&candidate.transactions.length>0){
           cloudMigrationNeeded=true;
@@ -3067,26 +3183,18 @@
       },
       onSettings(settings,metadata={}){
         if(metadata.fromCache||metadata.hasPendingWrites)return;
-        if(settings&&!cloudMigrationNeeded){
-          applyCloudSettings(settings);
-          saveLocalMirror();
-          renderAll();
-        }
+        if(settings&&!cloudMigrationNeeded){applyCloudSettings(settings);saveLocalMirror();renderAll();}
       },
       onTrash(items,metadata={}){
         if(metadata.fromCache||metadata.hasPendingWrites)return;
-        cloudTrash=items;
-        renderTrash();
+        cloudTrash=items;renderTrash();
       },
       onError(error){
         console.error(error);
-        cloudServerVerified=false;
-        setCloudStatus("error",error.message||"Cloud listener failed.");
+        if(cloudServerVerified)setCloudStatus("online");
+        else{cloudServerVerified=false;setCloudStatus("error",error.message||"Cloud listener failed.");}
       }
     });
-
-    // A one-time server read catches permission errors, proves server state,
-    // and permanently removes trash items whose 30-day retention has expired.
     verifyCloudNow(false);
     if(trashMaintenanceTimer)clearInterval(trashMaintenanceTimer);
     trashMaintenanceTimer=setInterval(()=>verifyCloudNow(false),6*60*60*1000);
@@ -4912,6 +5020,9 @@
   function renderDashboard(){
     const list=txnsForMonth(selectedMonth);
     const t=totals(list);
+    $("homeIncome").textContent=money(t.income);
+    $("homeExpense").textContent=money(t.expense);
+    $("homeBalance").textContent=money(t.income-t.expense);
 
     const b=effectiveBudget(selectedMonth);
     const rate=b?Math.min((t.expense/b)*100,100):0;
@@ -5524,100 +5635,70 @@
 ${error.message||"Please check your network and try again."}`);
     }
   }
+  async function syncOnePendingCloudDelete(id,{showToast=false}={}){
+    const pending=pendingCloudDeletes.get(String(id));
+    if(!pending||!cloudApi?.configured||!cloudUser||!navigator.onLine)return false;
+    try{
+      const trashed=await withTimeout(cloudApi.moveToTrash(cloudUser.uid,pending.transaction),15000);
+      clearPendingCloudDelete(id);
+      setCloudRecordCount(Math.max(0,cloudRemoteRecordCount-1));
+      if(trashed){cloudTrash=[trashed,...cloudTrash.filter(item=>item.id!==trashed.id)];renderTrash();}
+      markServerVerified();renderCloudPanel();
+      if(showToast)toast("Cloud cleanup completed.");
+      return true;
+    }catch(error){
+      console.error("Pending cloud delete failed",error);
+      queuePendingCloudDelete(pending.transaction,error.message||"Cloud cleanup failed");
+      if(cloudServerVerified)setCloudStatus("online");
+      if(showToast)toast("Cloud cleanup is still pending.");
+      return false;
+    }
+  }
+  async function retryPendingCloudDeletes(){
+    if(pendingDeleteCleanupRunning||!pendingCloudDeletes.size)return;
+    if(!cloudApi?.configured||!cloudUser){toast("Sign in before retrying cloud cleanup.");return;}
+    pendingDeleteCleanupRunning=true;renderPendingCloudDeletes();
+    let completed=0;
+    for(const id of [...pendingCloudDeletes.keys()]){
+      const success=await syncOnePendingCloudDelete(id,{showToast:false});
+      if(!success)break;
+      completed++;
+    }
+    pendingDeleteCleanupRunning=false;renderPendingCloudDeletes();renderCloudPanel();
+    if(!pendingCloudDeletes.size)toast(`${completed} pending deletion${completed===1?"":"s"} cleaned from cloud.`);
+    else toast(completed?`${completed} cleaned · ${pendingCloudDeletes.size} still pending`:`${pendingCloudDeletes.size} cloud deletion${pendingCloudDeletes.size===1?" is":"s are"} still pending`);
+  }
+
   async function optimisticallyDeleteTransaction(txn,{
     closeEditor=false,
     preserveRecordsPosition=true
   }={}){
-    if(!txn||!cloudReadyForWrite())return false;
-    if(pendingDeleteOperations.has(txn.id))return false;
-
+    if(!txn||isLocallyDeleted(txn.id))return false;
     const originalIndex=state.transactions.findIndex(item=>item.id===txn.id);
     if(originalIndex<0)return false;
-
     const originalScroll=currentView==="records"?(window.scrollY||0):0;
-    const operationId=uid();
-
-    pendingDeleteOperations.set(txn.id,{
-      operationId,
-      transaction:txn,
-      originalIndex
-    });
-
+    pendingDeleteOperations.set(String(txn.id),{operationId:uid(),transaction:{...txn},originalIndex});
+    queuePendingCloudDelete(txn);
     state.transactions.splice(originalIndex,1);
     saveLocalMirror();
-
+    pendingDeleteOperations.delete(String(txn.id));
     if(closeEditor)closeModal();
     renderAll();
-
-    if(currentView==="records"&&preserveRecordsPosition){
-      recordsScrollTop=originalScroll;
-      restoreRecordsPosition();
-    }
-
-    setCloudStatus("syncing");
-    toast("Moved to trash · syncing…");
-
-    try{
-      const trashed=await withTimeout(
-        cloudApi.moveToTrash(cloudUser.uid,txn),
-        60000
-      );
-
-      const pending=pendingDeleteOperations.get(txn.id);
-      if(!pending||pending.operationId!==operationId)return true;
-      pendingDeleteOperations.delete(txn.id);
-
-      if(trashed){
-        cloudTrash=[
-          trashed,
-          ...cloudTrash.filter(item=>item.id!==trashed.id)
-        ];
-        renderTrash();
-      }
-
-      saveLocalMirror();
-      markServerVerified();
-      renderDashboard();
-      toast("Moved to Cloud trash.");
-
-      verifyCloudNow(false);
+    if(currentView==="records"&&preserveRecordsPosition){recordsScrollTop=originalScroll;restoreRecordsPosition();}
+    if(browserWriteTransportRestricted()){
+      if(cloudServerVerified)setCloudStatus("online");
+      toast("Deleted · cloud cleanup pending");
       return true;
-    }catch(error){
-      console.error(error);
-
-      const pending=pendingDeleteOperations.get(txn.id);
-      if(pending&&pending.operationId===operationId){
-        pendingDeleteOperations.delete(txn.id);
-
-        if(!state.transactions.some(item=>item.id===txn.id)){
-          state.transactions.splice(
-            Math.min(pending.originalIndex,state.transactions.length),
-            0,
-            pending.transaction
-          );
-        }
-
-        saveLocalMirror();
-        renderAll();
-
-        if(currentView==="records"&&preserveRecordsPosition){
-          recordsScrollTop=originalScroll;
-          restoreRecordsPosition();
-        }
-      }
-
-      setCloudStatus("error",error.message);
-      alert(`Cloud delete failed. The record was restored.
-
-${error.message||"Please check your network and try again."}`);
-      return false;
     }
+    syncOnePendingCloudDelete(txn.id,{showToast:false});
+    toast("Deleted");
+    return true;
   }
 
   async function deleteTxn(){
-    if(!editingId||!cloudReadyForWrite())return;
+    if(!editingId)return;
     const txn=state.transactions.find(transaction=>transaction.id===editingId);
-    if(!txn||!confirm("Move this record to Cloud trash?"))return;
+    if(!txn||!confirm("Delete this record?"))return;
     await optimisticallyDeleteTransaction(txn,{
       closeEditor:true,
       preserveRecordsPosition:true
@@ -6021,7 +6102,9 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     try{await cloudApi.signOut();toast("Signed out.");}catch(error){toast(error.message||"Sign-out failed.");}
   });
   $("uploadLocalToCloud").addEventListener("click",uploadCurrentStateToCloud);
-  $("cloudRetrySync").addEventListener("click",()=>verifyCloudNow(true));
+    $("cloudRetrySync").addEventListener("click",()=>quickVerifyCloudNow(true));
+  $("cloudFullRefresh").addEventListener("click",()=>verifyCloudNow(true));
+  $("retryPendingCloudDeletes").addEventListener("click",retryPendingCloudDeletes);
   $("trashList").addEventListener("click",async e=>{
     const restore=e.target.closest("[data-restore-trash]");
     const purge=e.target.closest("[data-purge-trash]");
@@ -6172,8 +6255,8 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
       wrapper?.classList.remove("open","swiping");
       if(txnLayer)txnLayer.style.transform="";
 
-      if(!txn||!cloudReadyForWrite())return;
-      const confirmed=confirm("Move this record to Cloud trash?");
+      if(!txn)return;
+      const confirmed=confirm("Delete this record?");
       if(!confirmed){
         wrapper?.classList.remove("open","swiping");
         if(txnLayer)txnLayer.style.transform="";
@@ -6243,10 +6326,10 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 
-  window.addEventListener("online",()=>{if(cloudUser)verifyCloudNow(false);});
+  window.addEventListener("online",()=>{if(cloudUser)quickVerifyCloudNow(false);});
   window.addEventListener("offline",()=>{
-    cloudServerVerified=false;
-    setCloudStatus("error","Offline");
+    if(cloudServerVerified)setCloudStatus("online");
+    else setCloudStatus("error","Offline");
   });
   registerRightSwipeClose("categoryDetailModal",closeCategoryDetail);
   registerRightSwipeClose("txnModal",closeModal);
@@ -6262,6 +6345,9 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
       });
     });
   });
+  applyLocalDeleteQueue();
+  saveLocalMirror();
+  renderPendingCloudDeletes();
   initCloud();
   populateMonths();
   $("globalMonth").value=selectedMonth;
