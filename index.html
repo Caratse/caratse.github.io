@@ -1850,7 +1850,80 @@
       font-size:8px;
       font-weight:700
     }
-    </style>
+    
+    /* V38 — Home shows current-month and all-cloud data */
+    .home-data-overview{
+      margin:10px 0 14px;
+      padding:12px;
+      border:1px solid rgba(35,37,43,.07);
+      border-radius:17px;
+      background:var(--card);
+      box-shadow:0 5px 15px rgba(30,34,40,.04)
+    }
+    .home-data-overview-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:9px
+    }
+    .home-data-overview-head small{
+      display:block;
+      margin-bottom:2px;
+      color:var(--muted);
+      font-size:8px;
+      font-weight:750;
+      text-transform:uppercase;
+      letter-spacing:.04em
+    }
+    .home-data-overview-head strong{
+      display:block;
+      font-size:12px
+    }
+    .home-data-sync-badge{
+      flex:0 0 auto;
+      border-radius:999px;
+      padding:5px 8px;
+      background:var(--yellow-soft);
+      color:var(--accent-ink);
+      font-size:8px;
+      font-weight:850
+    }
+    .home-data-sync-badge.verified{
+      background:#E5F4E9;
+      color:#39714A
+    }
+    .home-data-sync-badge.error{
+      background:#FBE7E7;
+      color:#A13C3C
+    }
+    .home-data-overview-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px
+    }
+    .home-data-stat{
+      min-width:0;
+      padding:8px 9px;
+      border-radius:12px;
+      background:var(--field-bg)
+    }
+    .home-data-stat small{
+      display:block;
+      margin-bottom:4px;
+      color:var(--muted);
+      font-size:8px;
+      font-weight:700
+    }
+    .home-data-stat strong{
+      display:block;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:11px
+    }
+
+</style>
 </head>
 <body>
 <div class="app">
@@ -1894,6 +1967,35 @@
         <div class="budget-box">
           <div class="budget-head"><strong>Monthly budget</strong><span id="budgetText">Not set</span></div>
           <div class="progress"><div id="budgetProgress"></div></div>
+        </div>
+      </div>
+
+      <div class="home-data-overview">
+        <div class="home-data-overview-head">
+          <div>
+            <small>Data overview</small>
+            <strong id="homeDataSyncTitle">Cloud data</strong>
+          </div>
+          <span id="homeDataSyncBadge" class="home-data-sync-badge">Checking</span>
+        </div>
+
+        <div class="home-data-overview-grid">
+          <div class="home-data-stat">
+            <small id="homeMonthDataLabel">Selected month</small>
+            <strong id="homeMonthRecordCount">0 records</strong>
+          </div>
+          <div class="home-data-stat">
+            <small>All cloud records</small>
+            <strong id="homeAllRecordCount">0 records</strong>
+          </div>
+          <div class="home-data-stat">
+            <small>All-time income</small>
+            <strong id="homeAllIncome" class="income">¥0.00</strong>
+          </div>
+          <div class="home-data-stat">
+            <small>All-time expense</small>
+            <strong id="homeAllExpense" class="expense">¥0.00</strong>
+          </div>
         </div>
       </div>
 
@@ -2259,7 +2361,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 37 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
+            Version 38 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2480,8 +2582,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=37"></script>
-<script src="firebase-cloud-v37.js?v=37"></script>
+<script src="firebase-config.js?v=38"></script>
+<script src="firebase-cloud-v37.js?v=38"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2669,6 +2771,8 @@
   let categoryPickerTarget = "transaction";
   let recurringProcessRunning = false;
   const pendingSaveOperations = new Map();
+  const pendingDeleteOperations = new Map();
+  let recordsScrollTop = 0;
   let overlayScrollLockDepth = 0;
   let overlayViewSnapshot = null;
 
@@ -2955,8 +3059,9 @@
     setCloudStatus("online");
   }
   function applyVerifiedServerState(serverState,{allowMigration=true}={}){
-    const remote=Array.isArray(serverState?.transactions)?serverState.transactions:[];
-    cloudRemoteRecordCount=remote.length;
+    const remoteRaw=Array.isArray(serverState?.transactions)?serverState.transactions:[];
+    cloudRemoteRecordCount=remoteRaw.length;
+    const remote=remoteRaw.filter(transaction=>!pendingDeleteOperations.has(transaction.id));
     cloudTrash=Array.isArray(serverState?.trash)?serverState.trash:[];
 
     const candidate=cloudLocalCandidate||state;
@@ -3035,12 +3140,13 @@
           return;
         }
         cloudRemoteRecordCount=items.length;
+        const visibleItems=items.filter(transaction=>!pendingDeleteOperations.has(transaction.id));
         const candidate=cloudLocalCandidate||state;
-        if(items.length===0&&candidate.transactions.length>0){
+        if(visibleItems.length===0&&candidate.transactions.length>0){
           cloudMigrationNeeded=true;
           state=normalizeState(JSON.parse(JSON.stringify(candidate)));
         }else{
-          state.transactions=items;
+          state.transactions=visibleItems;
           cloudMigrationNeeded=false;
           saveLocalMirror();
           renderAll();
@@ -4693,8 +4799,22 @@
     ensureAnalysisSelection();
   }
   function populateFilters(){
-    $("filterCategory").innerHTML='<option value="">All categories</option>'+
-      [...new Set([...state.expenseCategories,...state.incomeCategories])].map(x=>`<option>${escapeHtml(x)}</option>`).join("");
+    const select=$("filterCategory");
+    const selected=select?.value||"";
+    const categories=[...new Set([
+      ...state.expenseCategories,
+      ...state.incomeCategories,
+      ...state.transactions.map(transaction=>transaction.category)
+    ])];
+
+    select.innerHTML='<option value="">All categories</option>'+
+      categories.map(category=>`<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("");
+
+    if(selected&&categories.includes(selected)){
+      select.value=selected;
+    }else if(!selected){
+      select.value="";
+    }
   }
   function populateTxnSelects(type="expense"){
     const cats=type==="expense"?state.expenseCategories:state.incomeCategories;
@@ -4876,9 +4996,24 @@
   function renderDashboard(){
     const list=txnsForMonth(selectedMonth);
     const t=totals(list);
+    const allTotals=totals(state.transactions);
     $("homeIncome").textContent=money(t.income);
     $("homeExpense").textContent=money(t.expense);
     $("homeBalance").textContent=money(t.income-t.expense);
+
+    $("homeMonthDataLabel").textContent=fullMonthLabel(selectedMonth);
+    $("homeMonthRecordCount").textContent=`${list.length} record${list.length===1?"":"s"}`;
+    $("homeAllRecordCount").textContent=`${state.transactions.length} record${state.transactions.length===1?"":"s"}`;
+    $("homeAllIncome").textContent=money(allTotals.income);
+    $("homeAllExpense").textContent=money(allTotals.expense);
+
+    const syncBadge=$("homeDataSyncBadge");
+    const verified=Boolean(cloudServerVerified);
+    syncBadge.textContent=verified?"Server verified":cloudStatus==="error"?"Sync error":"Checking";
+    syncBadge.className=`home-data-sync-badge ${verified?"verified":cloudStatus==="error"?"error":""}`;
+    $("homeDataSyncTitle").textContent=verified
+      ?`${cloudRemoteRecordCount} cloud record${cloudRemoteRecordCount===1?"":"s"} loaded`
+      :"Showing current local mirror";
 
     const b=effectiveBudget(selectedMonth);
     const rate=b?Math.min((t.expense/b)*100,100):0;
@@ -4888,7 +5023,7 @@
       :`linear-gradient(90deg,${themeCssColor("--yellow-2","#D8AE36")},${themeCssColor("--yellow","#E9C86B")})`;
     $("budgetText").textContent=b ? `${money(t.expense)} / ${money(b)} · ${Math.round((t.expense/b)*100)}%` : "Not set";
 
-    const recent=sortTxns(state.transactions).slice(0,6);
+    const recent=sortTxns(state.transactions).slice(0,8);
     $("recentList").innerHTML=recent.length?recent.map(txnHtml).join(""):emptyHtml("No records yet","Tap + to record your first transaction.");
     const quick=state.expenseCategories.slice(0,4);
     $("quickGrid").innerHTML=quick.map(cat=>`<button class="quick" data-quick="${escapeHtml(cat)}"><span>${categoryIcon(cat)}</span>${escapeHtml(cat)}</button>`).join("");
@@ -5345,6 +5480,11 @@
 
   function setView(view,{scrollToTop=true}={}){
     const changed=view!==currentView;
+    const leavingRecords=changed&&currentView==="records"&&view!=="records";
+    if(leavingRecords){
+      clearFilters({render:false});
+      recordsScrollTop=0;
+    }
     if(currentView==="settings"&&view!=="settings")categoryEditing=false;
     currentView=view;
     document.body.classList.toggle("settings-view",view==="settings");
@@ -5489,22 +5629,104 @@
 ${error.message||"Please check your network and try again."}`);
     }
   }
-  async function deleteTxn(){
-    if(!editingId||!cloudReadyForWrite())return;
-    const txn=state.transactions.find(x=>x.id===editingId);
-    if(!txn||!confirm("Move this record to Cloud trash?"))return;
+  async function optimisticallyDeleteTransaction(txn,{
+    closeEditor=false,
+    preserveRecordsPosition=true
+  }={}){
+    if(!txn||!cloudReadyForWrite())return false;
+    if(pendingDeleteOperations.has(txn.id))return false;
+
+    const originalIndex=state.transactions.findIndex(item=>item.id===txn.id);
+    if(originalIndex<0)return false;
+
+    const originalScroll=currentView==="records"?(window.scrollY||0):0;
+    const operationId=uid();
+
+    pendingDeleteOperations.set(txn.id,{
+      operationId,
+      transaction:txn,
+      originalIndex
+    });
+
+    state.transactions.splice(originalIndex,1);
+    saveLocalMirror();
+
+    if(closeEditor)closeModal();
+    renderAll();
+
+    if(currentView==="records"&&preserveRecordsPosition){
+      recordsScrollTop=originalScroll;
+      restoreRecordsPosition();
+    }
+
+    setCloudStatus("syncing");
+    toast("Moved to trash · syncing…");
+
     try{
-      setCloudStatus("syncing");
-      await withTimeout(cloudApi.moveToTrash(cloudUser.uid,txn));
-      state.transactions=state.transactions.filter(x=>x.id!==editingId);
-      saveLocalMirror();closeModal();renderAll();
-      setCloudStatus("online");
+      const trashed=await withTimeout(
+        cloudApi.moveToTrash(cloudUser.uid,txn),
+        60000
+      );
+
+      const pending=pendingDeleteOperations.get(txn.id);
+      if(!pending||pending.operationId!==operationId)return true;
+      pendingDeleteOperations.delete(txn.id);
+
+      if(trashed){
+        cloudTrash=[
+          trashed,
+          ...cloudTrash.filter(item=>item.id!==trashed.id)
+        ];
+        renderTrash();
+      }
+
+      saveLocalMirror();
+      markServerVerified();
+      renderDashboard();
       toast("Moved to Cloud trash.");
+
+      verifyCloudNow(false);
+      return true;
     }catch(error){
       console.error(error);
+
+      const pending=pendingDeleteOperations.get(txn.id);
+      if(pending&&pending.operationId===operationId){
+        pendingDeleteOperations.delete(txn.id);
+
+        if(!state.transactions.some(item=>item.id===txn.id)){
+          state.transactions.splice(
+            Math.min(pending.originalIndex,state.transactions.length),
+            0,
+            pending.transaction
+          );
+        }
+
+        saveLocalMirror();
+        renderAll();
+
+        if(currentView==="records"&&preserveRecordsPosition){
+          recordsScrollTop=originalScroll;
+          restoreRecordsPosition();
+        }
+      }
+
       setCloudStatus("error",error.message);
-      toast(error.message||"Delete failed.");
+      alert(`Cloud delete failed. The record was restored.
+
+${error.message||"Please check your network and try again."}`);
+      return false;
     }
+  }
+
+  async function deleteTxn(){
+    if(!editingId||!cloudReadyForWrite())return;
+    const txn=state.transactions.find(transaction=>transaction.id===editingId);
+    if(!txn||!confirm("Move this record to Cloud trash?"))return;
+    await optimisticallyDeleteTransaction(txn,{
+      closeEditor:true,
+      preserveRecordsPosition:true
+    });
   }
 
   function setPreset(preset){
@@ -5521,11 +5743,24 @@ ${error.message||"Please check your network and try again."}`);
     }
     renderRecords();
   }
-  function clearFilters(){
-    ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>$(id).value="");
-    qsa("#presetChips .chip").forEach(c=>c.classList.toggle("active",c.dataset.preset==="all"));
+  function clearFilters({render=true}={}){
+    ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>{
+      if($(id))$(id).value="";
+    });
+    qsa("#presetChips .chip").forEach(chip=>{
+      chip.classList.toggle("active",chip.dataset.preset==="all");
+    });
     recordFiltersExpanded=false;
-    renderRecords();
+    if(render){
+      renderRecords();
+    }else{
+      renderRecordFilterToolbar();
+    }
+  }
+
+  function restoreRecordsPosition(){
+    const target=Math.max(0,recordsScrollTop||0);
+    requestAnimationFrame(()=>window.scrollTo({top:target,behavior:"auto"}));
   }
 
   async function saveBudget(){
@@ -6034,14 +6269,10 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
         return;
       }
 
-      setCloudStatus("syncing");
-      try{
-        await withTimeout(cloudApi.moveToTrash(cloudUser.uid,txn));
-        state.transactions=state.transactions.filter(x=>x.id!==id);
-        saveLocalMirror();renderAll();setCloudStatus("online");toast("Moved to Cloud trash.");
-      }catch(error){
-        console.error(error);setCloudStatus("error",error.message);toast(error.message||"Delete failed.");
-      }
+      await optimisticallyDeleteTransaction(txn,{
+        closeEditor:false,
+        preserveRecordsPosition:true
+      });
       return;
     }
     const row=e.target.closest(".txn[data-id]");
