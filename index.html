@@ -1634,6 +1634,52 @@
       .month-button-copy strong{font-size:10px}
     }
 
+
+    /* V30 — selected background across the complete app */
+    html,body,.app,main,.view{background:var(--bg)}
+    main{min-height:calc(100dvh - 118px);background:var(--bg)}
+    .view{min-height:calc(100dvh - 174px);background:var(--bg)}
+
+    .summary,.list,.quick,.filter-card,.panel,.mini-stat,.analysis-card,
+    .records-compact-card,details.settings-card,.category-summary-row,
+    .category-item,.analysis-breakdown-row,.duplicate-impact-card,
+    .duplicate-group,.trash-row,.recurring-rule,.appearance-choice,
+    .month-picker-option,.month-picker-current,.category-picker-option,
+    .category-record-row,.cloud-config-code,.txn,.record-summary-item,canvas{
+      background:var(--card)
+    }
+
+    .top-category-card{
+      background:linear-gradient(180deg,var(--card),var(--sheet-bg))
+    }
+
+    .field input,.field select,.field textarea,.record-search-compact input,
+    .compact-filter-btn,.category-name-input,.add-category input,
+    .txn-compact-input,.txn-category-button,.txn-control-shell,
+    .txn-compact-shell,.category-picker-search{
+      background:var(--field-bg)!important
+    }
+
+    .nav{
+      background:var(--nav-bg);
+      border-top-color:rgba(35,37,43,.10)
+    }
+
+    .category-detail-modal{background:var(--bg)}
+    .category-detail-sheet,.category-picker-sheet,.month-picker-sheet,
+    .txn-sheet,.txn-sheet-scroll{background:var(--sheet-bg)}
+    .txn-sheet-head,.category-picker-head,.month-picker-head,
+    .sticky-actions,.txn-sticky-actions{background:var(--card)}
+
+    .top,.analysis-hero,.nav .add-main{background:#FFD84D!important}
+
+    html,body,.app,main,.view,.nav,.summary,.list,.quick,.filter-card,
+    .panel,.records-compact-card,details.settings-card,
+    .category-detail-modal,.category-detail-sheet,.category-picker-sheet,
+    .month-picker-sheet,.txn-sheet{
+      transition:background-color .18s ease,border-color .18s ease
+    }
+
 </style>
 </head>
 <body>
@@ -1899,7 +1945,7 @@
           </span>
         </summary>
         <div class="settings-card-body">
-          <p class="appearance-intro">Tap a color to apply it immediately. The choice is saved to cloud.</p>
+          <p class="appearance-intro">Changes the background and supporting surfaces across Home, Records, Analysis and Settings. Cards stay light for readability. The choice is saved to cloud.</p>
           <div id="appearanceChoices" class="appearance-choices"></div>
         </div>
       </details>
@@ -2038,7 +2084,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 29 replaces the mixed gradient and native month dropdown with a clean solid header, custom calendar month picker, refined title and a ledger-style logo.
+            Version 30 applies the selected background theme across Home, Records, Analysis, Settings, navigation and supporting sheets while keeping cards readable and the brand header yellow.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2259,8 +2305,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=29"></script>
-<script src="firebase-cloud-v28.js?v=29"></script>
+<script src="firebase-config.js?v=30"></script>
+<script src="firebase-cloud-v28.js?v=30"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2346,12 +2392,12 @@
   };
   const COLORS = ["#FFD84D","#6FB1FF","#FF8D8D","#7ED6A5","#A98BFF","#FFB36B","#62CAD6","#D2A878","#EC7FB6","#8FA7C8","#A6D66D","#C6A6FF","#B8BDC8"];
   const THEME_PRESETS = {
-    warm:{name:"Classic gray",bg:"#F7F7F8"},
-    cream:{name:"Soft cream",bg:"#FFF9ED"},
-    mint:{name:"Fresh mint",bg:"#EFF8F2"},
-    sky:{name:"Clear sky",bg:"#EFF6FF"},
-    rose:{name:"Soft rose",bg:"#FFF1F4"},
-    lavender:{name:"Lavender",bg:"#F5F1FF"}
+    warm:{name:"Classic gray",bg:"#F3F4F6",card:"#FFFFFF",nav:"#FAFAFB",sheet:"#F7F7F8",field:"#F6F7F8"},
+    cream:{name:"Soft cream",bg:"#FFF2DC",card:"#FFFCF6",nav:"#FFF8EC",sheet:"#FFF8EC",field:"#FFF7E9"},
+    mint:{name:"Fresh mint",bg:"#E7F5EC",card:"#F8FCF9",nav:"#EFF9F2",sheet:"#EFF9F2",field:"#F1F8F3"},
+    sky:{name:"Clear sky",bg:"#E8F2FE",card:"#F8FBFF",nav:"#F0F7FF",sheet:"#F1F7FE",field:"#F2F7FC"},
+    rose:{name:"Soft rose",bg:"#FDECF0",card:"#FFF8FA",nav:"#FFF2F5",sheet:"#FFF3F6",field:"#FFF4F6"},
+    lavender:{name:"Lavender",bg:"#F0EAFC",card:"#FBF9FF",nav:"#F6F2FF",sheet:"#F5F1FD",field:"#F7F4FC"}
   };
 
   let state = loadState();
@@ -2939,6 +2985,11 @@
     const root=document.documentElement;
 
     root.style.setProperty("--bg",theme.bg);
+    root.style.setProperty("--card",theme.card);
+    root.style.setProperty("--nav-bg",theme.nav);
+    root.style.setProperty("--sheet-bg",theme.sheet);
+    root.style.setProperty("--field-bg",theme.field);
+
     root.style.setProperty("--yellow","#FFD84D");
     root.style.setProperty("--yellow-2","#FFCB2F");
     root.style.setProperty("--yellow-soft","#FFF7D6");

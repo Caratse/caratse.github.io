@@ -1,10 +1,10 @@
-const CACHE_NAME = "daily-budget-cloud-v29-20260729";
+const CACHE_NAME = "daily-budget-cloud-v30-20260729";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./firebase-config.js?v=29",
-  "./firebase-cloud-v28.js?v=29",
+  "./firebase-config.js?v=30",
+  "./firebase-cloud-v28.js?v=30",
   "./icon-192.png",
   "./icon-512.png"
 ];
@@ -20,11 +20,9 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
 });
 
@@ -42,19 +40,15 @@ self.addEventListener("fetch", event => {
 
   if (isCodeRequest(event.request)) {
     event.respondWith(
-      fetch(event.request, { cache: "no-store" })
-        .then(response => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() =>
-          caches.match(event.request).then(cached =>
-            cached || caches.match("./index.html")
-          )
-        )
+      fetch(event.request, {cache:"no-store"}).then(response => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() =>
+        caches.match(event.request).then(cached => cached || caches.match("./index.html"))
+      )
     );
     return;
   }
