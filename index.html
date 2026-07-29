@@ -1904,6 +1904,134 @@
       display:flex;align-items:center;gap:6px;color:#45634D;font-size:8px;font-weight:800
     }
 
+
+    /* V43 — local-first record upload queue */
+    .pending-cloud-save-box{
+      display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;
+      margin-top:9px;padding:9px 10px;border:1px solid rgba(69,112,154,.14);
+      border-radius:13px;background:#EDF5FB
+    }
+    .pending-cloud-save-box strong{display:block;color:#3C617E;font-size:10px}
+    .pending-cloud-save-box small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}
+    .pending-cloud-save-box button{white-space:nowrap;padding:7px 9px;font-size:8px}
+    .cloud-badge.local{background:#E9F3EB;color:#3D704B}
+    .save-pending-dot{background:#D7A934!important}
+
+
+    /* V44 — weekly automatic backup */
+    .weekly-backup-card{
+      margin-bottom:12px;
+      padding:12px;
+      border:1px solid rgba(62,95,74,.10);
+      border-radius:16px;
+      background:var(--field-bg)
+    }
+    .weekly-backup-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px
+    }
+    .weekly-backup-head strong{
+      display:block;
+      font-size:11px
+    }
+    .weekly-backup-head small{
+      display:block;
+      max-width:235px;
+      margin-top:4px;
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.45
+    }
+    .weekly-backup-switch{
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      gap:5px;
+      padding:6px 8px;
+      border-radius:999px;
+      background:var(--card);
+      font-size:8px;
+      font-weight:850
+    }
+    .weekly-backup-switch input{
+      width:15px;
+      height:15px;
+      margin:0;
+      accent-color:var(--yellow-2)
+    }
+    .weekly-backup-status-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px;
+      margin-top:10px
+    }
+    .weekly-backup-status-grid>div{
+      min-width:0;
+      padding:8px 9px;
+      border-radius:12px;
+      background:var(--card)
+    }
+    .weekly-backup-status-grid small{
+      display:block;
+      color:var(--muted);
+      font-size:7px
+    }
+    .weekly-backup-status-grid strong{
+      display:block;
+      overflow:hidden;
+      margin-top:3px;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:9px
+    }
+    .weekly-backup-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px;
+      margin-top:9px
+    }
+    .weekly-backup-actions button{
+      padding:9px;
+      font-size:9px
+    }
+    .weekly-backup-archive{
+      display:grid;
+      gap:6px;
+      margin-top:9px
+    }
+    .weekly-backup-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:8px 9px;
+      border-radius:11px;
+      background:var(--card)
+    }
+    .weekly-backup-row strong{
+      display:block;
+      font-size:8px
+    }
+    .weekly-backup-row small{
+      display:block;
+      margin-top:2px;
+      color:var(--muted);
+      font-size:7px
+    }
+    .weekly-backup-row button{
+      flex:0 0 auto;
+      padding:6px 8px;
+      font-size:7px
+    }
+    .weekly-backup-note{
+      margin:9px 0 0;
+      color:var(--muted);
+      font-size:7px;
+      line-height:1.45
+    }
+
 </style>
 </head>
 <body>
@@ -2098,7 +2226,15 @@
               Signed in as <strong id="cloudUserEmail"></strong><br>
               <span id="cloudRecordCount">0 cloud records</span><br>
               <span id="cloudVerificationText">Waiting for server verification…</span>
-              <span class="cloud-transport-note">Fast cloud check enabled</span>
+              <span class="cloud-transport-note">Local-first mode · no automatic cloud calls</span>
+            </div>
+
+            <div id="pendingCloudSaveBox" class="pending-cloud-save-box hidden">
+              <div>
+                <strong><span id="pendingCloudSaveCount">0</span> record<span id="pendingCloudSavePlural">s</span> saved locally</strong>
+                <small>They are usable now. Cloud upload can be retried separately without blocking entry.</small>
+              </div>
+              <button id="retryPendingCloudSaves" type="button" class="secondary">Retry upload</button>
             </div>
 
             <div id="pendingCloudDeleteBox" class="pending-cloud-delete-box hidden">
@@ -2115,8 +2251,8 @@
             </div>
             <div class="cloud-actions">
               <button id="openAccuracy" class="secondary" style="grid-column:1/-1">Open data accuracy check</button>
-              <button id="cloudRetrySync" class="secondary">Quick cloud check</button>
-              <button id="cloudFullRefresh" class="secondary">Refresh records</button>
+              <button id="cloudRetrySync" class="secondary">Check cloud availability</button>
+              <button id="cloudFullRefresh" class="secondary">Refresh from cloud</button>
               <button id="cloudSignOut" class="secondary" style="grid-column:1/-1">Sign out</button>
             </div>
           </div>
@@ -2296,6 +2432,51 @@
           </span>
         </summary>
         <div class="settings-card-body">
+          <div class="weekly-backup-card">
+            <div class="weekly-backup-head">
+              <div>
+                <strong>Weekly automatic backup</strong>
+                <small>Every 7 days, the next time you open the app, it saves a full local snapshot and retries pending cloud uploads.</small>
+              </div>
+              <label class="weekly-backup-switch">
+                <input id="weeklyBackupEnabled" type="checkbox" checked>
+                <span>On</span>
+              </label>
+            </div>
+
+            <div class="weekly-backup-status-grid">
+              <div>
+                <small>Last backup</small>
+                <strong id="weeklyBackupLast">Not created yet</strong>
+              </div>
+              <div>
+                <small>Next due</small>
+                <strong id="weeklyBackupNext">When app opens</strong>
+              </div>
+              <div>
+                <small>Saved snapshots</small>
+                <strong id="weeklyBackupCount">0</strong>
+              </div>
+              <div>
+                <small>Last cloud attempt</small>
+                <strong id="weeklyBackupCloudStatus">Not attempted</strong>
+              </div>
+            </div>
+
+            <div class="weekly-backup-actions">
+              <button id="runWeeklyBackupNow" type="button" class="primary">Run now</button>
+              <button id="downloadLatestWeeklyBackup" type="button" class="secondary">Download latest</button>
+            </div>
+
+            <div id="weeklyBackupArchive" class="weekly-backup-archive"></div>
+
+            <p class="weekly-backup-note">
+              iPhone cannot reliably wake a closed Home Screen web app at a fixed time.
+              The backup runs automatically on the first app open after 7 days.
+              Automatic snapshots stay inside this app; downloading to Files still requires a tap.
+            </p>
+          </div>
+
           <div class="settings-actions">
             <button id="exportCsv" class="secondary">Export CSV</button>
             <button id="backupJson" class="secondary">Backup JSON</button>
@@ -2323,7 +2504,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 42 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
+            Version 44 adds weekly automatic snapshots and automatic retry of pending cloud changes whenever the app is opened after the weekly due date.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2544,13 +2725,18 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=42"></script>
-<script src="firebase-cloud-v37.js?v=42"></script>
+<script src="firebase-config.js?v=44"></script>
+<script src="firebase-cloud-v37.js?v=44"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
   const PENDING_DELETE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_deletes_v1`;
+  const PENDING_SAVE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_saves_v1`;
   const CLOUD_COUNT_STORAGE_KEY = `${STORAGE_KEY}_last_cloud_count_v1`;
+  const WEEKLY_BACKUP_STORAGE_KEY = `${STORAGE_KEY}_weekly_backups_v1`;
+  const WEEKLY_BACKUP_META_KEY = `${STORAGE_KEY}_weekly_backup_meta_v1`;
+  const WEEKLY_BACKUP_INTERVAL_MS = 7*24*60*60*1000;
+  const WEEKLY_BACKUP_MAX_SNAPSHOTS = 4;
   const DEFAULT_EXPENSE = ["Dining","Transportation","Shopping","Housing","Entertainment","Household","Medical","Communication","Education","Travel","Gifts","Pets","Other"];
   const DEFAULT_INCOME = ["Salary","Bonus","Freelance","Investment","Refund","Other Income"];
   const PAYMENTS = ["WeChat Pay","Alipay","Debit Card","Credit Card","Cash","Transit Card","Other"];
@@ -2742,14 +2928,470 @@
   let recurringProcessRunning = false;
   const pendingSaveOperations = new Map();
   const pendingDeleteOperations = new Map();
+  const pendingCloudSaves = loadPendingCloudSaves();
   const pendingCloudDeletes = loadPendingCloudDeletes();
+  let pendingSaveCleanupRunning = false;
   let pendingDeleteCleanupRunning = false;
+  let weeklyBackupRunning = false;
+  let weeklyBackupMeta = loadWeeklyBackupMeta();
   let recordsScrollTop = 0;
   let overlayScrollLockDepth = 0;
   let overlayViewSnapshot = null;
 
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
+
+  function loadWeeklyBackupMeta(){
+    const fallback={
+      enabled:true,
+      lastRunAt:0,
+      nextDueAt:0,
+      lastLocalBackupAt:0,
+      lastCloudAttemptAt:0,
+      lastCloudStatus:"never",
+      lastCloudMessage:"",
+      lastSnapshotId:""
+    };
+
+    try{
+      const parsed=JSON.parse(
+        localStorage.getItem(WEEKLY_BACKUP_META_KEY)||"null"
+      );
+      return {
+        ...fallback,
+        ...(parsed&&typeof parsed==="object"?parsed:{})
+      };
+    }catch(error){
+      console.error("Weekly backup metadata could not be loaded",error);
+      return fallback;
+    }
+  }
+
+  function saveWeeklyBackupMeta(){
+    try{
+      localStorage.setItem(
+        WEEKLY_BACKUP_META_KEY,
+        JSON.stringify(weeklyBackupMeta)
+      );
+    }catch(error){
+      console.error("Weekly backup metadata could not be saved",error);
+    }
+  }
+
+  function loadWeeklyBackupSnapshots(){
+    try{
+      const parsed=JSON.parse(
+        localStorage.getItem(WEEKLY_BACKUP_STORAGE_KEY)||"[]"
+      );
+      return Array.isArray(parsed)?parsed:[];
+    }catch(error){
+      console.error("Weekly backup archive could not be loaded",error);
+      return [];
+    }
+  }
+
+  function saveWeeklyBackupSnapshots(snapshots){
+    const trimmed=(Array.isArray(snapshots)?snapshots:[])
+      .slice(0,WEEKLY_BACKUP_MAX_SNAPSHOTS);
+
+    try{
+      localStorage.setItem(
+        WEEKLY_BACKUP_STORAGE_KEY,
+        JSON.stringify(trimmed)
+      );
+      return trimmed;
+    }catch(error){
+      // If storage is tight, keep only the newest two complete snapshots.
+      console.warn("Weekly archive was reduced because device storage is tight",error);
+      const reduced=trimmed.slice(0,2);
+      localStorage.setItem(
+        WEEKLY_BACKUP_STORAGE_KEY,
+        JSON.stringify(reduced)
+      );
+      return reduced;
+    }
+  }
+
+  function weeklyBackupDateTime(timestamp){
+    if(!timestamp)return "Not created yet";
+    return new Date(timestamp).toLocaleString(
+      "en-GB",
+      {
+        day:"2-digit",
+        month:"short",
+        year:"numeric",
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false
+      }
+    );
+  }
+
+  function weeklyBackupFileName(snapshot){
+    const date=new Date(snapshot.createdAt||Date.now())
+      .toISOString()
+      .slice(0,10);
+    return `daily-budget-weekly-backup-${date}.json`;
+  }
+
+  function buildWeeklyBackupSnapshot(){
+    const createdAt=Date.now();
+    const payload={
+      format:"daily-budget-weekly-backup-v1",
+      appVersion:44,
+      createdAt:new Date(createdAt).toISOString(),
+      createdAtMs:createdAt,
+      selectedMonth,
+      state:JSON.parse(JSON.stringify(state)),
+      pendingCloudSaves:[...pendingCloudSaves.values()],
+      pendingCloudDeletes:[...pendingCloudDeletes.values()],
+      cloudTrash:JSON.parse(JSON.stringify(cloudTrash||[]))
+    };
+
+    return {
+      id:`weekly_${new Date(createdAt).toISOString().slice(0,10)}_${createdAt}`,
+      createdAt,
+      records:Array.isArray(state.transactions)
+        ?state.transactions.length
+        :0,
+      pendingUploads:pendingCloudSaves.size,
+      pendingDeletes:pendingCloudDeletes.size,
+      payload
+    };
+  }
+
+  function createWeeklyBackupSnapshot(){
+    const snapshot=buildWeeklyBackupSnapshot();
+    const existing=loadWeeklyBackupSnapshots()
+      .filter(item=>item&&item.id!==snapshot.id);
+    const saved=saveWeeklyBackupSnapshots([snapshot,...existing]);
+
+    weeklyBackupMeta.lastLocalBackupAt=snapshot.createdAt;
+    weeklyBackupMeta.lastSnapshotId=snapshot.id;
+    saveWeeklyBackupMeta();
+    renderWeeklyBackupPanel();
+    return saved.find(item=>item.id===snapshot.id)||snapshot;
+  }
+
+  function latestWeeklyBackupSnapshot(){
+    return loadWeeklyBackupSnapshots()
+      .sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0))[0]||null;
+  }
+
+  function downloadWeeklyBackupSnapshot(snapshot){
+    if(!snapshot?.payload)return;
+    downloadFile(
+      weeklyBackupFileName(snapshot),
+      JSON.stringify(snapshot.payload,null,2),
+      "application/json"
+    );
+  }
+
+  function weeklyCloudStatusLabel(){
+    const status=weeklyBackupMeta.lastCloudStatus;
+    if(status==="success")return "Uploaded pending changes";
+    if(status==="partial")return "Some changes still pending";
+    if(status==="failed")return "Upload attempt failed";
+    if(status==="nothing")return "Nothing pending";
+    if(status==="skipped")return "Waiting for sign-in/network";
+    return "Not attempted";
+  }
+
+  function renderWeeklyBackupPanel(){
+    const enabled=$("weeklyBackupEnabled");
+    if(!enabled)return;
+
+    const snapshots=loadWeeklyBackupSnapshots()
+      .sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
+
+    enabled.checked=weeklyBackupMeta.enabled!==false;
+    $("weeklyBackupLast").textContent=weeklyBackupDateTime(
+      weeklyBackupMeta.lastLocalBackupAt
+    );
+
+    const nextDue=weeklyBackupMeta.enabled===false
+      ?0
+      :(weeklyBackupMeta.nextDueAt||
+        (weeklyBackupMeta.lastRunAt
+          ?weeklyBackupMeta.lastRunAt+WEEKLY_BACKUP_INTERVAL_MS
+          :Date.now()));
+
+    $("weeklyBackupNext").textContent=weeklyBackupMeta.enabled===false
+      ?"Turned off"
+      :nextDue<=Date.now()
+        ?"Next app open"
+        :weeklyBackupDateTime(nextDue);
+
+    $("weeklyBackupCount").textContent=
+      `${snapshots.length} / ${WEEKLY_BACKUP_MAX_SNAPSHOTS}`;
+
+    $("weeklyBackupCloudStatus").textContent=weeklyCloudStatusLabel();
+
+    const runButton=$("runWeeklyBackupNow");
+    runButton.disabled=weeklyBackupRunning;
+    runButton.textContent=weeklyBackupRunning
+      ?"Backing up…"
+      :"Run now";
+
+    const downloadButton=$("downloadLatestWeeklyBackup");
+    downloadButton.disabled=!snapshots.length;
+
+    $("weeklyBackupArchive").innerHTML=snapshots.length
+      ?snapshots.map((snapshot,index)=>`
+        <div class="weekly-backup-row">
+          <div>
+            <strong>${index===0?"Latest · ":""}${escapeHtml(weeklyBackupDateTime(snapshot.createdAt))}</strong>
+            <small>${Number(snapshot.records)||0} records · ${Number(snapshot.pendingUploads)||0} upload pending · ${Number(snapshot.pendingDeletes)||0} delete pending</small>
+          </div>
+          <button
+            type="button"
+            class="secondary"
+            data-weekly-backup-download="${escapeHtml(snapshot.id)}"
+          >Download</button>
+        </div>
+      `).join("")
+      :`<div class="weekly-backup-row">
+          <div>
+            <strong>No automatic snapshot yet</strong>
+            <small>The first one will be created automatically on the next due app open.</small>
+          </div>
+        </div>`;
+  }
+
+  async function attemptWeeklyCloudUpload(){
+    const beforeSaves=pendingCloudSaves.size;
+    const beforeDeletes=pendingCloudDeletes.size;
+
+    if(!beforeSaves&&!beforeDeletes){
+      return {
+        status:"nothing",
+        uploaded:0,
+        cleaned:0,
+        remaining:0,
+        message:"No pending cloud changes"
+      };
+    }
+
+    if(!cloudApi?.configured||!cloudUser||!navigator.onLine){
+      return {
+        status:"skipped",
+        uploaded:0,
+        cleaned:0,
+        remaining:beforeSaves+beforeDeletes,
+        message:"Waiting for sign-in or network"
+      };
+    }
+
+    let uploaded=0;
+    let cleaned=0;
+
+    for(const id of [...pendingCloudSaves.keys()]){
+      const success=await syncOnePendingCloudSave(
+        id,
+        {showToast:false}
+      );
+      if(!success)break;
+      uploaded++;
+    }
+
+    // Only try delete cleanup after pending saves have finished or there
+    // were no pending saves. This avoids unnecessary repeated failures.
+    if(!pendingCloudSaves.size){
+      for(const id of [...pendingCloudDeletes.keys()]){
+        const success=await syncOnePendingCloudDelete(
+          id,
+          {showToast:false}
+        );
+        if(!success)break;
+        cleaned++;
+      }
+    }
+
+    const remaining=pendingCloudSaves.size+pendingCloudDeletes.size;
+    return {
+      status:remaining
+        ?(uploaded||cleaned?"partial":"failed")
+        :"success",
+      uploaded,
+      cleaned,
+      remaining,
+      message:remaining
+        ?`${remaining} cloud change${remaining===1?"":"s"} still pending`
+        :"All pending cloud changes uploaded"
+    };
+  }
+
+  async function runWeeklyAutoBackup({
+    force=false,
+    manual=false
+  }={}){
+    if(weeklyBackupRunning)return false;
+    if(weeklyBackupMeta.enabled===false&&!manual)return false;
+
+    const now=Date.now();
+    const dueAt=weeklyBackupMeta.nextDueAt||
+      (weeklyBackupMeta.lastRunAt
+        ?weeklyBackupMeta.lastRunAt+WEEKLY_BACKUP_INTERVAL_MS
+        :0);
+
+    if(!force&&dueAt&&now<dueAt)return false;
+
+    weeklyBackupRunning=true;
+    renderWeeklyBackupPanel();
+
+    try{
+      createWeeklyBackupSnapshot();
+
+      weeklyBackupMeta.lastRunAt=now;
+      weeklyBackupMeta.nextDueAt=now+WEEKLY_BACKUP_INTERVAL_MS;
+      weeklyBackupMeta.lastCloudAttemptAt=Date.now();
+
+      const cloudResult=await attemptWeeklyCloudUpload();
+      weeklyBackupMeta.lastCloudStatus=cloudResult.status;
+      weeklyBackupMeta.lastCloudMessage=cloudResult.message;
+      saveWeeklyBackupMeta();
+
+      renderWeeklyBackupPanel();
+      renderCloudPanel();
+
+      if(manual){
+        if(cloudResult.status==="success"){
+          toast("Weekly backup saved · pending cloud changes uploaded.");
+        }else if(cloudResult.status==="nothing"){
+          toast("Weekly backup saved · nothing was waiting to upload.");
+        }else{
+          toast(
+            `Weekly backup saved · ${cloudResult.remaining} cloud change`+
+            `${cloudResult.remaining===1?"":"s"} still pending.`
+          );
+        }
+      }
+
+      return true;
+    }catch(error){
+      console.error("Weekly automatic backup failed",error);
+      weeklyBackupMeta.lastRunAt=now;
+      weeklyBackupMeta.nextDueAt=now+WEEKLY_BACKUP_INTERVAL_MS;
+      weeklyBackupMeta.lastCloudStatus="failed";
+      weeklyBackupMeta.lastCloudMessage=error.message||"Backup failed";
+      saveWeeklyBackupMeta();
+      renderWeeklyBackupPanel();
+
+      if(manual){
+        toast(error.message||"Weekly backup failed.");
+      }
+      return false;
+    }finally{
+      weeklyBackupRunning=false;
+      renderWeeklyBackupPanel();
+    }
+  }
+
+  function checkWeeklyAutoBackup(){
+    if(weeklyBackupMeta.enabled===false)return;
+    const now=Date.now();
+    const dueAt=weeklyBackupMeta.nextDueAt||
+      (weeklyBackupMeta.lastRunAt
+        ?weeklyBackupMeta.lastRunAt+WEEKLY_BACKUP_INTERVAL_MS
+        :0);
+
+    if(!dueAt||now>=dueAt){
+      runWeeklyAutoBackup({force:true,manual:false});
+    }
+  }
+
+  function loadPendingCloudSaves(){
+    try{
+      const parsed=JSON.parse(localStorage.getItem(PENDING_SAVE_STORAGE_KEY)||"[]");
+      if(!Array.isArray(parsed))return new Map();
+      return new Map(
+        parsed
+          .filter(item=>item&&item.id&&item.transaction)
+          .map(item=>[String(item.id),item])
+      );
+    }catch(error){
+      console.error("Pending save queue could not be loaded",error);
+      return new Map();
+    }
+  }
+  function savePendingCloudSaves(){
+    try{
+      localStorage.setItem(
+        PENDING_SAVE_STORAGE_KEY,
+        JSON.stringify([...pendingCloudSaves.values()])
+      );
+    }catch(error){
+      console.error("Pending save queue could not be saved",error);
+    }
+    renderPendingCloudSaves();
+  }
+  function queuePendingCloudSave(transaction,previous=null,errorMessage=""){
+    const id=String(transaction.id);
+    const existing=pendingCloudSaves.get(id);
+    const originalPrevious=existing?.previous??(previous?{...previous}:null);
+    pendingCloudSaves.set(id,{
+      id,
+      transaction:{...transaction},
+      previous:originalPrevious,
+      isNew:existing?Boolean(existing.isNew):!previous,
+      requestedAt:existing?.requestedAt||Date.now(),
+      attempts:(Number(existing?.attempts)||0)+(errorMessage?1:0),
+      lastAttemptAt:errorMessage?Date.now():(existing?.lastAttemptAt||0),
+      lastError:errorMessage||existing?.lastError||""
+    });
+    savePendingCloudSaves();
+  }
+  function restorePendingCloudSaveEntry(entry){
+    if(!entry?.id||!entry?.transaction)return;
+    pendingCloudSaves.set(String(entry.id),entry);
+    savePendingCloudSaves();
+  }
+  function clearPendingCloudSave(id){
+    pendingCloudSaves.delete(String(id));
+    savePendingCloudSaves();
+  }
+  function renderPendingCloudSaves(){
+    const box=$("pendingCloudSaveBox");
+    if(!box)return;
+    const count=pendingCloudSaves.size;
+    box.classList.toggle("hidden",count===0);
+    $("pendingCloudSaveCount").textContent=String(count);
+    $("pendingCloudSavePlural").textContent=count===1?"":"s";
+    const button=$("retryPendingCloudSaves");
+    button.disabled=pendingSaveCleanupRunning||count===0;
+    button.textContent=pendingSaveCleanupRunning?"Retrying…":"Retry upload";
+  }
+  function reconcilePendingCloudSaves(remoteTransactions){
+    const remoteById=new Map(
+      (Array.isArray(remoteTransactions)?remoteTransactions:[])
+        .map(item=>[String(item.id),item])
+    );
+    let changed=false;
+    pendingCloudSaves.forEach((entry,id)=>{
+      const remote=remoteById.get(String(id));
+      if(remote&&transactionFingerprint(remote)===transactionFingerprint(entry.transaction)){
+        pendingCloudSaves.delete(String(id));
+        changed=true;
+      }
+    });
+    if(changed)savePendingCloudSaves();
+  }
+  function mergePendingCloudSaves(transactions){
+    const merged=new Map(
+      (Array.isArray(transactions)?transactions:[])
+        .map(item=>[String(item.id),item])
+    );
+    pendingCloudSaves.forEach(entry=>{
+      if(!isLocallyDeleted(entry.id)){
+        merged.set(String(entry.id),{...entry.transaction});
+      }
+    });
+    return [...merged.values()];
+  }
+  function applyLocalPendingSaves(){
+    if(!pendingCloudSaves.size)return;
+    state.transactions=mergePendingCloudSaves(state.transactions);
+  }
 
   function loadPendingCloudDeletes(){
     try{
@@ -2777,14 +3419,17 @@
   function filterLocallyDeleted(transactions){
     return (Array.isArray(transactions)?transactions:[]).filter(transaction=>!isLocallyDeleted(transaction.id));
   }
-  function queuePendingCloudDelete(transaction,errorMessage=""){
+  function queuePendingCloudDelete(transaction,errorMessage="",options={}){
     const id=String(transaction.id);
     const previous=pendingCloudDeletes.get(id);
     pendingCloudDeletes.set(id,{
-      id,transaction:{...transaction},requestedAt:previous?.requestedAt||Date.now(),
+      id,
+      transaction:{...transaction},
+      requestedAt:previous?.requestedAt||Date.now(),
       attempts:(Number(previous?.attempts)||0)+(errorMessage?1:0),
       lastAttemptAt:errorMessage?Date.now():(previous?.lastAttemptAt||0),
-      lastError:errorMessage||previous?.lastError||""
+      lastError:errorMessage||previous?.lastError||"",
+      pendingSave:options.pendingSave||previous?.pendingSave||null
     });
     savePendingCloudDeletes();
   }
@@ -3048,6 +3693,9 @@
     }else if(cloudStatus==="error"){
       badge.textContent="Sync error";
       badge.classList.add("error");
+    }else if(cloudStatus==="local"){
+      badge.textContent="Local ready";
+      badge.classList.add("local");
     }else if(cloudUser&&cloudServerVerified){
       badge.textContent="Cloud verified";
       badge.classList.add("online");
@@ -3066,14 +3714,17 @@
           :"Signed out";
     }
 
+    renderPendingCloudSaves();
     renderPendingCloudDeletes();
 
     if(cloudUser){
       $("cloudUserEmail").textContent=cloudUser.email||cloudUser.uid;
-      $("cloudRecordCount").textContent=`${cloudRemoteRecordCount} cloud record${cloudRemoteRecordCount===1?"":"s"}`;
+      $("cloudRecordCount").textContent=`${cloudRemoteRecordCount} last known cloud record${cloudRemoteRecordCount===1?"":"s"}`;
       $("cloudVerificationText").textContent=cloudServerVerified
         ? `Server verified${cloudVerifiedAt?` · ${cloudVerifiedAt}`:""} · Sign-in remembered on this device`
-        : "Waiting for direct server verification…";
+        :cloudStatus==="local"
+          ?"Local records are ready. Cloud upload and refresh can be retried later."
+          :"Waiting for direct server verification…";
       $("cloudMigrationBox").classList.toggle("hidden",!cloudMigrationNeeded);
     }
     renderTrash();
@@ -3156,21 +3807,52 @@
   }
 
   async function syncSettingsToCloud(showSuccess=false){
-    if(!cloudApi?.configured||!cloudUser||cloudMigrationNeeded)return false;
-    if(!navigator.onLine){setCloudStatus("error","Offline");return false;}
+    saveLocalMirror();
+    if(browserWriteTransportRestricted()||!cloudApi?.configured||!cloudUser||!navigator.onLine){
+      setLocalMode("Settings saved locally");
+      if(showSuccess)toast("Settings saved on this device.");
+      return true;
+    }
+    if(cloudMigrationNeeded)return false;
     try{
       setCloudStatus("syncing");
-      await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()),30000);
+      await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()),15000);
       markServerVerified();
       if(showSuccess)toast("Settings cloud-saved.");
       return true;
     }catch(error){
       console.error(error);
-      setCloudStatus("error",error.message);
-      toast(error.message||"Cloud sync failed.");
+      if(cloudErrorIsHard(error))setCloudStatus("error",error.message);
+      else setLocalMode(error.message);
+      if(showSuccess)localModeToast(error,"Settings upload");
       return false;
     }
   }
+  function cloudErrorIsHard(error){
+    const text=String(error?.message||error||"").toLowerCase();
+    return text.includes("permission_denied")||
+      text.includes("permission denied")||
+      text.includes("unauthenticated")||
+      text.includes("fresh firebase sign-in")||
+      text.includes("database or requested resource was not found")||
+      text.includes("firebase is not configured");
+  }
+  function cloudErrorIsQuota(error){
+    const text=String(error?.message||error||"").toLowerCase();
+    return text.includes("quota")||text.includes("resource_exhausted")||text.includes("http 429");
+  }
+  function setLocalMode(message=""){
+    cloudServerVerified=false;
+    setCloudStatus("local",message);
+  }
+  function localModeToast(error,action="Cloud sync"){
+    if(cloudErrorIsQuota(error)){
+      toast("Firebase is temporarily limited. Your local records are safe.");
+    }else{
+      toast(`${action} is unavailable. Your local records are safe.`);
+    }
+  }
+
   function browserWriteTransportRestricted(){
     const transport=String(cloudApi?.transport||cloudApi?.persistence||"");
     return transport.includes("REST_POST_COMMIT");
@@ -3187,9 +3869,10 @@
   function applyVerifiedServerState(serverState,{allowMigration=true}={}){
     const remoteRaw=Array.isArray(serverState?.transactions)?serverState.transactions:[];
     const serverTrash=Array.isArray(serverState?.trash)?serverState.trash:[];
+    reconcilePendingCloudSaves(remoteRaw);
     reconcilePendingCloudTrash(serverTrash);
     setCloudRecordCount(remoteRaw.length);
-    const remote=filterLocallyDeleted(remoteRaw);
+    const remote=mergePendingCloudSaves(filterLocallyDeleted(remoteRaw));
     cloudTrash=serverTrash;
 
     const candidate=cloudLocalCandidate||state;
@@ -3241,9 +3924,14 @@
       return true;
     }catch(error){
       console.error(error);
-      if(showToast){cloudServerVerified=false;setCloudStatus("error",error.message);toast(error.message||"Cloud check failed.");}
-      else if(previouslyVerified){cloudServerVerified=true;setCloudStatus("online");}
-      else setCloudStatus("online");
+      if(cloudErrorIsHard(error)){
+        cloudServerVerified=false;
+        setCloudStatus("error",error.message);
+        if(showToast)toast(error.message||"Cloud check failed.");
+      }else{
+        setLocalMode(error.message);
+        if(showToast)localModeToast(error,"Cloud check");
+      }
       return false;
     }
   }
@@ -3265,9 +3953,14 @@
       return true;
     }catch(error){
       console.error(error);
-      if(showToast){cloudServerVerified=false;setCloudStatus("error",error.message);toast(error.message||"Server refresh failed.");}
-      else if(previouslyVerified){cloudServerVerified=true;setCloudStatus("online");}
-      else setCloudStatus("online");
+      if(cloudErrorIsHard(error)){
+        cloudServerVerified=false;
+        setCloudStatus("error",error.message);
+        if(showToast)toast(error.message||"Server refresh failed.");
+      }else{
+        setLocalMode(error.message);
+        if(showToast)localModeToast(error,"Cloud refresh");
+      }
       return false;
     }
   }
@@ -3286,12 +3979,15 @@
     saveLocalMirror();
 
     if(browserWriteTransportRestricted()){
-      setCloudRecordCount(cloudRemoteRecordCount||state.transactions.length+pendingCloudDeletes.size);
-      setCloudStatus("online");
+      applyLocalPendingSaves();
+      setCloudRecordCount(
+        cloudRemoteRecordCount||
+        Math.max(0,state.transactions.length-pendingCloudSaves.size+pendingCloudDeletes.size)
+      );
+      setLocalMode("Local-first mode");
+      saveLocalMirror();
       renderAll();
       renderCloudPanel();
-      if(state.transactions.length)quickVerifyCloudNow(false);
-      else verifyCloudNow(false);
       return;
     }
 
@@ -3301,7 +3997,8 @@
       onTransactions(items,metadata={}){
         if(metadata.fromCache||metadata.hasPendingWrites){setCloudStatus("syncing");return;}
         setCloudRecordCount(items.length);
-        const visibleItems=filterLocallyDeleted(items);
+        reconcilePendingCloudSaves(items);
+        const visibleItems=mergePendingCloudSaves(filterLocallyDeleted(items));
         const candidate=cloudLocalCandidate||state;
         if(visibleItems.length===0&&candidate.transactions.length>0){
           cloudMigrationNeeded=true;
@@ -5156,6 +5853,7 @@
     renderRecurringExpenses();
     renderCloudPanel();
     renderDuplicateAudit();
+    renderWeeklyBackupPanel();
     refreshCategoryDetailCurrent();
   }
   function renderDashboard(){
@@ -5184,7 +5882,7 @@
       <div class="txn" data-id="${t.id}">
         <div class="txn-icon">${icon}</div>
         <div>
-          <div class="txn-title">${escapeHtml(t.category)}${pendingSaveOperations.has(t.id)?'<span class="save-pending-dot" title="Syncing"></span>':""}</div>
+          <div class="txn-title">${escapeHtml(t.category)}${pendingCloudSaves.has(String(t.id))||pendingSaveOperations.has(t.id)?'<span class="save-pending-dot" title="Saved locally · cloud upload pending"></span>':""}</div>
           <div class="txn-meta">${dateLabel(t.date)}${t.tag?` · ${escapeHtml(t.tag)}`:""}</div>
         </div>
         <div class="txn-amount ${cls}">${sign}${money(t.amount)}</div>
@@ -5701,12 +6399,93 @@
   }
   function currentTxnType(){return $("typeIncome").classList.contains("active")?"income":"expense";}
 
+  async function syncOnePendingCloudSave(id,{showToast=false}={}){
+    const pending=pendingCloudSaves.get(String(id));
+    if(!pending||!cloudApi?.configured||!cloudUser||!navigator.onLine)return false;
+
+    const operationId=uid();
+    pendingSaveOperations.set(String(id),operationId);
+    renderRecords();
+
+    try{
+      const acknowledged=await withTimeout(
+        cloudApi.saveTransaction(
+          cloudUser.uid,
+          pending.transaction,
+          pending.previous||null
+        ),
+        8000
+      );
+
+      if(pendingSaveOperations.get(String(id))!==operationId)return false;
+      pendingSaveOperations.delete(String(id));
+      clearPendingCloudSave(id);
+
+      const index=state.transactions.findIndex(item=>String(item.id)===String(id));
+      if(index>=0)state.transactions[index]=acknowledged;
+      else state.transactions.push(acknowledged);
+
+      if(pending.isNew)setCloudRecordCount(cloudRemoteRecordCount+1);
+      saveLocalMirror();
+      renderAll();
+      markServerVerified();
+      if(showToast)toast("Record uploaded to cloud.");
+      return true;
+    }catch(error){
+      console.error("Pending record upload failed",error);
+      pendingSaveOperations.delete(String(id));
+      queuePendingCloudSave(
+        pending.transaction,
+        pending.previous||null,
+        error.message||"Cloud upload failed"
+      );
+      if(cloudErrorIsHard(error))setCloudStatus("error",error.message);
+      else setLocalMode(error.message);
+      renderAll();
+      if(showToast)localModeToast(error,"Record upload");
+      return false;
+    }
+  }
+
+  async function retryPendingCloudSaves(){
+    if(pendingSaveCleanupRunning||!pendingCloudSaves.size)return;
+    if(!cloudApi?.configured||!cloudUser){
+      toast("Sign in before retrying cloud upload.");
+      return;
+    }
+    if(!navigator.onLine){
+      toast("No network. Records remain saved locally.");
+      return;
+    }
+
+    pendingSaveCleanupRunning=true;
+    renderPendingCloudSaves();
+    let completed=0;
+
+    for(const id of [...pendingCloudSaves.keys()]){
+      const success=await syncOnePendingCloudSave(id,{showToast:false});
+      if(!success)break;
+      completed++;
+    }
+
+    pendingSaveCleanupRunning=false;
+    renderPendingCloudSaves();
+    renderCloudPanel();
+
+    if(!pendingCloudSaves.size){
+      toast(`${completed} pending record${completed===1?"":"s"} uploaded.`);
+    }else if(completed){
+      toast(`${completed} uploaded · ${pendingCloudSaves.size} still saved locally`);
+    }else{
+      toast(`${pendingCloudSaves.size} record${pendingCloudSaves.size===1?" is":"s are"} still saved locally.`);
+    }
+  }
+
   async function saveTxn(){
-    if(!cloudReadyForWrite())return;
     const amount=Number($("txnAmount").value);
     if(!amount||amount<=0){toast("Enter a valid amount.");return;}
 
-    const old=editingId?state.transactions.find(x=>x.id===editingId):null;
+    const old=editingId?state.transactions.find(item=>item.id===editingId):null;
     const txn={
       id:editingId||uid(),
       type:currentTxnType(),
@@ -5717,64 +6496,27 @@
       createdAt:Number(old?.createdAt)||Date.now()
     };
 
-    const operationId=uid();
-    pendingSaveOperations.set(txn.id,operationId);
+    queuePendingCloudSave(txn,old||null);
 
-    // Immediate UI response: update the local mirror and close the sheet first.
     const localIndex=state.transactions.findIndex(item=>item.id===txn.id);
     if(localIndex>=0)state.transactions[localIndex]=txn;
     else state.transactions.push(txn);
+
     saveLocalMirror();
     closeModal();
     renderAll();
-    setCloudStatus("syncing");
-    toast("Record added · syncing to cloud…");
 
-    try{
-      const acknowledged=await withTimeout(
-        cloudApi.saveTransaction(cloudUser.uid,txn,old),
-        20000
+    if(browserWriteTransportRestricted()||!cloudApi?.configured||!cloudUser||!navigator.onLine){
+      setLocalMode("Record saved locally");
+      toast(old
+        ?"Update saved on this device · cloud upload pending"
+        :"Record saved on this device · cloud upload pending"
       );
-
-      if(pendingSaveOperations.get(txn.id)!==operationId)return;
-      pendingSaveOperations.delete(txn.id);
-
-      const index=state.transactions.findIndex(item=>item.id===acknowledged.id);
-      if(index>=0)state.transactions[index]=acknowledged;
-      else state.transactions.push(acknowledged);
-      saveLocalMirror();
-      renderAll();
-      markServerVerified();
-      toast(old?"Update saved to cloud.":"Record saved to cloud.");
-
-      // Extra verification runs in the background and does not block the user.
-      if(typeof cloudApi.verifyTransaction==="function"){
-        cloudApi.verifyTransaction(cloudUser.uid,txn.id).catch(error=>{
-          console.error("Background save verification failed",error);
-          verifyCloudNow(false);
-        });
-      }
-    }catch(error){
-      console.error(error);
-
-      if(pendingSaveOperations.get(txn.id)===operationId){
-        pendingSaveOperations.delete(txn.id);
-        const currentIndex=state.transactions.findIndex(item=>item.id===txn.id);
-        if(old){
-          if(currentIndex>=0)state.transactions[currentIndex]=old;
-          else state.transactions.push(old);
-        }else if(currentIndex>=0){
-          state.transactions.splice(currentIndex,1);
-        }
-        saveLocalMirror();
-        renderAll();
-      }
-
-      setCloudStatus("error",error.message);
-      alert(`Cloud save failed. The visible record was rolled back.
-
-${error.message||"Please check your network and try again."}`);
+      return;
     }
+
+    toast(old?"Update saved · uploading in background":"Record saved · uploading in background");
+    syncOnePendingCloudSave(txn.id,{showToast:false});
   }
   async function syncOnePendingCloudDelete(id,{showToast=false}={}){
     const pending=pendingCloudDeletes.get(String(id));
@@ -5824,8 +6566,10 @@ ${error.message||"Please check your network and try again."}`);
     const originalIndex=state.transactions.findIndex(item=>item.id===txn.id);
     if(originalIndex<0)return false;
     const originalScroll=currentView==="records"?(window.scrollY||0):0;
+    const pendingSaveEntry=pendingCloudSaves.get(String(txn.id))||null;
+    if(pendingSaveEntry)clearPendingCloudSave(txn.id);
     pendingDeleteOperations.set(String(txn.id),{operationId:uid(),transaction:{...txn},originalIndex});
-    queuePendingCloudDelete(txn);
+    queuePendingCloudDelete(txn,"",{pendingSave:pendingSaveEntry});
     state.transactions.splice(originalIndex,1);
     saveLocalMirror();
     pendingDeleteOperations.delete(String(txn.id));
@@ -6274,6 +7018,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   });
   $("uploadLocalToCloud").addEventListener("click",uploadCurrentStateToCloud);
     $("cloudRetrySync").addEventListener("click",()=>quickVerifyCloudNow(true));
+  $("retryPendingCloudSaves").addEventListener("click",retryPendingCloudSaves);
   $("cloudFullRefresh").addEventListener("click",()=>verifyCloudNow(true));
   $("retryPendingCloudDeletes").addEventListener("click",retryPendingCloudDeletes);
   $("trashList").addEventListener("click",async event=>{
@@ -6290,6 +7035,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
         if(!state.transactions.some(item=>String(item.id)===id)){
           state.transactions.push({...pending.transaction});
         }
+        if(pending.pendingSave)restorePendingCloudSaveEntry(pending.pendingSave);
         saveLocalMirror();
         renderAll();
         toast("Record restored from local Trash.");
@@ -6518,6 +7264,41 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     if(remove)deleteRecurringExpense(remove.dataset.recurringDelete);
   });
 
+  $("weeklyBackupEnabled").addEventListener("change",event=>{
+    weeklyBackupMeta.enabled=event.target.checked;
+    weeklyBackupMeta.nextDueAt=event.target.checked
+      ?Date.now()
+      :0;
+    saveWeeklyBackupMeta();
+    renderWeeklyBackupPanel();
+
+    if(event.target.checked){
+      setTimeout(checkWeeklyAutoBackup,300);
+      toast("Weekly automatic backup enabled.");
+    }else{
+      toast("Weekly automatic backup turned off.");
+    }
+  });
+
+  $("runWeeklyBackupNow").addEventListener(
+    "click",
+    ()=>runWeeklyAutoBackup({force:true,manual:true})
+  );
+
+  $("downloadLatestWeeklyBackup").addEventListener("click",()=>{
+    const snapshot=latestWeeklyBackupSnapshot();
+    if(snapshot)downloadWeeklyBackupSnapshot(snapshot);
+  });
+
+  $("weeklyBackupArchive").addEventListener("click",event=>{
+    const button=event.target.closest("[data-weekly-backup-download]");
+    if(!button)return;
+    const snapshot=loadWeeklyBackupSnapshots().find(
+      item=>item.id===button.dataset.weeklyBackupDownload
+    );
+    if(snapshot)downloadWeeklyBackupSnapshot(snapshot);
+  });
+
   $("exportCsv").addEventListener("click",exportCsv);
   $("backupJson").addEventListener("click",backupJson);
   $("importJson").addEventListener("click",()=>$("importFile").click());
@@ -6540,10 +7321,19 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 
-  window.addEventListener("online",()=>{if(cloudUser)quickVerifyCloudNow(false);});
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="visible"){
+      setTimeout(checkWeeklyAutoBackup,500);
+    }
+  });
+
+  window.addEventListener("online",()=>{
+    if(cloudUser&&cloudStatus!=="error")setLocalMode("Network available");
+    setTimeout(checkWeeklyAutoBackup,500);
+  });
   window.addEventListener("offline",()=>{
-    if(cloudServerVerified)setCloudStatus("online");
-    else setCloudStatus("error","Offline");
+    if(cloudUser)setLocalMode("Offline · local records remain available");
+    else setCloudStatus("signedout");
   });
   registerRightSwipeClose("categoryDetailModal",closeCategoryDetail);
   registerRightSwipeClose("txnModal",closeModal);
@@ -6560,9 +7350,13 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     });
   });
   applyLocalDeleteQueue();
+  applyLocalPendingSaves();
   saveLocalMirror();
+  renderPendingCloudSaves();
   renderPendingCloudDeletes();
   initCloud();
+  renderWeeklyBackupPanel();
+  setTimeout(checkWeeklyAutoBackup,2500);
   populateMonths();
   $("globalMonth").value=selectedMonth;
   $("budgetMonth").value=selectedMonth;
