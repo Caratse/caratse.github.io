@@ -2032,6 +2032,37 @@
       line-height:1.45
     }
 
+
+    /* V45 — local-first settings queue */
+    .pending-cloud-settings-box{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      align-items:center;
+      gap:10px;
+      margin-top:9px;
+      padding:9px 10px;
+      border:1px solid rgba(80,107,150,.14);
+      border-radius:13px;
+      background:#EEF3FA
+    }
+    .pending-cloud-settings-box strong{
+      display:block;
+      color:#405675;
+      font-size:10px
+    }
+    .pending-cloud-settings-box small{
+      display:block;
+      margin-top:3px;
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.4
+    }
+    .pending-cloud-settings-box button{
+      white-space:nowrap;
+      padding:7px 9px;
+      font-size:8px
+    }
+
 </style>
 </head>
 <body>
@@ -2243,6 +2274,14 @@
                 <small>They will not reappear on this device. Cloud cleanup can be retried separately.</small>
               </div>
               <button id="retryPendingCloudDeletes" type="button" class="secondary">Retry cleanup</button>
+            </div>
+
+            <div id="pendingCloudSettingsBox" class="pending-cloud-settings-box hidden">
+              <div>
+                <strong>Settings changes saved locally</strong>
+                <small id="pendingCloudSettingsReason">Categories, budget and app preferences can be uploaded later.</small>
+              </div>
+              <button id="retryPendingCloudSettings" type="button" class="secondary">Retry settings</button>
             </div>
             <div id="cloudMigrationBox" class="cloud-warning hidden">
               Local records were found, but this cloud account is empty.
@@ -2486,8 +2525,8 @@
           </div>
           <input id="importFile" class="hidden" type="file" accept=".json,application/json">
           <p class="helper migration-import-note">
-            Migration files add transactions without replacing your current budget,
-            recurring expenses, appearance or existing records.
+            Backups restore on this device first. Migration files add transactions without replacing your current budget,
+            recurring expenses, appearance or existing records. Pending changes upload later.
           </p>
         </div>
       </details>
@@ -2504,7 +2543,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 44 adds weekly automatic snapshots and automatic retry of pending cloud changes whenever the app is opened after the weekly due date.
+            Version 46 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2713,7 +2752,7 @@
     </div>
     <p id="deleteCategoryMessage"></p>
     <div id="deleteCategorySelectWrap" class="field delete-box hidden">
-      <label>Move existing records and budget to</label>
+      <label>Move existing records and fixed-expense rules to</label>
       <select id="deleteCategoryTarget"></select>
     </div>
     <div class="modal-actions">
@@ -2725,13 +2764,14 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=44"></script>
-<script src="firebase-cloud-v37.js?v=44"></script>
+<script src="firebase-config.js?v=46"></script>
+<script src="firebase-cloud-v46.js?v=46"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
   const PENDING_DELETE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_deletes_v1`;
   const PENDING_SAVE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_saves_v1`;
+  const PENDING_SETTINGS_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_settings_v1`;
   const CLOUD_COUNT_STORAGE_KEY = `${STORAGE_KEY}_last_cloud_count_v1`;
   const WEEKLY_BACKUP_STORAGE_KEY = `${STORAGE_KEY}_weekly_backups_v1`;
   const WEEKLY_BACKUP_META_KEY = `${STORAGE_KEY}_weekly_backup_meta_v1`;
@@ -2930,6 +2970,8 @@
   const pendingDeleteOperations = new Map();
   const pendingCloudSaves = loadPendingCloudSaves();
   const pendingCloudDeletes = loadPendingCloudDeletes();
+  let pendingCloudSettings = loadPendingCloudSettings();
+  let pendingSettingsCleanupRunning = false;
   let pendingSaveCleanupRunning = false;
   let pendingDeleteCleanupRunning = false;
   let weeklyBackupRunning = false;
@@ -2991,25 +3033,32 @@
   }
 
   function saveWeeklyBackupSnapshots(snapshots){
-    const trimmed=(Array.isArray(snapshots)?snapshots:[])
-      .slice(0,WEEKLY_BACKUP_MAX_SNAPSHOTS);
+    const source=Array.isArray(snapshots)?snapshots:[];
+    const sizes=[WEEKLY_BACKUP_MAX_SNAPSHOTS,2,1];
+    let lastError=null;
 
-    try{
-      localStorage.setItem(
-        WEEKLY_BACKUP_STORAGE_KEY,
-        JSON.stringify(trimmed)
-      );
-      return trimmed;
-    }catch(error){
-      // If storage is tight, keep only the newest two complete snapshots.
-      console.warn("Weekly archive was reduced because device storage is tight",error);
-      const reduced=trimmed.slice(0,2);
-      localStorage.setItem(
-        WEEKLY_BACKUP_STORAGE_KEY,
-        JSON.stringify(reduced)
-      );
-      return reduced;
+    for(const size of sizes){
+      const candidate=source.slice(0,size);
+      try{
+        localStorage.setItem(
+          WEEKLY_BACKUP_STORAGE_KEY,
+          JSON.stringify(candidate)
+        );
+        return candidate;
+      }catch(error){
+        lastError=error;
+        console.warn(
+          `Weekly backup archive could not keep ${size} snapshot${size===1?"":"s"}`,
+          error
+        );
+      }
     }
+
+    const failure=new Error(
+      "The weekly backup could not be stored because this device has no available app storage. Download a manual backup, then free some Safari storage."
+    );
+    failure.cause=lastError;
+    throw failure;
   }
 
   function weeklyBackupDateTime(timestamp){
@@ -3034,28 +3083,119 @@
     return `daily-budget-weekly-backup-${date}.json`;
   }
 
-  function buildWeeklyBackupSnapshot(){
-    const createdAt=Date.now();
-    const payload={
-      format:"daily-budget-weekly-backup-v1",
-      appVersion:44,
-      createdAt:new Date(createdAt).toISOString(),
-      createdAtMs:createdAt,
+  function buildRecoveryPackage(format="daily-budget-full-backup-v2"){
+    return {
+      format,
+      appVersion:46,
+      createdAt:new Date().toISOString(),
+      createdAtMs:Date.now(),
       selectedMonth,
       state:JSON.parse(JSON.stringify(state)),
-      pendingCloudSaves:[...pendingCloudSaves.values()],
-      pendingCloudDeletes:[...pendingCloudDeletes.values()],
+      pendingCloudSaves:[...pendingCloudSaves.values()].map(item=>
+        JSON.parse(JSON.stringify(item))
+      ),
+      pendingCloudDeletes:[...pendingCloudDeletes.values()].map(item=>
+        JSON.parse(JSON.stringify(item))
+      ),
+      pendingCloudSettings:pendingCloudSettings
+        ?JSON.parse(JSON.stringify(pendingCloudSettings))
+        :null,
       cloudTrash:JSON.parse(JSON.stringify(cloudTrash||[]))
     };
+  }
+
+  function normalizeRecoveryPackage(input){
+    if(!input||typeof input!=="object")return null;
+
+    if(
+      (input.format==="daily-budget-full-backup-v2"||
+       input.format==="daily-budget-weekly-backup-v1")&&
+      input.state&&typeof input.state==="object"
+    )return input;
+
+    if(
+      input.payload&&
+      typeof input.payload==="object"&&
+      input.payload.state
+    )return normalizeRecoveryPackage(input.payload);
+
+    if(Array.isArray(input.transactions)&&input.budgets&&typeof input.budgets==="object"){
+      return {
+        format:"daily-budget-legacy-backup-v1",
+        appVersion:0,
+        createdAt:new Date().toISOString(),
+        createdAtMs:Date.now(),
+        selectedMonth,
+        state:input,
+        pendingCloudSaves:[],
+        pendingCloudDeletes:[],
+        pendingCloudSettings:null,
+        cloudTrash:[]
+      };
+    }
+
+    return null;
+  }
+
+  function replacePendingMap(target,items){
+    target.clear();
+    (Array.isArray(items)?items:[]).forEach(item=>{
+      if(item&&item.id&&item.transaction){
+        target.set(String(item.id),item);
+      }
+    });
+  }
+
+  function restoreRecoveryPackageLocally(recovery){
+    const normalized=normalizeRecoveryPackage(recovery);
+    if(!normalized)throw new Error("This file is not a supported Daily Budget backup.");
+
+    state=normalizeState(normalized.state);
+    duplicateSkippedGroups.clear();
+    state.reviewedDuplicateGroups.forEach(fingerprint=>
+      duplicateSkippedGroups.add(String(fingerprint))
+    );
+
+    replacePendingMap(pendingCloudSaves,normalized.pendingCloudSaves);
+    replacePendingMap(pendingCloudDeletes,normalized.pendingCloudDeletes);
+    pendingCloudSettings=normalized.pendingCloudSettings||null;
+    cloudTrash=Array.isArray(normalized.cloudTrash)
+      ?normalized.cloudTrash
+      :[];
+
+    applyLocalDeleteQueue();
+    applyLocalPendingSaves();
+    applyAppearanceTheme(state.appearanceTheme);
+
+    saveLocalMirror();
+    savePendingCloudSaves();
+    savePendingCloudDeletes();
+    savePendingCloudSettings();
+
+    selectedMonth=/^\d{4}-\d{2}$/.test(String(normalized.selectedMonth||""))
+      ?String(normalized.selectedMonth)
+      :currentMonthKey();
+    budgetSelectedMonth=selectedMonth;
+    selectedYear=selectedMonth.slice(0,4);
+
+    populateMonths();
+    renderAll();
+    return normalized;
+  }
+
+  function buildWeeklyBackupSnapshot(){
+    const createdAt=Date.now();
+    const payload=buildRecoveryPackage("daily-budget-weekly-backup-v1");
+    payload.createdAt=new Date(createdAt).toISOString();
+    payload.createdAtMs=createdAt;
 
     return {
       id:`weekly_${new Date(createdAt).toISOString().slice(0,10)}_${createdAt}`,
       createdAt,
-      records:Array.isArray(state.transactions)
-        ?state.transactions.length
-        :0,
+      records:Array.isArray(state.transactions)?state.transactions.length:0,
       pendingUploads:pendingCloudSaves.size,
       pendingDeletes:pendingCloudDeletes.size,
+      pendingSettings:pendingCloudSettings?1:0,
       payload
     };
   }
@@ -3141,7 +3281,7 @@
         <div class="weekly-backup-row">
           <div>
             <strong>${index===0?"Latest · ":""}${escapeHtml(weeklyBackupDateTime(snapshot.createdAt))}</strong>
-            <small>${Number(snapshot.records)||0} records · ${Number(snapshot.pendingUploads)||0} upload pending · ${Number(snapshot.pendingDeletes)||0} delete pending</small>
+            <small>${Number(snapshot.records)||0} records · ${Number(snapshot.pendingUploads)||0} upload pending · ${Number(snapshot.pendingDeletes)||0} delete pending · ${Number(snapshot.pendingSettings)||0} settings pending</small>
           </div>
           <button
             type="button"
@@ -3161,12 +3301,14 @@
   async function attemptWeeklyCloudUpload(){
     const beforeSaves=pendingCloudSaves.size;
     const beforeDeletes=pendingCloudDeletes.size;
+    const beforeSettings=pendingCloudSettings?1:0;
 
-    if(!beforeSaves&&!beforeDeletes){
+    if(!beforeSaves&&!beforeDeletes&&!beforeSettings){
       return {
         status:"nothing",
         uploaded:0,
         cleaned:0,
+        settingsUploaded:0,
         remaining:0,
         message:"No pending cloud changes"
       };
@@ -3177,43 +3319,47 @@
         status:"skipped",
         uploaded:0,
         cleaned:0,
-        remaining:beforeSaves+beforeDeletes,
+        settingsUploaded:0,
+        remaining:beforeSaves+beforeDeletes+beforeSettings,
         message:"Waiting for sign-in or network"
       };
     }
 
     let uploaded=0;
     let cleaned=0;
+    let settingsUploaded=0;
 
     for(const id of [...pendingCloudSaves.keys()]){
-      const success=await syncOnePendingCloudSave(
-        id,
-        {showToast:false}
-      );
+      const success=await syncOnePendingCloudSave(id,{showToast:false});
       if(!success)break;
       uploaded++;
     }
 
-    // Only try delete cleanup after pending saves have finished or there
-    // were no pending saves. This avoids unnecessary repeated failures.
-    if(!pendingCloudSaves.size){
+    if(pendingCloudSettings){
+      const success=await syncOnePendingCloudSettings({showToast:false});
+      if(success)settingsUploaded=1;
+    }
+
+    if(!pendingCloudSaves.size&&!pendingCloudSettings){
       for(const id of [...pendingCloudDeletes.keys()]){
-        const success=await syncOnePendingCloudDelete(
-          id,
-          {showToast:false}
-        );
+        const success=await syncOnePendingCloudDelete(id,{showToast:false});
         if(!success)break;
         cleaned++;
       }
     }
 
-    const remaining=pendingCloudSaves.size+pendingCloudDeletes.size;
+    const remaining=
+      pendingCloudSaves.size+
+      pendingCloudDeletes.size+
+      (pendingCloudSettings?1:0);
+
     return {
       status:remaining
-        ?(uploaded||cleaned?"partial":"failed")
+        ?(uploaded||cleaned||settingsUploaded?"partial":"failed")
         :"success",
       uploaded,
       cleaned,
+      settingsUploaded,
       remaining,
       message:remaining
         ?`${remaining} cloud change${remaining===1?"":"s"} still pending`
@@ -3298,6 +3444,145 @@
     if(!dueAt||now>=dueAt){
       runWeeklyAutoBackup({force:true,manual:false});
     }
+  }
+
+  function loadPendingCloudSettings(){
+    try{
+      const parsed=JSON.parse(
+        localStorage.getItem(PENDING_SETTINGS_STORAGE_KEY)||"null"
+      );
+      return parsed&&parsed.payload?parsed:null;
+    }catch(error){
+      console.error("Pending settings queue could not be loaded",error);
+      return null;
+    }
+  }
+
+  function savePendingCloudSettings(){
+    try{
+      if(pendingCloudSettings){
+        localStorage.setItem(
+          PENDING_SETTINGS_STORAGE_KEY,
+          JSON.stringify(pendingCloudSettings)
+        );
+      }else{
+        localStorage.removeItem(PENDING_SETTINGS_STORAGE_KEY);
+      }
+    }catch(error){
+      console.error("Pending settings queue could not be saved",error);
+    }
+    renderPendingCloudSettings();
+  }
+
+  function queuePendingCloudSettings(reason="Settings changed"){
+    const previous=pendingCloudSettings;
+    pendingCloudSettings={
+      payload:appSettingsPayload(),
+      reason:String(reason||"Settings changed"),
+      requestedAt:previous?.requestedAt||Date.now(),
+      attempts:Number(previous?.attempts)||0,
+      lastAttemptAt:Number(previous?.lastAttemptAt)||0,
+      lastError:String(previous?.lastError||"")
+    };
+    savePendingCloudSettings();
+  }
+
+  function clearPendingCloudSettings(){
+    pendingCloudSettings=null;
+    savePendingCloudSettings();
+  }
+
+  function renderPendingCloudSettings(){
+    const box=$("pendingCloudSettingsBox");
+    if(!box)return;
+
+    box.classList.toggle("hidden",!pendingCloudSettings);
+    $("pendingCloudSettingsReason").textContent=pendingCloudSettings
+      ?`${pendingCloudSettings.reason}. It is already active on this device.`
+      :"Categories, budget and app preferences can be uploaded later.";
+
+    const button=$("retryPendingCloudSettings");
+    button.disabled=pendingSettingsCleanupRunning||!pendingCloudSettings;
+    button.textContent=pendingSettingsCleanupRunning
+      ?"Retrying…"
+      :"Retry settings";
+  }
+
+  async function syncOnePendingCloudSettings({showToast=false}={}){
+    if(!pendingCloudSettings)return true;
+
+    if(!cloudApi?.configured||!cloudUser||!navigator.onLine){
+      if(showToast)toast("Settings remain saved on this device.");
+      return false;
+    }
+
+    const queued=pendingCloudSettings;
+
+    try{
+      await withTimeout(
+        cloudApi.saveSettings(cloudUser.uid,queued.payload),
+        15000
+      );
+
+      if(pendingCloudSettings===queued){
+        clearPendingCloudSettings();
+      }
+
+      markServerVerified();
+      renderCloudPanel();
+      if(showToast)toast("Settings uploaded to cloud.");
+      return true;
+    }catch(error){
+      console.error("Pending settings upload failed",error);
+
+      if(pendingCloudSettings===queued){
+        pendingCloudSettings={
+          ...queued,
+          attempts:(Number(queued.attempts)||0)+1,
+          lastAttemptAt:Date.now(),
+          lastError:error.message||"Settings upload failed"
+        };
+        savePendingCloudSettings();
+      }
+
+      if(cloudErrorIsHard(error)){
+        setCloudStatus("error",error.message);
+      }else{
+        setLocalMode(error.message);
+      }
+
+      if(showToast)localModeToast(error,"Settings upload");
+      return false;
+    }
+  }
+
+  async function retryPendingCloudSettings(){
+    if(pendingSettingsCleanupRunning||!pendingCloudSettings)return;
+
+    pendingSettingsCleanupRunning=true;
+    renderPendingCloudSettings();
+
+    await syncOnePendingCloudSettings({showToast:true});
+
+    pendingSettingsCleanupRunning=false;
+    renderPendingCloudSettings();
+    renderCloudPanel();
+  }
+
+  function clearAllPendingCloudQueues(){
+    pendingCloudSaves.clear();
+    pendingCloudDeletes.clear();
+    pendingCloudSettings=null;
+    pendingSaveOperations.clear();
+    pendingDeleteOperations.clear();
+
+    try{localStorage.removeItem(PENDING_SAVE_STORAGE_KEY);}catch(_){}
+    try{localStorage.removeItem(PENDING_DELETE_STORAGE_KEY);}catch(_){}
+    try{localStorage.removeItem(PENDING_SETTINGS_STORAGE_KEY);}catch(_){}
+
+    renderPendingCloudSaves();
+    renderPendingCloudDeletes();
+    renderPendingCloudSettings();
   }
 
   function loadPendingCloudSaves(){
@@ -3480,9 +3765,13 @@
   }
   function cloudReadyForWrite(){
     if(!cloudApi?.configured){toast("Firebase is not configured.");setView("settings");return false;}
-    if(!cloudUser){toast("Sign in to save securely.");setView("settings");return false;}
-    if(!navigator.onLine){toast("No network. Nothing was saved.");return false;}
-    if(!cloudServerVerified){toast("Cloud is not server-verified yet. Tap Verify cloud data.");setView("settings");return false;}
+    if(!cloudUser){toast("This cloud-only action needs you to sign in.");setView("settings");return false;}
+    if(!navigator.onLine){toast("This cloud-only action needs a network connection.");return false;}
+    if(!cloudServerVerified){
+      toast("This cloud-only action needs a verified connection. Use Quick cloud check, then retry.");
+      setView("settings");
+      return false;
+    }
     if(cloudMigrationNeeded){toast("Upload your current local data to cloud first.");setView("settings");return false;}
     return true;
   }
@@ -3508,6 +3797,13 @@
     if(settings.budgets&&typeof settings.budgets==="object")state.budgets=JSON.parse(JSON.stringify(settings.budgets));
     if(Array.isArray(settings.recurringExpenses)){
       state.recurringExpenses=settings.recurringExpenses.map(normalizeRecurringExpense);
+    }
+    if(Array.isArray(settings.reviewedDuplicateGroups)){
+      duplicateSkippedGroups.clear();
+      settings.reviewedDuplicateGroups.forEach(fingerprint=>
+        duplicateSkippedGroups.add(String(fingerprint))
+      );
+      state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
     }
     if(settings.appearanceTheme){
       state.appearanceTheme=normalizeAppearanceTheme(settings.appearanceTheme);
@@ -3716,6 +4012,7 @@
 
     renderPendingCloudSaves();
     renderPendingCloudDeletes();
+    renderPendingCloudSettings();
 
     if(cloudUser){
       $("cloudUserEmail").textContent=cloudUser.email||cloudUser.uid;
@@ -3806,27 +4103,29 @@
       }).join("");
   }
 
-  async function syncSettingsToCloud(showSuccess=false){
+  async function syncSettingsToCloud(
+    showSuccess=false,
+    reason="Settings changed"
+  ){
     saveLocalMirror();
-    if(browserWriteTransportRestricted()||!cloudApi?.configured||!cloudUser||!navigator.onLine){
+    queuePendingCloudSettings(reason);
+
+    if(
+      browserWriteTransportRestricted()||
+      !cloudApi?.configured||
+      !cloudUser||
+      !navigator.onLine||
+      cloudMigrationNeeded
+    ){
       setLocalMode("Settings saved locally");
       if(showSuccess)toast("Settings saved on this device.");
       return true;
     }
-    if(cloudMigrationNeeded)return false;
-    try{
-      setCloudStatus("syncing");
-      await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()),15000);
-      markServerVerified();
-      if(showSuccess)toast("Settings cloud-saved.");
-      return true;
-    }catch(error){
-      console.error(error);
-      if(cloudErrorIsHard(error))setCloudStatus("error",error.message);
-      else setLocalMode(error.message);
-      if(showSuccess)localModeToast(error,"Settings upload");
-      return false;
-    }
+
+    syncOnePendingCloudSettings({showToast:false});
+
+    if(showSuccess)toast("Settings saved · cloud upload pending");
+    return true;
   }
   function cloudErrorIsHard(error){
     const text=String(error?.message||error||"").toLowerCase();
@@ -3858,7 +4157,6 @@
     return transport.includes("REST_POST_COMMIT");
   }
   function scheduleAutomaticRecurringGeneration(){
-    if(browserWriteTransportRestricted())return;
     setTimeout(()=>processRecurringExpenses({showToast:false}),0);
   }
   function markServerVerified(){
@@ -3882,7 +4180,9 @@
     }else{
       cloudMigrationNeeded=false;
       state.transactions=remote;
-      if(serverState?.settings)applyCloudSettings(serverState.settings);
+      if(serverState?.settings&&!pendingCloudSettings){
+        applyCloudSettings(serverState.settings);
+      }
     }
 
     saveLocalMirror();
@@ -4015,7 +4315,11 @@
       },
       onSettings(settings,metadata={}){
         if(metadata.fromCache||metadata.hasPendingWrites)return;
-        if(settings&&!cloudMigrationNeeded){applyCloudSettings(settings);saveLocalMirror();renderAll();}
+        if(settings&&!cloudMigrationNeeded&&!pendingCloudSettings){
+          applyCloudSettings(settings);
+          saveLocalMirror();
+          renderAll();
+        }
       },
       onTrash(items,metadata={}){
         if(metadata.fromCache||metadata.hasPendingWrites)return;
@@ -4401,14 +4705,11 @@
       requestAnimationFrame(()=>renderAnalysis());
     }
 
-    if(!cloudReadyForWrite())return;
-    if(!(await syncSettingsToCloud(false))){
-      restoreSettings(previous);
-      saveLocalMirror();
-      renderAll();
-      return;
-    }
-    toast(`${THEME_PRESETS[id].name} applied.`);
+    await syncSettingsToCloud(
+      false,
+      `App background changed to ${THEME_PRESETS[id].name}`
+    );
+    toast(`${THEME_PRESETS[id].name} applied on this device.`);
   }
 
   function renderRecurringExpenses(){
@@ -4454,8 +4755,6 @@
   }
 
   async function saveRecurringExpense(){
-    if(!cloudReadyForWrite())return;
-
     const amount=Number($("recurringAmount").value);
     const day=Number($("recurringDay").value);
     const category=$("recurringCategory").value;
@@ -4491,19 +4790,21 @@
     saveLocalMirror();
     renderAll();
 
-    if(!(await syncSettingsToCloud(false))){
-      restoreSettings(previous);
-      saveLocalMirror();
-      renderAll();
-      return;
-    }
+    await syncSettingsToCloud(
+      false,
+      existing?"Fixed expense updated":"Fixed expense added"
+    );
 
-    toast(existing?"Fixed expense updated.":"Fixed expense saved.");
+    toast(
+      existing
+        ?"Fixed expense updated on this device."
+        :"Fixed expense saved on this device."
+    );
+
     await processRecurringExpenses({showToast:true});
   }
 
   async function deleteRecurringExpense(id){
-    if(!cloudReadyForWrite())return;
     const rule=state.recurringExpenses.find(item=>item.id===id);
     if(!rule)return;
     if(!confirm(`Delete the fixed expense “${rule.tag||rule.category}”? Existing records will remain.`))return;
@@ -4514,27 +4815,12 @@
     saveLocalMirror();
     renderAll();
 
-    if(!(await syncSettingsToCloud(false))){
-      restoreSettings(previous);
-      saveLocalMirror();
-      renderAll();
-      return;
-    }
-    toast("Fixed expense rule deleted.");
+    await syncSettingsToCloud(false,"Fixed expense deleted");
+    toast("Fixed expense rule deleted on this device.");
   }
 
   async function processRecurringExpenses({showToast=false}={}){
     if(recurringProcessRunning)return {created:0};
-    if(
-      !cloudApi?.configured ||
-      !cloudUser ||
-      !navigator.onLine ||
-      !cloudServerVerified ||
-      cloudMigrationNeeded
-    ){
-      if(showToast)toast("Cloud must be online and verified before generating fixed expenses.");
-      return {created:0};
-    }
 
     recurringProcessRunning=true;
     let created=0;
@@ -4553,7 +4839,9 @@
           if(rule.generatedMonths.includes(month))continue;
 
           const transactionId=recurringTransactionId(rule,month);
-          const existing=state.transactions.find(transaction=>transaction.id===transactionId);
+          const existing=state.transactions.find(transaction=>
+            transaction.id===transactionId
+          );
 
           if(existing){
             rule.generatedMonths.push(month);
@@ -4573,12 +4861,8 @@
             createdAt:Date.parse(`${dueDate}T12:00:00`)||Date.now()
           };
 
-          const acknowledged=await withTimeout(
-            cloudApi.saveTransaction(cloudUser.uid,transaction,null),
-            30000
-          );
-
-          state.transactions.push(acknowledged||transaction);
+          state.transactions.push(transaction);
+          queuePendingCloudSave(transaction,null);
           rule.generatedMonths.push(month);
           rule.generatedMonths=[...new Set(rule.generatedMonths)].sort();
           created++;
@@ -4588,24 +4872,31 @@
 
       if(settingsChanged){
         saveLocalMirror();
+        queuePendingCloudSettings("Fixed expense generation updated");
         renderAll();
-        await withTimeout(
-          cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()),
-          30000
-        );
-        markServerVerified();
+      }
+
+      if(
+        created&&
+        !browserWriteTransportRestricted()&&
+        cloudApi?.configured&&
+        cloudUser&&
+        navigator.onLine
+      ){
+        retryPendingCloudSaves();
+        syncOnePendingCloudSettings({showToast:false});
       }
 
       if(showToast){
         toast(created
-          ?`${created} fixed expense${created===1?"":"s"} added.`
+          ?`${created} fixed expense${created===1?"":"s"} added on this device.`
           :"No fixed expenses are due."
         );
       }
+
       return {created};
     }catch(error){
       console.error("Recurring expense generation failed",error);
-      setCloudStatus("error",error.message);
       if(showToast)toast(error.message||"Fixed expense generation failed.");
       return {created,error};
     }finally{
@@ -5503,7 +5794,6 @@
     if(analysisMode==="month") return monthLabel(key);
     return key;
   }
-  function categoryIcon(cat){ return state.categoryIcons?.[cat] || ICONS[cat] || "•"; }
   function totals(list){
     return list.reduce((a,t)=>{
       const amt=Number(t.amount)||0;
@@ -6199,58 +6489,106 @@
   function categoryArray(type){return type==="expense"?state.expenseCategories:state.incomeCategories;}
   function setCategoryMode(type){categoryMode=type;renderCategoryManager();}
   async function addCategory(){
-    if(!cloudReadyForWrite())return;
-    const previous=appSettingsPayload();
-    const name=$("newCategoryName").value.trim(),icon=$("newCategoryIcon").value || "⭐",list=categoryArray(categoryMode);
+    const name=$("newCategoryName").value.trim();
+    const icon=$("newCategoryIcon").value||"⭐";
+    const list=categoryArray(categoryMode);
+
     if(!name){toast("Enter a category name.");return;}
-    if(list.some(x=>x.toLowerCase()===name.toLowerCase())){toast("This category already exists.");return;}
-    list.push(name);state.categoryIcons[name]=icon;$("newCategoryName").value="";$("newCategoryIcon").value="⭐";
-    saveLocalMirror();renderAll();
-    if(!(await syncSettingsToCloud(false))){restoreSettings(previous);saveLocalMirror();renderAll();return;}
-    toast("Category cloud-saved.");
+    if(list.some(item=>item.toLowerCase()===name.toLowerCase())){
+      toast("This category already exists.");
+      return;
+    }
+
+    list.push(name);
+    state.categoryIcons[name]=icon;
+    $("newCategoryName").value="";
+    $("newCategoryIcon").value="⭐";
+
+    saveLocalMirror();
+    renderAll();
+    await syncSettingsToCloud(false,"Category added");
+    toast("Category added on this device.");
   }
+
   async function renameCategory(type,index,newName){
-    if(!cloudReadyForWrite())return renderCategoryManager();
-    const previous=appSettingsPayload();
-    const list=categoryArray(type),old=list[index],name=newName.trim();
+    const list=categoryArray(type);
+    const old=list[index];
+    const name=newName.trim();
+
     if(!old||!name||old===name)return;
-    if(list.some((x,i)=>i!==index&&x.toLowerCase()===name.toLowerCase())){toast("This category already exists.");renderCategoryManager();return;}
+
+    if(list.some((item,itemIndex)=>
+      itemIndex!==index&&item.toLowerCase()===name.toLowerCase()
+    )){
+      toast("This category already exists.");
+      renderCategoryManager();
+      return;
+    }
+
+    const changedTransactions=state.transactions
+      .filter(transaction=>
+        transaction.type===type&&transaction.category===old
+      )
+      .map(transaction=>({
+        previous:{...transaction},
+        updated:{...transaction,category:name}
+      }));
+
     list[index]=name;
-    state.transactions.forEach(t=>{if(t.type===type&&t.category===old)t.category=name;});
+
+    changedTransactions.forEach(({updated})=>{
+      const transaction=state.transactions.find(item=>item.id===updated.id);
+      if(transaction)transaction.category=name;
+    });
+
     if(type==="expense"){
-      state.recurringExpenses.forEach(rule=>{if(rule.category===old)rule.category=name;});
+      state.recurringExpenses.forEach(rule=>{
+        if(rule.category===old)rule.category=name;
+      });
     }
-    state.categoryIcons[name]=state.categoryIcons[old]||ICONS[old]||"⭐";delete state.categoryIcons[old];
-    saveLocalMirror();renderAll();
-    try{
-      setCloudStatus("syncing");
-      await withTimeout(cloudApi.replaceCategory(cloudUser.uid,type,old,name,appSettingsPayload()),60000);
-      setCloudStatus("online");toast("Category renamed in cloud.");
-    }catch(error){
-      restoreSettings(previous);
-      state.transactions.forEach(t=>{if(t.type===type&&t.category===name)t.category=old;});
-      saveLocalMirror();renderAll();setCloudStatus("error",error.message);toast(error.message||"Rename failed.");
-    }
+
+    state.categoryIcons[name]=state.categoryIcons[old]||ICONS[old]||"⭐";
+    delete state.categoryIcons[old];
+
+    changedTransactions.forEach(({previous,updated})=>
+      queuePendingCloudSave(updated,previous)
+    );
+
+    saveLocalMirror();
+    renderAll();
+    await syncSettingsToCloud(
+      false,
+      `Category renamed from ${old} to ${name}`
+    );
+
+    toast(
+      changedTransactions.length
+        ?`Category renamed · ${changedTransactions.length} record${changedTransactions.length===1?"":"s"} saved locally`
+        :"Category renamed on this device."
+    );
   }
+
   async function updateCategoryIcon(type,index,icon){
-    if(!cloudReadyForWrite())return;
-    const previous=appSettingsPayload();
-    const cat=categoryArray(type)[index];
-    if(!cat)return;
-    state.categoryIcons[cat]=icon || "⭐";
-    saveLocalMirror();renderAll();
-    if(!(await syncSettingsToCloud(false))){restoreSettings(previous);saveLocalMirror();renderAll();}
+    const category=categoryArray(type)[index];
+    if(!category)return;
+
+    state.categoryIcons[category]=icon||"⭐";
+    saveLocalMirror();
+    renderAll();
+    await syncSettingsToCloud(false,`Icon changed for ${category}`);
   }
+
   async function moveCategory(type,index,dir){
-    if(!cloudReadyForWrite())return;
-    const previous=appSettingsPayload();
-    const list=categoryArray(type),next=index+dir;
+    const list=categoryArray(type);
+    const next=index+dir;
     if(next<0||next>=list.length)return;
+
     [list[index],list[next]]=[list[next],list[index]];
-    saveLocalMirror();renderAll();
-    if(!(await syncSettingsToCloud(false))){restoreSettings(previous);saveLocalMirror();renderAll();return;}
-    toast("Category order cloud-saved.");
+    saveLocalMirror();
+    renderAll();
+    await syncSettingsToCloud(false,"Category order changed");
   }
+
   function openIconPicker(type,index){
     iconPickerTarget={type,index};
     renderPalette("iconPickerGrid", categoryIcon(categoryArray(type)[index]));
@@ -6290,37 +6628,71 @@
     unlockPageFromOverlay({restore:restoreScroll});
   }
   async function confirmDeleteCategory(){
-    if(!pendingDeleteCategory||!cloudReadyForWrite())return;
+    if(!pendingDeleteCategory)return;
+
     const {type,index,needsMove}=pendingDeleteCategory;
-    const list=categoryArray(type),cat=list[index];
-    if(!cat)return closeDeleteCategory();
-    const previous=appSettingsPayload();
+    const list=categoryArray(type);
+    const category=list[index];
+
+    if(!category){
+      closeDeleteCategory();
+      return;
+    }
+
     let fallback=null;
     if(needsMove){
       fallback=$("deleteCategoryTarget").value;
-      if(!fallback){toast("Choose a target category.");return;}
-    }
-    list.splice(index,1);delete state.categoryIcons[cat];
-    if(fallback){
-      state.transactions.forEach(t=>{if(t.type===type&&t.category===cat)t.category=fallback;});
-      if(type==="expense"){
-        state.recurringExpenses.forEach(rule=>{if(rule.category===cat)rule.category=fallback;});
+      if(!fallback){
+        toast("Choose a target category.");
+        return;
       }
     }
-    saveLocalMirror();closeDeleteCategory();renderAll();
-    try{
-      setCloudStatus("syncing");
-      if(fallback){
-        await withTimeout(cloudApi.replaceCategory(cloudUser.uid,type,cat,fallback,appSettingsPayload()),60000);
-      }else{
-        await withTimeout(cloudApi.saveSettings(cloudUser.uid,appSettingsPayload()));
-      }
-      setCloudStatus("online");toast("Category deleted in cloud.");
-    }catch(error){
-      restoreSettings(previous);
-      if(fallback)state.transactions.forEach(t=>{if(t.type===type&&t.category===fallback)t.category=cat;});
-      saveLocalMirror();renderAll();setCloudStatus("error",error.message);toast(error.message||"Category delete failed.");
+
+    const changedTransactions=fallback
+      ?state.transactions
+        .filter(transaction=>
+          transaction.type===type&&transaction.category===category
+        )
+        .map(transaction=>({
+          previous:{...transaction},
+          updated:{...transaction,category:fallback}
+        }))
+      :[];
+
+    list.splice(index,1);
+    delete state.categoryIcons[category];
+
+    changedTransactions.forEach(({updated})=>{
+      const transaction=state.transactions.find(item=>item.id===updated.id);
+      if(transaction)transaction.category=fallback;
+    });
+
+    if(fallback&&type==="expense"){
+      state.recurringExpenses.forEach(rule=>{
+        if(rule.category===category)rule.category=fallback;
+      });
     }
+
+    changedTransactions.forEach(({previous,updated})=>
+      queuePendingCloudSave(updated,previous)
+    );
+
+    saveLocalMirror();
+    closeDeleteCategory();
+    renderAll();
+
+    await syncSettingsToCloud(
+      false,
+      fallback
+        ?`Category ${category} deleted and moved to ${fallback}`
+        :`Category ${category} deleted`
+    );
+
+    toast(
+      changedTransactions.length
+        ?`Category deleted · ${changedTransactions.length} record${changedTransactions.length===1?"":"s"} moved to ${fallback}`
+        :"Category deleted on this device."
+    );
   }
 
   function setView(view,{scrollToTop=true}={}){
@@ -6631,16 +7003,20 @@
   }
 
   async function saveBudget(){
-    if(!cloudReadyForWrite())return;
-    const previous=appSettingsPayload();
     const key=budgetSelectedMonth||currentMonthKey();
-    state.budgets[key]={overall:Number($("overallBudget").value)||0};
-    saveLocalMirror();renderAll();
-    if(!(await syncSettingsToCloud(false))){
-      restoreSettings(previous);saveLocalMirror();renderAll();return;
-    }
-    toast("Monthly budget cloud-saved.");
+    state.budgets[key]={
+      overall:Number($("overallBudget").value)||0
+    };
+
+    saveLocalMirror();
+    renderAll();
+    await syncSettingsToCloud(
+      false,
+      `Monthly budget changed for ${key}`
+    );
+    toast("Monthly budget saved on this device.");
   }
+
   function exportCsv(){
     const headers=["Date","Type","Category","Amount (RMB)","Tag"];
     const rows=sortTxns(state.transactions).map(t=>[t.date,t.type,t.category,t.amount,t.tag]);
@@ -6648,7 +7024,11 @@
     downloadFile("daily-budget-rmb.csv",[headers,...rows].map(r=>r.map(esc).join(",")).join("\n"),"text/csv;charset=utf-8");
   }
   function backupJson(){
-    downloadFile("daily-budget-backup.json",JSON.stringify(state,null,2),"application/json");
+    downloadFile(
+      `daily-budget-full-backup-${todayKey()}.json`,
+      JSON.stringify(buildRecoveryPackage(),null,2),
+      "application/json"
+    );
   }
   function downloadFile(name,content,type){
     const blob=new Blob(["\uFEFF",content],{type});
@@ -6678,17 +7058,11 @@
   }
 
   async function importTransactionMigration(data){
-    if(!cloudReadyForWrite())return;
-
     const source=normalizedRecordText(data.source)||"External app";
     const importedState=normalizeState({
       transactions:data.transactions,
-      expenseCategories:Array.isArray(data.expenseCategories)
-        ?data.expenseCategories
-        :[],
-      incomeCategories:Array.isArray(data.incomeCategories)
-        ?data.incomeCategories
-        :[],
+      expenseCategories:Array.isArray(data.expenseCategories)?data.expenseCategories:[],
+      incomeCategories:Array.isArray(data.incomeCategories)?data.incomeCategories:[],
       categoryIcons:data.categoryIcons&&typeof data.categoryIcons==="object"
         ?data.categoryIcons
         :{},
@@ -6701,174 +7075,173 @@
       throw new Error("The migration file contains no transactions.");
     }
 
-    const accepted=confirm(
-      `Import ${importedState.transactions.length} transaction${importedState.transactions.length===1?"":"s"} from ${source}?\n\n`+
-      "Existing exact matches will be reused. Your current records, monthly budgets, fixed expenses and appearance will remain."
+    if(!confirm(
+      `Import ${importedState.transactions.length} transaction${importedState.transactions.length===1?"":"s"} from ${source} on this device?
+
+`+
+      "Exact local matches will be reused. Current budgets, fixed expenses and appearance will remain."
+    ))return;
+
+    createWeeklyBackupSnapshot();
+
+    const aligned=alignImportedRecordsWithCloud(
+      importedState,
+      state.transactions
     );
-    if(!accepted)return;
+    const existingIds=new Set(state.transactions.map(item=>item.id));
+    let added=0;
+    let reused=0;
 
-    try{
-      setCloudStatus("syncing");
+    aligned.transactions.forEach(transaction=>{
+      if(existingIds.has(transaction.id)){
+        reused++;
+        return;
+      }
+      state.transactions.push(transaction);
+      existingIds.add(transaction.id);
+      queuePendingCloudSave(transaction,null);
+      added++;
+    });
 
-      const serverBefore=await withTimeout(
-        cloudApi.fetchServerState(cloudUser.uid),
-        30000
-      );
-      const serverTransactions=Array.isArray(serverBefore.transactions)
-        ?serverBefore.transactions
-        :[];
-      const serverSettings=serverBefore.settings||{};
+    state.expenseCategories=mergeUniqueTextValues(
+      state.expenseCategories,
+      data.expenseCategories||[]
+    );
+    state.incomeCategories=mergeUniqueTextValues(
+      state.incomeCategories,
+      data.incomeCategories||[]
+    );
+    state.categoryIcons={
+      ...(data.categoryIcons||{}),
+      ...state.categoryIcons
+    };
 
-      const alignedMigration=alignImportedRecordsWithCloud(
-        importedState,
-        serverTransactions
-      );
+    saveLocalMirror();
+    queuePendingCloudSettings(`${source} migration imported`);
+    renderAll();
 
-      const existingIds=new Set(serverTransactions.map(transaction=>transaction.id));
-      const mergedById=new Map(
-        serverTransactions.map(transaction=>[transaction.id,transaction])
-      );
-
-      alignedMigration.transactions.forEach(transaction=>{
-        mergedById.set(transaction.id,transaction);
-      });
-
-      const importedNewCount=alignedMigration.transactions.filter(
-        transaction=>!existingIds.has(transaction.id)
-      ).length;
-      const reusedCount=alignedMigration.transactions.length-importedNewCount;
-
-      const currentExpenseCategories=Array.isArray(serverSettings.expenseCategories)
-        ?serverSettings.expenseCategories
-        :state.expenseCategories;
-      const currentIncomeCategories=Array.isArray(serverSettings.incomeCategories)
-        ?serverSettings.incomeCategories
-        :state.incomeCategories;
-      const currentCategoryIcons=serverSettings.categoryIcons&&typeof serverSettings.categoryIcons==="object"
-        ?serverSettings.categoryIcons
-        :state.categoryIcons;
-      const currentBudgets=serverSettings.budgets&&typeof serverSettings.budgets==="object"
-        ?serverSettings.budgets
-        :state.budgets;
-      const currentRecurring=Array.isArray(serverSettings.recurringExpenses)
-        ?serverSettings.recurringExpenses
-        :state.recurringExpenses;
-      const currentAppearance=serverSettings.appearanceTheme||state.appearanceTheme;
-
-      const mergedState=normalizeState({
-        ...state,
-        transactions:[...mergedById.values()],
-        expenseCategories:mergeUniqueTextValues(
-          currentExpenseCategories,
-          data.expenseCategories||[]
-        ),
-        incomeCategories:mergeUniqueTextValues(
-          currentIncomeCategories,
-          data.incomeCategories||[]
-        ),
-        categoryIcons:{
-          ...(data.categoryIcons||{}),
-          ...currentCategoryIcons
-        },
-        budgets:JSON.parse(JSON.stringify(currentBudgets||{})),
-        recurringExpenses:JSON.parse(JSON.stringify(currentRecurring||[])),
-        appearanceTheme:currentAppearance
-      });
-
-      // Always create a safety backup before writing the migration to cloud.
-      downloadFile(
-        datedBackupName("daily-budget-before-migration"),
-        JSON.stringify(normalizeState({
-          ...state,
-          transactions:serverTransactions,
-          expenseCategories:currentExpenseCategories,
-          incomeCategories:currentIncomeCategories,
-          categoryIcons:currentCategoryIcons,
-          budgets:currentBudgets,
-          recurringExpenses:currentRecurring,
-          appearanceTheme:currentAppearance
-        }),null,2),
-        "application/json"
-      );
-
-      const verifiedState=await withTimeout(
-        cloudApi.importState(cloudUser.uid,mergedState),
-        180000
-      );
-
-      cloudLocalCandidate=null;
-      applyVerifiedServerState(verifiedState,{allowMigration:false});
-
-      toast(
-        `${source} migration verified: ${importedNewCount} added`+
-        `${reusedCount?`, ${reusedCount} existing match${reusedCount===1?"":"es"} reused`:""}.`
-      );
-    }catch(error){
-      console.error(error);
-      cloudServerVerified=false;
-      setCloudStatus("error",error.message);
-      alert(error.message||"The transaction migration could not be completed.");
-    }
+    toast(
+      `${source} imported locally: ${added} added`+
+      `${reused?`, ${reused} exact match${reused===1?"":"es"} reused`:""}.`
+    );
   }
 
   function importBackup(file){
     const reader=new FileReader();
+
     reader.onload=async()=>{
       try{
-        if(!cloudReadyForWrite())return;
         const data=JSON.parse(reader.result);
+
         if(isTransactionMigration(data)){
           await importTransactionMigration(data);
           return;
         }
-        if(!Array.isArray(data.transactions)||typeof data.budgets!=="object")throw new Error("Invalid backup or migration file.");
-        const imported=normalizeState(data);
-        if(!confirm(`Upload ${imported.transactions.length} backup records to the signed-in cloud account? Existing exact matches will be updated instead of added again.`))return;
-        setCloudStatus("syncing");
-        const serverBefore=await withTimeout(cloudApi.fetchServerState(cloudUser.uid),120000);
-        const alignedImport=alignImportedRecordsWithCloud(imported,serverBefore.transactions||[]);
-        const verifiedState=await withTimeout(cloudApi.importState(cloudUser.uid,alignedImport),120000);
-        cloudLocalCandidate=null;
-        applyVerifiedServerState(verifiedState,{allowMigration:false});
-        toast(`Backup server-verified: ${verifiedState.transactions.length} record${verifiedState.transactions.length===1?"":"s"}.`);
+
+        const recovery=normalizeRecoveryPackage(data);
+        if(!recovery){
+          throw new Error("This is not a supported Daily Budget backup or migration file.");
+        }
+
+        const recordCount=normalizeState(recovery.state).transactions.length;
+        if(!confirm(
+          `Restore ${recordCount} record${recordCount===1?"":"s"} on this device?
+
+`+
+          "A safety snapshot of the current app will be saved first. This restore replaces the current local view."
+        ))return;
+
+        createWeeklyBackupSnapshot();
+        restoreRecoveryPackageLocally(recovery);
+
+        if(!pendingCloudSettings){
+          queuePendingCloudSettings("Backup restored");
+        }
+
+        toast(`Backup restored on this device: ${state.transactions.length} records.`);
       }catch(error){
-        console.error(error);setCloudStatus("error",error.message);alert(error.message||"This is not a valid backup file.");
+        console.error(error);
+        toast(error.message||"This backup file could not be restored.");
       }
     };
+
+    reader.onerror=()=>toast("The selected backup file could not be read.");
     reader.readAsText(file);
   }
   function loadDemo(){
     if(state.transactions.length&&!confirm("Add demo records to your existing data?"))return;
+
     const month=selectedMonth;
     const samples=[
-      ["expense","Dining",28.64,"Lunch"],
+      ["expense","Food",28.64,"Lunch"],
       ["expense","Transportation",6,"Subway"],
       ["expense","Shopping",198,"Sandals"],
-      ["expense","Dining",277,"Hot pot"],
+      ["expense","Food",277,"Hot pot"],
       ["expense","Entertainment",49.9,"Movie"],
       ["income","Salary",15000,"Monthly salary"]
     ];
-    samples.forEach((s,i)=>{
-      const day=String(Math.max(1,26-i)).padStart(2,"0");
-      state.transactions.push({
-        id:uid(),type:s[0],category:s[1],amount:s[2],tag:s[3],
-        date:`${month}-${day}`,createdAt:Date.now()+i
-      });
+
+    samples.forEach((sample,index)=>{
+      const day=String(Math.max(1,26-index)).padStart(2,"0");
+      const transaction={
+        id:uid(),
+        type:sample[0],
+        category:sample[1],
+        amount:sample[2],
+        tag:sample[3],
+        date:`${month}-${day}`,
+        createdAt:Date.now()+index
+      };
+      state.transactions.push(transaction);
+      queuePendingCloudSave(transaction,null);
     });
+
+    state.expenseCategories=mergeUniqueTextValues(
+      state.expenseCategories,
+      ["Food","Transportation","Shopping","Entertainment"]
+    );
+    state.incomeCategories=mergeUniqueTextValues(
+      state.incomeCategories,
+      ["Salary"]
+    );
+
     if(!state.budgets[month])state.budgets[month]={overall:8000};
-    saveState();renderAll();toast("Demo data loaded.");
+    saveLocalMirror();
+    queuePendingCloudSettings("Demo data loaded");
+    renderAll();
+    toast("Demo data loaded on this device.");
   }
   async function clearAll(){
     if(!cloudReadyForWrite())return;
-    if(!confirm("Delete every cloud record, trash item, history entry, category setting, and budget? This cannot be undone."))return;
-    const phrase=prompt('Type DELETE CLOUD DATA to confirm:');
-    if(phrase!=="DELETE CLOUD DATA"){toast("Cancelled.");return;}
+    if(!confirm(
+      "Delete every cloud record, trash item, history entry, category setting, and budget? A local safety snapshot will be created first."
+    ))return;
+
+    const phrase=prompt("Type DELETE CLOUD DATA to confirm:");
+    if(phrase!=="DELETE CLOUD DATA"){
+      toast("Cancelled.");
+      return;
+    }
+
     try{
+      createWeeklyBackupSnapshot();
       setCloudStatus("syncing");
       await withTimeout(cloudApi.clearCloudData(cloudUser.uid),120000);
-      state=defaultState();cloudTrash=[];saveLocalMirror();renderAll();setCloudStatus("online");toast("Cloud data deleted.");
+
+      clearAllPendingCloudQueues();
+      state=defaultState();
+      duplicateKeepChoices.clear();
+      duplicateSkippedGroups.clear();
+      cloudTrash=[];
+      setCloudRecordCount(0);
+      saveLocalMirror();
+      renderAll();
+      markServerVerified();
+      toast("Cloud and current local data deleted. Safety snapshot retained.");
     }catch(error){
-      console.error(error);setCloudStatus("error",error.message);toast(error.message||"Cloud deletion failed.");
+      console.error(error);
+      setCloudStatus("error",error.message);
+      toast(error.message||"Cloud deletion failed.");
     }
   }
   function escapeHtml(s){
@@ -7019,6 +7392,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("uploadLocalToCloud").addEventListener("click",uploadCurrentStateToCloud);
     $("cloudRetrySync").addEventListener("click",()=>quickVerifyCloudNow(true));
   $("retryPendingCloudSaves").addEventListener("click",retryPendingCloudSaves);
+  $("retryPendingCloudSettings").addEventListener("click",retryPendingCloudSettings);
   $("cloudFullRefresh").addEventListener("click",()=>verifyCloudNow(true));
   $("retryPendingCloudDeletes").addEventListener("click",retryPendingCloudDeletes);
   $("trashList").addEventListener("click",async event=>{
@@ -7363,6 +7737,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   selectedYear=selectedMonth.slice(0,4);
   setTxnType("expense");
   renderAll();
+  setTimeout(scheduleAutomaticRecurringGeneration,700);
 })();
 </script>
 </body>
