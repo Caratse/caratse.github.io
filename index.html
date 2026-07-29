@@ -48,7 +48,7 @@
     }
     .brand p{
       margin:3px 0 0;
-      color:#6F5D00;
+      color:var(--accent-ink);
       font-size:9px;
       font-weight:750;
       letter-spacing:.01em
@@ -109,12 +109,12 @@
       width:28px;height:28px;
       display:grid;place-items:center;
       border-radius:9px;
-      background:#FFF5BE
+      background:var(--yellow-soft)
     }
     .month-button-calendar::before{
       content:"";
       width:13px;height:12px;
-      border:1.8px solid #625400;
+      border:1.8px solid var(--accent-ink);
       border-radius:3px
     }
     .month-button-calendar::after{
@@ -122,14 +122,14 @@
       position:absolute;
       left:8px;right:8px;top:10px;
       height:1.8px;border-radius:99px;
-      background:#625400
+      background:var(--accent-ink)
     }
     .month-button-calendar i::before,
     .month-button-calendar i::after{
       content:"";
       position:absolute;
       top:6px;width:2px;height:4px;
-      border-radius:2px;background:#625400
+      border-radius:2px;background:var(--accent-ink)
     }
     .month-button-calendar i::before{left:9px}
     .month-button-calendar i::after{right:9px}
@@ -303,7 +303,7 @@
     .icon-choice{height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:22px;display:grid;place-items:center}
     .icon-choice.active{background:var(--yellow-soft);border-color:var(--yellow-2);box-shadow:inset 0 0 0 1px var(--yellow-2)}
     .helper{color:var(--muted);font-size:11px;line-height:1.5;margin:10px 2px 0}
-    .badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--yellow-soft);padding:5px 9px;font-size:10px;font-weight:800;color:#705B00}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--yellow-soft);padding:5px 9px;font-size:10px;font-weight:800;color:var(--accent-ink)}
     .category-summary{display:grid;gap:8px}
     .category-summary-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:#FAFAFB;border:1px solid var(--line);border-radius:15px;padding:11px 12px}
     .category-summary-label{font-weight:800;font-size:13px}
@@ -1224,7 +1224,7 @@
     .recurring-rule-icon{
       width:38px;height:38px;border-radius:12px;
       display:grid;place-items:center;
-      background:#FFF5BE;font-size:19px
+      background:var(--yellow-soft);font-size:19px
     }
     .recurring-rule-title{
       font-size:12px;font-weight:900;
@@ -1576,14 +1576,14 @@
       background:#A9ACB2
     }
     .month-picker-option.current{
-      border-color:#E4C22F
+      border-color:var(--yellow-2)
     }
     .month-picker-option.selected{
-      border-color:#DDB600;
-      background:#FFF5BE;
-      box-shadow:inset 0 0 0 1px #DDB600
+      border-color:var(--yellow-2);
+      background:var(--yellow-soft);
+      box-shadow:inset 0 0 0 1px var(--yellow-2)
     }
-    .month-picker-option.selected small{color:#746000}
+    .month-picker-option.selected small{color:var(--accent-ink)}
     .month-picker-current{
       width:100%;
       min-height:48px;
@@ -1671,7 +1671,7 @@
     .txn-sheet-head,.category-picker-head,.month-picker-head,
     .sticky-actions,.txn-sticky-actions{background:var(--card)}
 
-    .top,.analysis-hero,.nav .add-main{background:#FFD84D!important}
+    .top,.analysis-hero,.nav .add-main{background:var(--yellow)!important}
 
     html,body,.app,main,.view,.nav,.summary,.list,.quick,.filter-card,
     .panel,.records-compact-card,details.settings-card,
@@ -1679,6 +1679,18 @@
     .month-picker-sheet,.txn-sheet{
       transition:background-color .18s ease,border-color .18s ease
     }
+
+
+    /* V31 — full accent themes for top areas too */
+    :root{--accent-ink:#6B5621}
+    .top{background:var(--yellow)!important}
+    .analysis-hero{background:var(--yellow)!important;box-shadow:0 8px 22px rgba(40,40,40,.08)}
+    .nav .add-main,.primary,.type-toggle button.active,.chip.active{background:var(--yellow)!important;border-color:var(--yellow)!important}
+    .month-button-calendar{background:var(--yellow-soft)}
+    .month-button-calendar::before,.month-button-calendar::after,.month-button-calendar i::before,.month-button-calendar i::after{border-color:var(--accent-ink)}
+    .month-button-calendar::after,.month-button-calendar i::before,.month-button-calendar i::after{background:var(--accent-ink)}
+    .brand p,.badge,.month-picker-option.selected small{color:var(--accent-ink)}
+    .appearance-swatch{background:linear-gradient(180deg,var(--yellow) 0 45%, var(--bg) 45% 100%)!important}
 
 </style>
 </head>
@@ -1945,7 +1957,7 @@
           </span>
         </summary>
         <div class="settings-card-body">
-          <p class="appearance-intro">Changes the background and supporting surfaces across Home, Records, Analysis and Settings. Cards stay light for readability. The choice is saved to cloud.</p>
+          <p class="appearance-intro">Changes the app background, top banner, analysis header, buttons and supporting surfaces. Gentle palettes are applied across all pages and saved to cloud.</p>
           <div id="appearanceChoices" class="appearance-choices"></div>
         </div>
       </details>
@@ -2084,7 +2096,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 30 applies the selected background theme across Home, Records, Analysis, Settings, navigation and supporting sheets while keeping cards readable and the brand header yellow.
+            Version 31 adds gentle accent themes that also recolor the top banner, analysis hero and primary controls, with more soft palette options.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2305,8 +2317,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=30"></script>
-<script src="firebase-cloud-v28.js?v=30"></script>
+<script src="firebase-config.js?v=31"></script>
+<script src="firebase-cloud-v28.js?v=31"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2392,12 +2404,16 @@
   };
   const COLORS = ["#FFD84D","#6FB1FF","#FF8D8D","#7ED6A5","#A98BFF","#FFB36B","#62CAD6","#D2A878","#EC7FB6","#8FA7C8","#A6D66D","#C6A6FF","#B8BDC8"];
   const THEME_PRESETS = {
-    warm:{name:"Classic gray",bg:"#F3F4F6",card:"#FFFFFF",nav:"#FAFAFB",sheet:"#F7F7F8",field:"#F6F7F8"},
-    cream:{name:"Soft cream",bg:"#FFF2DC",card:"#FFFCF6",nav:"#FFF8EC",sheet:"#FFF8EC",field:"#FFF7E9"},
-    mint:{name:"Fresh mint",bg:"#E7F5EC",card:"#F8FCF9",nav:"#EFF9F2",sheet:"#EFF9F2",field:"#F1F8F3"},
-    sky:{name:"Clear sky",bg:"#E8F2FE",card:"#F8FBFF",nav:"#F0F7FF",sheet:"#F1F7FE",field:"#F2F7FC"},
-    rose:{name:"Soft rose",bg:"#FDECF0",card:"#FFF8FA",nav:"#FFF2F5",sheet:"#FFF3F6",field:"#FFF4F6"},
-    lavender:{name:"Lavender",bg:"#F0EAFC",card:"#FBF9FF",nav:"#F6F2FF",sheet:"#F5F1FD",field:"#F7F4FC"}
+    warm:{name:"Soft amber",bg:"#F6F4EF",card:"#FFFDFC",nav:"#FBF8F2",sheet:"#F8F5EF",field:"#F8F4EC",accent:"#E9C86B",accent2:"#D8AE36",soft:"#FFF5D5",ink:"#6B5621"},
+    cream:{name:"Oat cream",bg:"#FFF5E8",card:"#FFFDF9",nav:"#FFF9F0",sheet:"#FFF7ED",field:"#FFF8F1",accent:"#EAC8A2",accent2:"#D7A978",soft:"#FFF1DE",ink:"#765338"},
+    sage:{name:"Sage",bg:"#EEF5EE",card:"#FBFEFB",nav:"#F3F8F3",sheet:"#F1F7F1",field:"#F4F9F4",accent:"#BDD8BE",accent2:"#8FB692",soft:"#E8F5E8",ink:"#49624C"},
+    sky:{name:"Powder blue",bg:"#EDF4FD",card:"#FBFDFF",nav:"#F2F7FD",sheet:"#F0F6FD",field:"#F4F8FD",accent:"#AFCBF2",accent2:"#7FAAE4",soft:"#E8F2FF",ink:"#46648B"},
+    rose:{name:"Blush",bg:"#FDF0F3",card:"#FFF9FB",nav:"#FFF4F6",sheet:"#FFF3F6",field:"#FFF5F7",accent:"#E9B8C6",accent2:"#D68CA0",soft:"#FCEAF0",ink:"#7A5060"},
+    lavender:{name:"Lavender",bg:"#F4F0FD",card:"#FCFBFF",nav:"#F8F5FF",sheet:"#F6F2FE",field:"#F8F5FD",accent:"#C8B7ED",accent2:"#A58EDB",soft:"#EFE8FF",ink:"#5D4E84"},
+    peach:{name:"Peach",bg:"#FFF1EA",card:"#FFF9F6",nav:"#FFF5F1",sheet:"#FFF3EE",field:"#FFF6F2",accent:"#F3C5B1",accent2:"#E49A79",soft:"#FDE9E0",ink:"#825844"},
+    mist:{name:"Silver mist",bg:"#F1F4F7",card:"#FBFCFD",nav:"#F5F7F9",sheet:"#F4F6F8",field:"#F6F8FA",accent:"#CBD3DE",accent2:"#9AA6B8",soft:"#E9EEF4",ink:"#566273"},
+    seafoam:{name:"Seafoam",bg:"#ECF7F4",card:"#FBFEFD",nav:"#F1FAF8",sheet:"#EEF8F6",field:"#F3FAF8",accent:"#B6DDD6",accent2:"#76BBAF",soft:"#E6F5F1",ink:"#447068"},
+    sand:{name:"Sand",bg:"#F7F1EA",card:"#FDFBF9",nav:"#FAF6F1",sheet:"#F8F3EE",field:"#FBF7F2",accent:"#DCC7B0",accent2:"#BE9D78",soft:"#F3E7D8",ink:"#6D5845"}
   };
 
   let state = loadState();
@@ -2989,15 +3005,15 @@
     root.style.setProperty("--nav-bg",theme.nav);
     root.style.setProperty("--sheet-bg",theme.sheet);
     root.style.setProperty("--field-bg",theme.field);
-
-    root.style.setProperty("--yellow","#FFD84D");
-    root.style.setProperty("--yellow-2","#FFCB2F");
-    root.style.setProperty("--yellow-soft","#FFF7D6");
-    root.style.setProperty("--theme-accent","#FFCB2F");
+    root.style.setProperty("--yellow",theme.accent);
+    root.style.setProperty("--yellow-2",theme.accent2);
+    root.style.setProperty("--yellow-soft",theme.soft);
+    root.style.setProperty("--theme-accent",theme.accent2);
+    root.style.setProperty("--accent-ink",theme.ink);
 
     document.body.dataset.appTheme=id;
     const meta=document.querySelector('meta[name="theme-color"]');
-    if(meta)meta.setAttribute("content","#FFD84D");
+    if(meta)meta.setAttribute("content",theme.accent);
   }
 
   function normalizeRecurringExpense(rule,index=0){
