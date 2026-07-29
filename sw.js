@@ -1,10 +1,10 @@
-const CACHE_NAME = "daily-budget-cloud-v26-20260728";
+const CACHE_NAME = "daily-budget-cloud-v28-20260729";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./firebase-config.js?v=26",
-  "./firebase-cloud-v17.js?v=26",
+  "./firebase-config.js?v=28",
+  "./firebase-cloud-v28.js?v=28",
   "./icon-192.png",
   "./icon-512.png"
 ];
