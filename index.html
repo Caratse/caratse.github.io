@@ -1834,6 +1834,14 @@
       .appearance-choices{grid-template-columns:1fr}
     }
 
+    .migration-import-note{
+      margin:10px 2px 0;
+      padding:9px 10px;
+      border-radius:11px;
+      background:var(--yellow-soft);
+      color:var(--accent-ink);
+      line-height:1.45
+    }
 </style>
 </head>
 <body>
@@ -2210,7 +2218,7 @@
             <span class="settings-summary-icon">📦</span>
             <span class="settings-summary-copy">
               <span class="settings-summary-title">Data & backup</span>
-              <span class="settings-summary-sub">Export, import and delete data</span>
+              <span class="settings-summary-sub">Export, migrate and protect data</span>
             </span>
           </span>
         </summary>
@@ -2218,11 +2226,15 @@
           <div class="settings-actions">
             <button id="exportCsv" class="secondary">Export CSV</button>
             <button id="backupJson" class="secondary">Backup JSON</button>
-            <button id="importJson" class="secondary">Import backup to cloud</button>
+            <button id="importJson" class="secondary">Import backup / migration</button>
             <button id="loadDemo" class="secondary">Load demo data</button>
             <button id="clearAll" class="danger">Delete all cloud data</button>
           </div>
           <input id="importFile" class="hidden" type="file" accept=".json,application/json">
+          <p class="helper migration-import-note">
+            Migration files add transactions without replacing your current budget,
+            recurring expenses, appearance or existing records.
+          </p>
         </div>
       </details>
 
@@ -2238,7 +2250,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 32 adds premium theme previews, a fully coordinated month picker and Analysis chart colors that adapt automatically to every selected palette.
+            Version 33 adds a safe transaction-only migration format that merges external bookkeeping records into cloud without replacing existing budgets, recurring expenses, themes or records.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2459,8 +2471,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=32"></script>
-<script src="firebase-cloud-v28.js?v=32"></script>
+<script src="firebase-config.js?v=33"></script>
+<script src="firebase-cloud-v28.js?v=33"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -5531,13 +5543,174 @@ ${error.message||"Please check your network and try again."}`);
     const blob=new Blob(["\uFEFF",content],{type});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);
   }
+  function isTransactionMigration(data){
+    return Boolean(
+      data &&
+      data.format==="daily-budget-transaction-migration-v1" &&
+      Array.isArray(data.transactions)
+    );
+  }
+
+  function mergeUniqueTextValues(...lists){
+    const seen=new Set();
+    const values=[];
+
+    lists.flat().forEach(value=>{
+      const normalized=normalizedRecordText(value);
+      const key=normalized.toLocaleLowerCase();
+      if(!normalized||seen.has(key))return;
+      seen.add(key);
+      values.push(normalized);
+    });
+
+    return values;
+  }
+
+  async function importTransactionMigration(data){
+    if(!cloudReadyForWrite())return;
+
+    const source=normalizedRecordText(data.source)||"External app";
+    const importedState=normalizeState({
+      transactions:data.transactions,
+      expenseCategories:Array.isArray(data.expenseCategories)
+        ?data.expenseCategories
+        :[],
+      incomeCategories:Array.isArray(data.incomeCategories)
+        ?data.incomeCategories
+        :[],
+      categoryIcons:data.categoryIcons&&typeof data.categoryIcons==="object"
+        ?data.categoryIcons
+        :{},
+      budgets:{},
+      recurringExpenses:[],
+      appearanceTheme:state.appearanceTheme
+    });
+
+    if(!importedState.transactions.length){
+      throw new Error("The migration file contains no transactions.");
+    }
+
+    const accepted=confirm(
+      `Import ${importedState.transactions.length} transaction${importedState.transactions.length===1?"":"s"} from ${source}?\n\n`+
+      "Existing exact matches will be reused. Your current records, monthly budgets, fixed expenses and appearance will remain."
+    );
+    if(!accepted)return;
+
+    try{
+      setCloudStatus("syncing");
+
+      const serverBefore=await withTimeout(
+        cloudApi.fetchServerState(cloudUser.uid),
+        30000
+      );
+      const serverTransactions=Array.isArray(serverBefore.transactions)
+        ?serverBefore.transactions
+        :[];
+      const serverSettings=serverBefore.settings||{};
+
+      const alignedMigration=alignImportedRecordsWithCloud(
+        importedState,
+        serverTransactions
+      );
+
+      const existingIds=new Set(serverTransactions.map(transaction=>transaction.id));
+      const mergedById=new Map(
+        serverTransactions.map(transaction=>[transaction.id,transaction])
+      );
+
+      alignedMigration.transactions.forEach(transaction=>{
+        mergedById.set(transaction.id,transaction);
+      });
+
+      const importedNewCount=alignedMigration.transactions.filter(
+        transaction=>!existingIds.has(transaction.id)
+      ).length;
+      const reusedCount=alignedMigration.transactions.length-importedNewCount;
+
+      const currentExpenseCategories=Array.isArray(serverSettings.expenseCategories)
+        ?serverSettings.expenseCategories
+        :state.expenseCategories;
+      const currentIncomeCategories=Array.isArray(serverSettings.incomeCategories)
+        ?serverSettings.incomeCategories
+        :state.incomeCategories;
+      const currentCategoryIcons=serverSettings.categoryIcons&&typeof serverSettings.categoryIcons==="object"
+        ?serverSettings.categoryIcons
+        :state.categoryIcons;
+      const currentBudgets=serverSettings.budgets&&typeof serverSettings.budgets==="object"
+        ?serverSettings.budgets
+        :state.budgets;
+      const currentRecurring=Array.isArray(serverSettings.recurringExpenses)
+        ?serverSettings.recurringExpenses
+        :state.recurringExpenses;
+      const currentAppearance=serverSettings.appearanceTheme||state.appearanceTheme;
+
+      const mergedState=normalizeState({
+        ...state,
+        transactions:[...mergedById.values()],
+        expenseCategories:mergeUniqueTextValues(
+          currentExpenseCategories,
+          data.expenseCategories||[]
+        ),
+        incomeCategories:mergeUniqueTextValues(
+          currentIncomeCategories,
+          data.incomeCategories||[]
+        ),
+        categoryIcons:{
+          ...(data.categoryIcons||{}),
+          ...currentCategoryIcons
+        },
+        budgets:JSON.parse(JSON.stringify(currentBudgets||{})),
+        recurringExpenses:JSON.parse(JSON.stringify(currentRecurring||[])),
+        appearanceTheme:currentAppearance
+      });
+
+      // Always create a safety backup before writing the migration to cloud.
+      downloadFile(
+        datedBackupName("daily-budget-before-migration"),
+        JSON.stringify(normalizeState({
+          ...state,
+          transactions:serverTransactions,
+          expenseCategories:currentExpenseCategories,
+          incomeCategories:currentIncomeCategories,
+          categoryIcons:currentCategoryIcons,
+          budgets:currentBudgets,
+          recurringExpenses:currentRecurring,
+          appearanceTheme:currentAppearance
+        }),null,2),
+        "application/json"
+      );
+
+      const verifiedState=await withTimeout(
+        cloudApi.importState(cloudUser.uid,mergedState),
+        180000
+      );
+
+      cloudLocalCandidate=null;
+      applyVerifiedServerState(verifiedState,{allowMigration:false});
+
+      toast(
+        `${source} migration verified: ${importedNewCount} added`+
+        `${reusedCount?`, ${reusedCount} existing match${reusedCount===1?"":"es"} reused`:""}.`
+      );
+    }catch(error){
+      console.error(error);
+      cloudServerVerified=false;
+      setCloudStatus("error",error.message);
+      alert(error.message||"The transaction migration could not be completed.");
+    }
+  }
+
   function importBackup(file){
     const reader=new FileReader();
     reader.onload=async()=>{
       try{
         if(!cloudReadyForWrite())return;
         const data=JSON.parse(reader.result);
-        if(!Array.isArray(data.transactions)||typeof data.budgets!=="object")throw new Error("Invalid backup.");
+        if(isTransactionMigration(data)){
+          await importTransactionMigration(data);
+          return;
+        }
+        if(!Array.isArray(data.transactions)||typeof data.budgets!=="object")throw new Error("Invalid backup or migration file.");
         const imported=normalizeState(data);
         if(!confirm(`Upload ${imported.transactions.length} backup records to the signed-in cloud account? Existing exact matches will be updated instead of added again.`))return;
         setCloudStatus("syncing");
