@@ -2063,6 +2063,58 @@
       font-size:8px
     }
 
+
+    /* V47 — bounded lists prevent iPhone Safari memory spikes */
+    .stable-pager{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      align-items:center;
+      gap:8px;
+      margin:10px 0 2px;
+      padding:8px;
+      border:1px solid rgba(65,72,82,.08);
+      border-radius:15px;
+      background:var(--card)
+    }
+    .stable-pager button{
+      min-width:74px;
+      padding:9px 10px;
+      font-size:9px
+    }
+    .stable-pager button:disabled{
+      opacity:.42
+    }
+    .stable-pager-copy{
+      min-width:0;
+      text-align:center
+    }
+    .stable-pager-copy strong{
+      display:block;
+      font-size:9px
+    }
+    .stable-pager-copy small{
+      display:block;
+      margin-top:2px;
+      color:var(--muted);
+      font-size:7px
+    }
+    .category-detail-pager{
+      margin:10px 12px 18px
+    }
+    .records-page-list .swipe-row,
+    .category-record-row{
+      contain:layout paint style
+    }
+    .records-page-list{
+      min-height:80px
+    }
+    @media (prefers-reduced-motion:reduce){
+      .view,.txn,.progress>div{
+        animation:none!important;
+        transition:none!important
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -2148,7 +2200,16 @@
         <span class="record-summary-item">Expense <strong id="recordExpense">¥0.00</strong></span>
       </div>
 
-      <div id="recordsList" class="list"></div>
+      <div id="recordsList" class="list records-page-list"></div>
+
+      <div id="recordsPager" class="stable-pager hidden">
+        <button id="recordsPrevPage" type="button" class="secondary">Previous</button>
+        <div class="stable-pager-copy">
+          <strong id="recordsPageRange">0 records</strong>
+          <small id="recordsPageNumber">Page 1 of 1</small>
+        </div>
+        <button id="recordsNextPage" type="button" class="secondary">Next</button>
+      </div>
     </section>
 
     <section id="analysisView" class="view">
@@ -2543,7 +2604,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 46 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
+            Version 47 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -2605,6 +2666,15 @@
 
     <div class="sheet-scroll category-detail-scroll">
       <div id="categoryDetailRecords" class="category-record-list"></div>
+
+      <div id="categoryDetailPager" class="stable-pager category-detail-pager hidden">
+        <button id="categoryDetailPrevPage" type="button" class="secondary">Previous</button>
+        <div class="stable-pager-copy">
+          <strong id="categoryDetailPageRange">0 records</strong>
+          <small id="categoryDetailPageNumber">Page 1 of 1</small>
+        </div>
+        <button id="categoryDetailNextPage" type="button" class="secondary">Next</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2764,8 +2834,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=46"></script>
-<script src="firebase-cloud-v46.js?v=46"></script>
+<script src="firebase-config.js?v=47"></script>
+<script src="firebase-cloud-v47.js?v=47"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -2777,6 +2847,8 @@
   const WEEKLY_BACKUP_META_KEY = `${STORAGE_KEY}_weekly_backup_meta_v1`;
   const WEEKLY_BACKUP_INTERVAL_MS = 7*24*60*60*1000;
   const WEEKLY_BACKUP_MAX_SNAPSHOTS = 4;
+  const RECORDS_PAGE_SIZE = 80;
+  const CATEGORY_DETAIL_PAGE_SIZE = 60;
   const DEFAULT_EXPENSE = ["Dining","Transportation","Shopping","Housing","Entertainment","Household","Medical","Communication","Education","Travel","Gifts","Pets","Other"];
   const DEFAULT_INCOME = ["Salary","Bonus","Freelance","Investment","Refund","Other Income"];
   const PAYMENTS = ["WeChat Pay","Alipay","Debit Card","Credit Card","Cash","Transit Card","Other"];
@@ -2977,6 +3049,14 @@
   let weeklyBackupRunning = false;
   let weeklyBackupMeta = loadWeeklyBackupMeta();
   let recordsScrollTop = 0;
+  let recordsPage = 0;
+  let categoryDetailPage = 0;
+  let recordSearchTimer = null;
+  let weeklyBackupCheckTimer = null;
+  let storageWarningShown = false;
+  let recordsRenderDirty = true;
+  let analysisRenderDirty = true;
+  let settingsRenderDirty = true;
   let overlayScrollLockDepth = 0;
   let overlayViewSnapshot = null;
 
@@ -3433,17 +3513,42 @@
     }
   }
 
+  function appHasOpenModal(){
+    return qsa(".modal.open").length>0;
+  }
+
+  function scheduleWeeklyBackupCheck(delay=8000){
+    clearTimeout(weeklyBackupCheckTimer);
+
+    const run=()=>checkWeeklyAutoBackup();
+    if("requestIdleCallback" in window){
+      weeklyBackupCheckTimer=setTimeout(()=>{
+        requestIdleCallback(run,{timeout:5000});
+      },delay);
+    }else{
+      weeklyBackupCheckTimer=setTimeout(run,delay);
+    }
+  }
+
   function checkWeeklyAutoBackup(){
     if(weeklyBackupMeta.enabled===false)return;
+
     const now=Date.now();
     const dueAt=weeklyBackupMeta.nextDueAt||
       (weeklyBackupMeta.lastRunAt
         ?weeklyBackupMeta.lastRunAt+WEEKLY_BACKUP_INTERVAL_MS
         :0);
 
-    if(!dueAt||now>=dueAt){
-      runWeeklyAutoBackup({force:true,manual:false});
+    if(dueAt&&now<dueAt)return;
+
+    // Avoid serializing a full backup while Records or an editor is using
+    // the same Safari process. Retry later when the app is idle.
+    if(currentView==="records"||appHasOpenModal()){
+      scheduleWeeklyBackupCheck(15000);
+      return;
     }
+
+    runWeeklyAutoBackup({force:true,manual:false});
   }
 
   function loadPendingCloudSettings(){
@@ -3786,8 +3891,27 @@
     cloudStatusMessage=message;
     renderCloudPanel();
   }
+  function safeLocalStorageSet(key,value,{silent=false}={}){
+    try{
+      localStorage.setItem(key,value);
+      return true;
+    }catch(error){
+      console.error(`Local storage write failed for ${key}`,error);
+      if(!silent&&!storageWarningShown){
+        storageWarningShown=true;
+        setTimeout(()=>toast(
+          "Device storage is full. Download a backup before clearing Safari data."
+        ),0);
+      }
+      return false;
+    }
+  }
+
   function saveLocalMirror(){
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    return safeLocalStorageSet(
+      STORAGE_KEY,
+      JSON.stringify(state)
+    );
   }
   function applyCloudSettings(settings){
     if(!settings)return;
@@ -4961,7 +5085,7 @@
     }catch(e){ return defaultState(); }
   }
   function saveState(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return saveLocalMirror();
   }
   function currentMonthKey(){
     const d = new Date();
@@ -5669,13 +5793,33 @@
     ));
   }
 
-  function renderCategoryDetailCurrent({preserveScroll=true}={}){
+  function renderCategoryDetailCurrent({
+    preserveScroll=true,
+    resetPage=false
+  }={}){
     if(!categoryDetailCurrent)return;
 
     const scrollArea=$("categoryDetailModal")?.querySelector(".category-detail-scroll");
     const previousScroll=preserveScroll?(scrollArea?.scrollTop||0):0;
     const {kind,category,range,type,title,subtitle}=categoryDetailCurrent;
     const matches=categoryDetailMatchingRecords();
+
+    if(resetPage)categoryDetailPage=0;
+    const pageCount=Math.max(
+      1,
+      Math.ceil(matches.length/CATEGORY_DETAIL_PAGE_SIZE)
+    );
+    categoryDetailPage=Math.max(
+      0,
+      Math.min(categoryDetailPage,pageCount-1)
+    );
+
+    const start=categoryDetailPage*CATEGORY_DETAIL_PAGE_SIZE;
+    const end=Math.min(
+      start+CATEGORY_DETAIL_PAGE_SIZE,
+      matches.length
+    );
+    const visibleMatches=matches.slice(start,end);
 
     const rangeTotal=state.transactions
       .filter(transaction=>
@@ -5704,7 +5848,7 @@
 
     let previousDate="";
     $("categoryDetailRecords").innerHTML=matches.length
-      ?matches.map(transaction=>{
+      ?visibleMatches.map(transaction=>{
           const dayHeader=transaction.date!==previousDate
             ?`<div class="category-detail-record-day">${escapeHtml(transaction.date)} · ${dateLabel(transaction.date)}</div>`
             :"";
@@ -5727,12 +5871,28 @@
         }).join("")
       :emptyHtml("No matching records","No records were found in this period.");
 
+    const pager=$("categoryDetailPager");
+    pager.classList.toggle(
+      "hidden",
+      matches.length<=CATEGORY_DETAIL_PAGE_SIZE
+    );
+    $("categoryDetailPageRange").textContent=matches.length
+      ?`${start+1}–${end} of ${matches.length}`
+      :"0 records";
+    $("categoryDetailPageNumber").textContent=
+      `Page ${categoryDetailPage+1} of ${pageCount}`;
+    $("categoryDetailPrevPage").disabled=categoryDetailPage===0;
+    $("categoryDetailNextPage").disabled=
+      categoryDetailPage>=pageCount-1;
+
     if(scrollArea){
       requestAnimationFrame(()=>{
-        scrollArea.scrollTop=Math.min(
-          previousScroll,
-          Math.max(0,scrollArea.scrollHeight-scrollArea.clientHeight)
-        );
+        scrollArea.scrollTop=preserveScroll
+          ?Math.min(
+              previousScroll,
+              Math.max(0,scrollArea.scrollHeight-scrollArea.clientHeight)
+            )
+          :0;
       });
     }
   }
@@ -5748,7 +5908,11 @@
 
   function openAnalysisDetail(scope){
     categoryDetailCurrent=scope;
-    renderCategoryDetailCurrent({preserveScroll:false});
+    categoryDetailPage=0;
+    renderCategoryDetailCurrent({
+      preserveScroll:false,
+      resetPage:true
+    });
     lockPageForOverlay();
     $("categoryDetailModal").classList.add("open");
 
@@ -6130,20 +6294,44 @@
     closeCategoryPicker();
   }
 
-  function renderAll(){
-    populateMonths();
-    populateFilters();
-    $("globalMonth").value=selectedMonth;
-    renderDashboard();
-    renderRecords();
-    renderAnalysis();
+  function renderSettingsView(){
     renderBudgetEditor();
     renderAppearanceSettings();
     renderCategoryManager();
     renderRecurringExpenses();
     renderCloudPanel();
+    renderTrash();
     renderDuplicateAudit();
     renderWeeklyBackupPanel();
+    settingsRenderDirty=false;
+  }
+
+  function renderAll(){
+    populateMonths();
+    populateFilters();
+    $("globalMonth").value=selectedMonth;
+    renderDashboard();
+
+    if(currentView==="records"){
+      renderRecords({resetPage:false,preserveScroll:true});
+      recordsRenderDirty=false;
+    }else{
+      recordsRenderDirty=true;
+    }
+
+    if(currentView==="analysis"){
+      renderAnalysis();
+      analysisRenderDirty=false;
+    }else{
+      analysisRenderDirty=true;
+    }
+
+    if(currentView==="settings"){
+      renderSettingsView();
+    }else{
+      settingsRenderDirty=true;
+    }
+
     refreshCategoryDetailCurrent();
   }
   function renderDashboard(){
@@ -6209,13 +6397,61 @@
     if(s) list=list.filter(t=>String(t.tag||"").toLowerCase().includes(s));
     return sortTxns(list);
   }
-  function renderRecords(){
-    const list=filteredRecords(), t=totals(list);
+  function renderRecords({
+    resetPage=false,
+    preserveScroll=false
+  }={}){
+    const previousScroll=preserveScroll
+      ?(window.scrollY||0)
+      :0;
+
+    if(resetPage)recordsPage=0;
+
+    const list=filteredRecords();
+    const totalsForList=totals(list);
+    const pageCount=Math.max(1,Math.ceil(list.length/RECORDS_PAGE_SIZE));
+    recordsPage=Math.max(0,Math.min(recordsPage,pageCount-1));
+
+    const start=recordsPage*RECORDS_PAGE_SIZE;
+    const end=Math.min(start+RECORDS_PAGE_SIZE,list.length);
+    const visible=list.slice(start,end);
+
     $("recordCount").textContent=list.length;
-    $("recordIncome").textContent=money(t.income);
-    $("recordExpense").textContent=money(t.expense);
-    $("recordsList").innerHTML=list.length?list.map(txnHtml).join(""):emptyHtml("No matching records","Change your filters or add a new transaction.");
+    $("recordIncome").textContent=money(totalsForList.income);
+    $("recordExpense").textContent=money(totalsForList.expense);
+    $("recordsList").innerHTML=list.length
+      ?visible.map(txnHtml).join("")
+      :emptyHtml(
+          "No matching records",
+          "Change your filters or add a new transaction."
+        );
+
+    const pager=$("recordsPager");
+    pager.classList.toggle("hidden",list.length<=RECORDS_PAGE_SIZE);
+    $("recordsPageRange").textContent=list.length
+      ?`${start+1}–${end} of ${list.length}`
+      :"0 records";
+    $("recordsPageNumber").textContent=`Page ${recordsPage+1} of ${pageCount}`;
+    $("recordsPrevPage").disabled=recordsPage===0;
+    $("recordsNextPage").disabled=recordsPage>=pageCount-1;
+
     renderRecordFilterToolbar();
+    recordsRenderDirty=false;
+
+    if(preserveScroll){
+      requestAnimationFrame(()=>window.scrollTo({
+        top:Math.min(previousScroll,document.documentElement.scrollHeight-window.innerHeight),
+        behavior:"auto"
+      }));
+    }
+  }
+
+  function scheduleRecordsFilterRender(){
+    clearTimeout(recordSearchTimer);
+    recordSearchTimer=setTimeout(
+      ()=>renderRecords({resetPage:true,preserveScroll:false}),
+      160
+    );
   }
 
   function renderAnalysis(){
@@ -6697,14 +6933,22 @@
 
   function setView(view,{scrollToTop=true}={}){
     const changed=view!==currentView;
-    const leavingRecords=changed&&currentView==="records"&&view!=="records";
+    const leavingRecords=
+      changed&&currentView==="records"&&view!=="records";
+
     if(leavingRecords){
       clearFilters({render:false});
       recordsScrollTop=0;
+      recordsPage=0;
     }
-    if(currentView==="settings"&&view!=="settings")categoryEditing=false;
+
+    if(currentView==="settings"&&view!=="settings"){
+      categoryEditing=false;
+    }
+
     currentView=view;
     document.body.classList.toggle("settings-view",view==="settings");
+
     if($("brandSubtitle")){
       $("brandSubtitle").textContent={
         home:"Overview",
@@ -6713,12 +6957,30 @@
         settings:"Settings"
       }[view]||"Overview";
     }
-    qsa(".view").forEach(v=>v.classList.remove("active"));
+
+    qsa(".view").forEach(element=>element.classList.remove("active"));
     $(view+"View").classList.add("active");
-    qsa(".nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
-    if(view==="analysis") setTimeout(()=>{renderAnalysis();},50);
-    if(view==="settings")renderCategoryManager();
-    if(changed&&scrollToTop)window.scrollTo({top:0,behavior:"smooth"});
+    qsa(".nav [data-view]").forEach(button=>
+      button.classList.toggle("active",button.dataset.view===view)
+    );
+
+    if(view==="home"){
+      renderDashboard();
+    }else if(view==="records"){
+      renderRecords({
+        resetPage:changed||recordsRenderDirty,
+        preserveScroll:false
+      });
+    }else if(view==="analysis"){
+      renderAnalysis();
+      analysisRenderDirty=false;
+    }else if(view==="settings"){
+      renderSettingsView();
+    }
+
+    if(changed&&scrollToTop){
+      window.scrollTo({top:0,behavior:"auto"});
+    }
   }
 
   function openModal(quickCategory=null, id=null){
@@ -6980,7 +7242,7 @@
       $("filterFrom").value=`${selectedMonth}-01`;
       $("filterTo").value=fmt(new Date(y,m,0));
     }
-    renderRecords();
+    renderRecords({resetPage:true});
   }
   function clearFilters({render=true}={}){
     ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>{
@@ -6990,8 +7252,9 @@
       chip.classList.toggle("active",chip.dataset.preset==="all");
     });
     recordFiltersExpanded=false;
+    recordsPage=0;
     if(render){
-      renderRecords();
+      renderRecords({resetPage:true});
     }else{
       renderRecordFilterToolbar();
     }
@@ -7613,10 +7876,56 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     }
     openModal(null,row.dataset.id);
   });
-  qsa("#presetChips .chip").forEach(c=>c.addEventListener("click",()=>setPreset(c.dataset.preset)));
-  ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>{
-    $(id).addEventListener(id==="filterSearch"?"input":"change",renderRecords);
+  qsa("#presetChips .chip").forEach(chip=>
+    chip.addEventListener("click",()=>setPreset(chip.dataset.preset))
+  );
+
+  ["filterFrom","filterTo","filterType","filterCategory"].forEach(id=>{
+    $(id).addEventListener(
+      "change",
+      ()=>renderRecords({resetPage:true,preserveScroll:false})
+    );
   });
+
+  $("filterSearch").addEventListener(
+    "input",
+    scheduleRecordsFilterRender
+  );
+
+  $("recordsPrevPage").addEventListener("click",()=>{
+    if(recordsPage<=0)return;
+    recordsPage--;
+    renderRecords({preserveScroll:false});
+    window.scrollTo({
+      top:$("recordsList").offsetTop-12,
+      behavior:"auto"
+    });
+  });
+
+  $("recordsNextPage").addEventListener("click",()=>{
+    recordsPage++;
+    renderRecords({preserveScroll:false});
+    window.scrollTo({
+      top:$("recordsList").offsetTop-12,
+      behavior:"auto"
+    });
+  });
+
+  $("categoryDetailPrevPage").addEventListener("click",()=>{
+    if(categoryDetailPage<=0)return;
+    categoryDetailPage--;
+    renderCategoryDetailCurrent({
+      preserveScroll:false
+    });
+  });
+
+  $("categoryDetailNextPage").addEventListener("click",()=>{
+    categoryDetailPage++;
+    renderCategoryDetailCurrent({
+      preserveScroll:false
+    });
+  });
+
   $("clearFilters").addEventListener("click",clearFilters);
   $("budgetMonth").addEventListener("change",event=>{
     budgetSelectedMonth=event.target.value||currentMonthKey();
@@ -7647,7 +7956,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     renderWeeklyBackupPanel();
 
     if(event.target.checked){
-      setTimeout(checkWeeklyAutoBackup,300);
+      scheduleWeeklyBackupCheck(1500);
       toast("Weekly automatic backup enabled.");
     }else{
       toast("Weekly automatic backup turned off.");
@@ -7697,13 +8006,13 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
 
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="visible"){
-      setTimeout(checkWeeklyAutoBackup,500);
+      scheduleWeeklyBackupCheck(3000);
     }
   });
 
   window.addEventListener("online",()=>{
     if(cloudUser&&cloudStatus!=="error")setLocalMode("Network available");
-    setTimeout(checkWeeklyAutoBackup,500);
+    scheduleWeeklyBackupCheck(3000);
   });
   window.addEventListener("offline",()=>{
     if(cloudUser)setLocalMode("Offline · local records remain available");
@@ -7729,8 +8038,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   renderPendingCloudSaves();
   renderPendingCloudDeletes();
   initCloud();
-  renderWeeklyBackupPanel();
-  setTimeout(checkWeeklyAutoBackup,2500);
+  scheduleWeeklyBackupCheck(12000);
   populateMonths();
   $("globalMonth").value=selectedMonth;
   $("budgetMonth").value=selectedMonth;
