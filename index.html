@@ -2249,7 +2249,7 @@
       min-width:0;
       min-height:72px;
       align-items:center;
-      cursor:pointer
+      cursor:default
     }
     .analysis-total-data-card small{font-size:8px}
     .analysis-total-data-card strong{font-size:22px}
@@ -2400,6 +2400,56 @@
       .analysis-period-value-grid.compact-days{grid-template-columns:repeat(5,minmax(0,1fr))}
     }
 
+
+    /* V51 — simplified Analysis and complete income privacy */
+    .analysis-total-row{margin:9px 0 0}
+    .analysis-total-row .analysis-total-data-card{width:100%;cursor:default}
+    #analysisQuickTabs,.analysis-compare-modal{display:none!important}
+    #analysisKpiStrip.year-mode #analysisKpi2Card{grid-column:span 2}
+    #analysisKpi2Card.wide strong{
+      display:flex;align-items:center;justify-content:center;gap:7px;
+      white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2
+    }
+    #analysisKpi2Card.wide strong span:last-child{font-weight:900}
+    .analysis-period-value-item.category-scope-selected{
+      outline:2px solid var(--yellow-2);background:var(--yellow-soft)
+    }
+    .analysis-category-scope-note{
+      display:inline-flex;align-items:center;gap:5px;margin-top:3px;
+      color:var(--accent-ink);font-size:7px;font-weight:800
+    }
+    .income-privacy-status-card{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:11px;border-radius:14px;background:var(--field-bg)
+    }
+    .income-privacy-status-card strong{display:block;font-size:10px}
+    .income-privacy-status-card small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.45}
+    #incomePrivacyStatusIcon{font-size:24px}
+    .income-privacy-actions{margin-top:10px}
+    .income-privacy-helper{margin-top:9px}
+    .income-pin-sheet{max-width:390px}
+    .income-pin-field{margin-top:9px}
+    .income-pin-field input{font-size:22px;letter-spacing:.45em;text-align:center}
+    .income-pin-error{margin-top:8px;padding:8px 9px;border-radius:10px;background:#FBE7E7;color:#A13C3C;font-size:8px;font-weight:750}
+    .income-unlock-target{cursor:pointer}
+    body.income-privacy-locked .income-unlock-target{position:relative}
+    body.income-privacy-locked #analysisView.income-mode #analysisPeriodChart{
+      filter:blur(10px);opacity:.18;pointer-events:none
+    }
+    body.income-privacy-locked #analysisView.income-mode .analysis-period-chart-panel{position:relative}
+    body.income-privacy-locked #analysisView.income-mode .analysis-period-chart-panel::after{
+      content:"🔒 Enter PIN to view income chart";
+      position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);
+      width:max-content;max-width:80%;padding:9px 11px;border-radius:999px;
+      background:var(--card);box-shadow:0 4px 16px rgba(0,0,0,.08);
+      color:var(--ink);font-size:9px;font-weight:850;pointer-events:none
+    }
+    body.income-privacy-locked #analysisView.income-mode .analysis-period-value-item strong,
+    body.income-privacy-locked #analysisView.income-mode .analysis-category-data-table td:nth-child(2),
+    body.income-privacy-locked #analysisView.income-mode .analysis-category-data-table td:nth-child(3){
+      letter-spacing:.08em
+    }
+
 </style>
 </head>
 <body>
@@ -2437,9 +2487,9 @@
     <section id="homeView" class="view active">
       <div class="summary home-summary-card">
         <div class="summary-grid">
-          <div class="metric"><div class="label">Income</div><div id="homeIncome" class="value income">¥0.00</div></div>
+          <div class="metric income-unlock-target" data-income-unlock="true"><div class="label">Income</div><div id="homeIncome" class="value income">¥••••</div></div>
           <div class="metric"><div class="label">Expenses</div><div id="homeExpense" class="value expense">¥0.00</div></div>
-          <div class="metric"><div class="label">Balance</div><div id="homeBalance" class="value">¥0.00</div></div>
+          <div class="metric income-unlock-target" data-income-unlock="true"><div class="label">Balance</div><div id="homeBalance" class="value">¥••••</div></div>
         </div>
 
         <button id="homeBudgetCard" class="home-budget-card" type="button" data-home-action="budget">
@@ -2504,7 +2554,7 @@
             <button class="chip" data-preset="month">Month</button>
           </div>
           <button id="toggleRecordFilters" class="compact-filter-btn" type="button">
-            Filters<span id="recordFilterBadge" class="compact-filter-badge hidden">0</span>
+            Filters
           </button>
         </div>
 
@@ -2531,7 +2581,7 @@
 
       <div class="record-summary-compact">
         <span class="record-summary-item">Records <strong id="recordCount">0</strong></span>
-        <span class="record-summary-item">Income <strong id="recordIncome">¥0.00</strong></span>
+        <span class="record-summary-item income-unlock-target" data-income-unlock="true">Income <strong id="recordIncome">¥••••</strong></span>
         <span class="record-summary-item">Expense <strong id="recordExpense">¥0.00</strong></span>
       </div>
 
@@ -2560,29 +2610,25 @@
           <button id="analysisWeekBtn" class="hidden" type="button" tabindex="-1">Week</button>
         </div>
 
-        <div id="analysisQuickTabs" class="analysis-quick-tabs"></div>
+        <div id="analysisQuickTabs" class="hidden" aria-hidden="true"></div>
 
-        <div class="analysis-total-compare-row">
+        <div class="analysis-total-row">
           <div id="analysisTotalCard" class="analysis-total-card analysis-total-data-card" aria-label="Selected period total">
             <div>
               <small id="analysisRangeLabel">July 2026</small>
               <strong id="analysisMainAmount">¥0.00</strong>
-              <span id="analysisCompareResult" class="analysis-inline-compare hidden">No comparison</span>
             </div>
           </div>
-
-          <button id="analysisCompareButton" class="analysis-compare-button analysis-compare-inline-button" type="button">
-            <span>Compare</span>
-            <strong id="analysisCompareButtonLabel">No comparison</strong>
-            <span aria-hidden="true">⌄</span>
-          </button>
+          <button id="analysisCompareButton" class="hidden" type="button" tabindex="-1" aria-hidden="true"></button>
+          <span id="analysisCompareResult" class="hidden" aria-hidden="true"></span>
+          <span id="analysisCompareButtonLabel" class="hidden" aria-hidden="true"></span>
         </div>
 
-        <div class="analysis-kpi-strip analysis-kpi-four">
-          <div class="analysis-kpi"><small id="analysisKpi1Label">Budget used</small><strong id="analysisAverageKpi">—</strong></div>
-          <div class="analysis-kpi"><small id="analysisKpi2Label">Daily average</small><strong id="analysisActiveKpi">¥0.00</strong></div>
-          <div class="analysis-kpi"><small id="analysisKpi3Label">Active categories</small><strong id="analysisTopKpi">0</strong></div>
-          <div class="analysis-kpi"><small id="analysisKpi4Label">Records</small><strong id="analysisFourthKpi">0</strong></div>
+        <div id="analysisKpiStrip" class="analysis-kpi-strip analysis-kpi-four">
+          <div id="analysisKpi1Card" class="analysis-kpi"><small id="analysisKpi1Label">Budget used</small><strong id="analysisAverageKpi">—</strong></div>
+          <div id="analysisKpi2Card" class="analysis-kpi"><small id="analysisKpi2Label">Daily average</small><strong id="analysisActiveKpi">¥0.00</strong></div>
+          <div id="analysisKpi3Card" class="analysis-kpi"><small id="analysisKpi3Label">Active categories</small><strong id="analysisTopKpi">0</strong></div>
+          <div id="analysisKpi4Card" class="analysis-kpi"><small id="analysisKpi4Label">Records</small><strong id="analysisFourthKpi">0</strong></div>
         </div>
       </div>
 
@@ -2880,6 +2926,35 @@
         </div>
       </details>
 
+      <details class="settings-card panel" id="incomePrivacySection">
+        <summary>
+          <span class="settings-summary-main">
+            <span class="settings-summary-icon">🔒</span>
+            <span class="settings-summary-copy">
+              <span class="settings-summary-title">Income privacy</span>
+              <span class="settings-summary-sub" id="incomePrivacySummary">Set a 4-digit PIN</span>
+            </span>
+          </span>
+          <span class="settings-summary-side"><span id="incomePrivacyBadge" class="badge">Locked</span></span>
+        </summary>
+        <div class="settings-card-body">
+          <div class="income-privacy-status-card">
+            <div>
+              <strong id="incomePrivacyStatusTitle">Income amounts are hidden</strong>
+              <small id="incomePrivacyStatusText">Set a four-digit PIN to unlock income amounts during the current app session.</small>
+            </div>
+            <span id="incomePrivacyStatusIcon">🔒</span>
+          </div>
+          <div class="settings-actions income-privacy-actions">
+            <button id="setIncomePin" class="primary" type="button">Set 4-digit PIN</button>
+            <button id="lockIncomeNow" class="secondary" type="button">Lock now</button>
+          </div>
+          <p class="helper income-privacy-helper">
+            Income amounts, balances, income records and income analysis are hidden until the PIN is entered. The app locks again whenever it leaves the foreground. This is screen privacy; downloaded backup files are not encrypted.
+          </p>
+        </div>
+      </details>
+
       <details class="settings-card panel" id="backupSection">
         <summary>
           <span class="settings-summary-main">
@@ -2963,7 +3038,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 50 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
+            Version 51 simplifies Analysis interactions, adds week/day category scopes and protects every income amount with a session-based four-digit PIN.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -3107,6 +3182,33 @@
 
 
 
+<div id="incomePinModal" class="modal income-pin-modal">
+  <div class="mini-sheet income-pin-sheet swipe-surface">
+    <div class="sheet-head">
+      <div>
+        <h3 id="incomePinTitle">Unlock income</h3>
+        <span id="incomePinSubtitle" class="swipe-close-hint">Enter your four-digit PIN</span>
+      </div>
+      <button id="closeIncomePin" class="icon-btn" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <div id="incomePinCurrentWrap" class="field income-pin-field">
+      <label for="incomePinCurrent">Current PIN</label>
+      <input id="incomePinCurrent" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
+    </div>
+    <div id="incomePinNewWrap" class="field income-pin-field hidden">
+      <label for="incomePinNew">New four-digit PIN</label>
+      <input id="incomePinNew" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
+    </div>
+    <div id="incomePinConfirmWrap" class="field income-pin-field hidden">
+      <label for="incomePinConfirm">Confirm PIN</label>
+      <input id="incomePinConfirm" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
+    </div>
+    <div id="incomePinError" class="income-pin-error hidden"></div>
+    <button id="incomePinSubmit" class="primary" type="button" style="width:100%;margin-top:10px">Unlock</button>
+  </div>
+</div>
+
 <div id="monthPickerModal" class="modal month-picker-modal">
   <div class="mini-sheet month-picker-sheet swipe-surface">
     <div class="sheet-head month-picker-head">
@@ -3180,7 +3282,7 @@
   </div>
 </div>
 
-<div id="analysisCompareModal" class="modal analysis-compare-modal">
+<div id="analysisCompareModal" class="modal analysis-compare-modal hidden" aria-hidden="true">
   <div class="mini-sheet analysis-compare-sheet swipe-surface">
     <div class="sheet-head">
       <div>
@@ -3228,8 +3330,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=50"></script>
-<script src="firebase-cloud-v50.js?v=50"></script>
+<script src="firebase-config.js?v=51"></script>
+<script src="firebase-cloud-v51.js?v=51"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -3242,6 +3344,7 @@
   const WEEKLY_BACKUP_META_KEY = `${STORAGE_KEY}_weekly_backup_meta_v1`;
   const WEEKLY_BACKUP_INTERVAL_MS = 7*24*60*60*1000;
   const WEEKLY_BACKUP_MAX_SNAPSHOTS = 4;
+  const INCOME_PIN_STORAGE_KEY = `${STORAGE_KEY}_income_privacy_pin_v1`;
   const RECORDS_PAGE_SIZE = 80;
   const CATEGORY_DETAIL_PAGE_SIZE = 60;
   const DUPLICATE_PAGE_SIZE = 10;
@@ -3424,6 +3527,8 @@
   let analysisChartHitAreas = [];
   let analysisMonthChartMode = "year";
   let analysisCategoryHidden = false;
+  let analysisCategoryScope = null;
+  let analysisPeriodChartCurrentData = null;
   let preserveAnalysisCompareOnNextOpen = false;
   let categoryPickerFilterMode = "expense";
   let categoryDetailCurrent = null;
@@ -3455,6 +3560,11 @@
   let pendingDeleteCleanupRunning = false;
   let weeklyBackupRunning = false;
   let weeklyBackupMeta = loadWeeklyBackupMeta();
+  let incomePinConfig = loadIncomePinConfig();
+  let incomePrivacyUnlocked = false;
+  let incomePinModalMode = "unlock";
+  let incomeUnlockContinuation = null;
+  let incomePinSubmitRunning = false;
   let recordsScrollTop = 0;
   let recordsPage = 0;
   let categoryDetailPage = 0;
@@ -3708,6 +3818,10 @@
 
   function downloadWeeklyBackupSnapshot(snapshot){
     if(!snapshot?.payload)return;
+    if(incomePrivacyLocked()){
+      requestIncomeUnlock(()=>downloadWeeklyBackupSnapshot(snapshot));
+      return;
+    }
     downloadFile(
       weeklyBackupFileName(snapshot),
       JSON.stringify(snapshot.payload,null,2),
@@ -4465,7 +4579,7 @@
     summary.innerHTML=
       `<strong>${groups.length} unresolved duplicate group${groups.length===1?"":"s"}.</strong><br>`+
       `This page has ${selected.length} record${selected.length===1?"":"s"} selected for deletion, `+
-      `totalling <strong>${money(selectedAmount)}</strong>. `+
+      `totalling <strong>${incomePrivacyLocked()&&selected.some(item=>item.type==="income")?maskedMoney():money(selectedAmount)}</strong>. `+
       `${reviewed.length?`${reviewed.length} reviewed group${reviewed.length===1?" is":"s are"} excluded. `:""}`+
       `Only the visible page is processed when you press the red button.`;
 
@@ -4481,7 +4595,7 @@
         return `<div class="duplicate-record-choice ${keep?"keep":"delete"}">
           <div class="duplicate-record-main">
             <strong>${keep?"Will keep":"Will delete"} · Copy ${itemIndex+1}</strong>
-            <small>Date ${escapeHtml(item.date)} · ${escapeHtml(item.type)} · ${money(item.amount)}<br>
+            <small>Date ${escapeHtml(item.date)} · ${escapeHtml(item.type)} · ${privacyMoney(item.amount,item.type)}<br>
             Category ${escapeHtml(item.category)} · Tag ${escapeHtml(item.tag||"—")}<br>
             Created ${escapeHtml(createdText)} · ID ${escapeHtml(String(item.id))}</small>
           </div>
@@ -4494,7 +4608,7 @@
       return `<details class="duplicate-group" ${index===0?"open":""}>
         <summary class="duplicate-group-summary">
           <div>
-            <div class="duplicate-group-title">${categoryIcon(first.category)} ${escapeHtml(first.category)} · ${money(first.amount)}</div>
+            <div class="duplicate-group-title">${categoryIcon(first.category)} ${escapeHtml(first.category)} · ${privacyMoney(first.amount,first.type)}</div>
             <div class="duplicate-group-meta">${escapeHtml(first.date)}${first.tag?` · ${escapeHtml(first.tag)}`:""}</div>
           </div>
           <span class="duplicate-group-count">${group.items.length} copies</span>
@@ -4650,7 +4764,7 @@
         const pending=Boolean(item.localPending);
         return `<div class="trash-row">
           <div>
-            <div class="trash-title">${categoryIcon(item.category)} ${escapeHtml(item.category)} · ${money(item.amount)}</div>
+            <div class="trash-title">${categoryIcon(item.category)} ${escapeHtml(item.category)} · ${privacyMoney(item.amount,item.type)}</div>
             <div class="trash-meta">${dateLabel(item.date)}${item.tag?` · ${escapeHtml(item.tag)}`:""}</div>
             ${
               pending
@@ -5546,6 +5660,235 @@
     const d = new Date();
     return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   }
+  function loadIncomePinConfig(){
+    try{
+      const parsed=JSON.parse(localStorage.getItem(INCOME_PIN_STORAGE_KEY)||"null");
+      return parsed&&parsed.salt&&parsed.hash?parsed:null;
+    }catch(error){
+      console.error("Income PIN configuration could not be loaded",error);
+      return null;
+    }
+  }
+
+  function hasIncomePin(){
+    return Boolean(incomePinConfig?.salt&&incomePinConfig?.hash);
+  }
+
+  function incomePrivacyLocked(){
+    return !incomePrivacyUnlocked;
+  }
+
+  function maskedMoney(){
+    return "¥••••";
+  }
+
+  function privacyMoney(value,type){
+    return type==="income"&&incomePrivacyLocked()
+      ?maskedMoney()
+      :money(value);
+  }
+
+  function privateBalanceMoney(value){
+    return incomePrivacyLocked()?maskedMoney():money(value);
+  }
+
+  function incomeAnalysisLocked(){
+    return analysisFlow==="income"&&incomePrivacyLocked();
+  }
+
+  function randomIncomePinSalt(){
+    if(crypto?.getRandomValues){
+      const bytes=new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      return [...bytes].map(value=>value.toString(16).padStart(2,"0")).join("");
+    }
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  async function hashIncomePin(pin,salt){
+    const value=`${salt}:${pin}:daily-budget-income`;
+    if(crypto?.subtle&&window.TextEncoder){
+      const bytes=new TextEncoder().encode(value);
+      const digest=await crypto.subtle.digest("SHA-256",bytes);
+      return [...new Uint8Array(digest)]
+        .map(byte=>byte.toString(16).padStart(2,"0"))
+        .join("");
+    }
+    let hash=2166136261;
+    for(let index=0;index<value.length;index++){
+      hash^=value.charCodeAt(index);
+      hash=Math.imul(hash,16777619);
+    }
+    return (hash>>>0).toString(16).padStart(8,"0");
+  }
+
+  async function verifyIncomePin(pin){
+    if(!hasIncomePin())return false;
+    return (await hashIncomePin(pin,incomePinConfig.salt))===incomePinConfig.hash;
+  }
+
+  function clearIncomePinInputs(){
+    ["incomePinCurrent","incomePinNew","incomePinConfirm"].forEach(id=>{
+      if($(id))$(id).value="";
+    });
+    $("incomePinError")?.classList.add("hidden");
+    if($("incomePinError"))$("incomePinError").textContent="";
+  }
+
+  function showIncomePinError(message){
+    $("incomePinError").textContent=message;
+    $("incomePinError").classList.remove("hidden");
+  }
+
+  function openIncomePinModal(mode=hasIncomePin()?"unlock":"setup",continuation=null){
+    incomePinModalMode=mode;
+    incomeUnlockContinuation=continuation;
+    clearIncomePinInputs();
+
+    const setup=mode==="setup";
+    const change=mode==="change";
+    $("incomePinTitle").textContent=setup
+      ?"Set income PIN"
+      :change
+        ?"Change income PIN"
+        :"Unlock income";
+    $("incomePinSubtitle").textContent=setup
+      ?"Create a four-digit PIN for this device"
+      :change
+        ?"Enter the current PIN, then choose a new one"
+        :"Enter your four-digit PIN";
+    $("incomePinCurrentWrap").classList.toggle("hidden",setup);
+    $("incomePinNewWrap").classList.toggle("hidden",!setup&&!change);
+    $("incomePinConfirmWrap").classList.toggle("hidden",!setup&&!change);
+    $("incomePinSubmit").textContent=setup
+      ?"Set PIN and unlock"
+      :change
+        ?"Change PIN"
+        :"Unlock income";
+
+    lockPageForOverlay();
+    $("incomePinModal").classList.add("open");
+    setTimeout(()=>$(setup?"incomePinNew":"incomePinCurrent")?.focus(),120);
+  }
+
+  function closeIncomePinModal({restoreScroll=true}={}){
+    $("incomePinModal").classList.remove("open");
+    resetSwipeSheet("incomePinModal");
+    incomeUnlockContinuation=null;
+    clearIncomePinInputs();
+    unlockPageFromOverlay({restore:restoreScroll});
+  }
+
+  function renderIncomePrivacySettings(){
+    const configured=hasIncomePin();
+    const unlocked=configured&&incomePrivacyUnlocked;
+    $("incomePrivacySummary").textContent=configured
+      ?unlocked?"Unlocked for this session":"4-digit PIN enabled"
+      :"Set a 4-digit PIN";
+    $("incomePrivacyBadge").textContent=unlocked?"Unlocked":"Locked";
+    $("incomePrivacyStatusTitle").textContent=unlocked
+      ?"Income amounts are visible"
+      :"Income amounts are hidden";
+    $("incomePrivacyStatusText").textContent=configured
+      ?unlocked
+        ?"The app will lock income again when it leaves the foreground."
+        :"Enter your PIN to view income amounts, balances and income analysis."
+      :"Create a four-digit PIN. Until then, income amounts remain hidden.";
+    $("incomePrivacyStatusIcon").textContent=unlocked?"🔓":"🔒";
+    $("setIncomePin").textContent=configured?"Change PIN":"Set 4-digit PIN";
+    $("lockIncomeNow").disabled=!unlocked;
+  }
+
+  function refreshVisibleViewForIncomePrivacy(){
+    document.body.classList.toggle("income-privacy-locked",incomePrivacyLocked());
+    if(currentView==="home")renderDashboard();
+    else if(currentView==="records")renderRecords({resetPage:false,preserveScroll:true});
+    else if(currentView==="analysis")renderAnalysis();
+    else if(currentView==="settings")renderSettingsView();
+    if(categoryDetailCurrent)renderCategoryDetailCurrent({preserveScroll:true});
+    renderIncomePrivacySettings();
+  }
+
+  function lockIncomePrivacy({showToast=false}={}){
+    if(!incomePrivacyUnlocked){
+      document.body.classList.add("income-privacy-locked");
+      return;
+    }
+    incomePrivacyUnlocked=false;
+    refreshVisibleViewForIncomePrivacy();
+    if(showToast)toast("Income amounts locked.");
+  }
+
+  function requestIncomeUnlock(continuation=null){
+    if(!incomePrivacyLocked()){
+      if(typeof continuation==="function")continuation();
+      return true;
+    }
+    openIncomePinModal(hasIncomePin()?"unlock":"setup",continuation);
+    return false;
+  }
+
+  async function submitIncomePin(){
+    if(incomePinSubmitRunning)return;
+    incomePinSubmitRunning=true;
+    $("incomePinSubmit").disabled=true;
+
+    try{
+      const current=$("incomePinCurrent").value.trim();
+      const next=$("incomePinNew").value.trim();
+      const confirmPin=$("incomePinConfirm").value.trim();
+      const valid=value=>/^\d{4}$/.test(value);
+
+      if(incomePinModalMode==="unlock"){
+        if(!valid(current)){
+          showIncomePinError("Enter exactly four digits.");
+          return;
+        }
+        if(!(await verifyIncomePin(current))){
+          showIncomePinError("Incorrect PIN.");
+          return;
+        }
+        incomePrivacyUnlocked=true;
+      }else{
+        if(incomePinModalMode==="change"){
+          if(!valid(current)||!(await verifyIncomePin(current))){
+            showIncomePinError("Current PIN is incorrect.");
+            return;
+          }
+        }
+        if(!valid(next)){
+          showIncomePinError("The new PIN must contain exactly four digits.");
+          return;
+        }
+        if(next!==confirmPin){
+          showIncomePinError("The two PIN entries do not match.");
+          return;
+        }
+        const salt=randomIncomePinSalt();
+        incomePinConfig={
+          version:1,
+          salt,
+          hash:await hashIncomePin(next,salt),
+          updatedAt:Date.now()
+        };
+        safeLocalStorageSet(
+          INCOME_PIN_STORAGE_KEY,
+          JSON.stringify(incomePinConfig)
+        );
+        incomePrivacyUnlocked=true;
+      }
+
+      const continuation=incomeUnlockContinuation;
+      closeIncomePinModal({restoreScroll:true});
+      refreshVisibleViewForIncomePrivacy();
+      toast("Income amounts unlocked for this app session.");
+      if(typeof continuation==="function")setTimeout(continuation,60);
+    }finally{
+      incomePinSubmitRunning=false;
+      $("incomePinSubmit").disabled=false;
+    }
+  }
+
   function money(v){
     return new Intl.NumberFormat("en-US",{style:"currency",currency:"CNY",currencyDisplay:"narrowSymbol",minimumFractionDigits:2}).format(Number(v)||0);
   }
@@ -6292,9 +6635,15 @@
     $("categoryDetailTitle").textContent=title||(isCategory?category:"Period records");
     $("categoryDetailIcon").textContent=isCategory?categoryIcon(category):(type==="income"?"↗":"◷");
     $("categoryDetailPeriod").textContent=subtitle||range.label;
-    $("categoryDetailAmount").textContent=money(detailTotal);
+    $("categoryDetailModal").classList.toggle("income-mode",type==="income");
+    $("categoryDetailAmount").classList.toggle("income-unlock-target",type==="income");
+    if(type==="income")$("categoryDetailAmount").dataset.incomeUnlock="true";
+    else delete $("categoryDetailAmount").dataset.incomeUnlock;
+    $("categoryDetailAmount").textContent=privacyMoney(detailTotal,type);
     $("categoryDetailMeta").textContent=isCategory
-      ?`${matches.length} record${matches.length===1?"":"s"} · ${rangeTotal?(detailTotal/rangeTotal*100).toFixed(1):"0.0"}% of ${type}`
+      ?type==="income"&&incomePrivacyLocked()
+        ?`${matches.length} record${matches.length===1?"":"s"} · share hidden`
+        :`${matches.length} record${matches.length===1?"":"s"} · ${rangeTotal?(detailTotal/rangeTotal*100).toFixed(1):"0.0"}% of ${type}`
       :`${matches.length} record${matches.length===1?"":"s"} · ${type==="income"?"Income":"Expense"}`;
     $("categoryDetailCount").textContent=
       `${matches.length} record${matches.length===1?"":"s"}`;
@@ -6321,7 +6670,7 @@
               <div class="category-record-title">${escapeHtml(transaction.tag||transaction.category)}</div>
               <div class="category-record-meta">${escapeHtml(transaction.category)} · ${transaction.type==="income"?"Income":"Expense"}</div>
             </div>
-            <div class="category-record-amount">${transaction.type==="income"?"+":"−"}${money(transaction.amount)}</div>
+            <div class="category-record-amount ${transaction.type==="income"?"income-unlock-target":""}" ${transaction.type==="income"?'data-income-unlock="true"':""}>${transaction.type==="income"?"+":"−"}${privacyMoney(transaction.amount,transaction.type)}</div>
             <div class="category-record-edit-arrow" aria-hidden="true">›</div>
           </div>`;
         }).join("")
@@ -6377,7 +6726,7 @@
   }
 
   function openCategoryDetail(category){
-    const range=analysisRange();
+    const range=analysisCategoryRange();
     openAnalysisDetail({
       kind:"category",
       category,
@@ -6838,6 +7187,7 @@
     renderTrash();
     renderDuplicateAudit();
     renderWeeklyBackupPanel();
+    renderIncomePrivacySettings();
     settingsRenderDirty=false;
   }
 
@@ -6918,9 +7268,11 @@
   function renderDashboard(){
     const list=txnsForMonth(selectedMonth);
     const totalsForMonth=totals(list);
-    $("homeIncome").textContent=money(totalsForMonth.income);
+    $("homeIncome").textContent=incomePrivacyLocked()
+      ?maskedMoney()
+      :money(totalsForMonth.income);
     $("homeExpense").textContent=money(totalsForMonth.expense);
-    $("homeBalance").textContent=money(
+    $("homeBalance").textContent=privateBalanceMoney(
       totalsForMonth.income-totalsForMonth.expense
     );
 
@@ -7020,7 +7372,7 @@
           <div class="txn-title">${escapeHtml(t.category)}${pendingCloudSaves.has(String(t.id))||pendingSaveOperations.has(t.id)?'<span class="save-pending-dot" title="Saved locally · cloud upload pending"></span>':""}</div>
           <div class="txn-meta">${dateLabel(t.date)}${t.tag?` · ${escapeHtml(t.tag)}`:""}</div>
         </div>
-        <div class="txn-amount ${cls}">${sign}${money(t.amount)}</div>
+        <div class="txn-amount ${cls} ${t.type==="income"?"income-unlock-target":""}" ${t.type==="income"?'data-income-unlock="true"':""}>${sign}${privacyMoney(t.amount,t.type)}</div>
       </div>
     </div>`;
   }
@@ -7033,13 +7385,10 @@
   function renderRecordFilterToolbar(){
     const drawer=$("recordFilterDrawer");
     const button=$("toggleRecordFilters");
-    const badge=$("recordFilterBadge");
-    if(!drawer||!button||!badge)return;
+    if(!drawer||!button)return;
     const count=activeRecordFilterCount();
     drawer.classList.toggle("hidden",!recordFiltersExpanded);
     button.classList.toggle("active",recordFiltersExpanded||count>0);
-    badge.classList.toggle("hidden",count===0);
-    badge.textContent=String(count);
   }
 
   function filteredRecords(){
@@ -7074,7 +7423,9 @@
     const visible=list.slice(start,end);
 
     $("recordCount").textContent=list.length;
-    $("recordIncome").textContent=money(totalsForList.income);
+    $("recordIncome").textContent=incomePrivacyLocked()
+      ?maskedMoney()
+      :money(totalsForList.income);
     $("recordExpense").textContent=money(totalsForList.expense);
     $("recordsList").innerHTML=list.length
       ?visible.map(txnHtml).join("")
@@ -7154,8 +7505,26 @@
       :[...state.incomeCategories];
   }
 
+  function analysisCategoryRange(){
+    if(analysisMode==="month"&&analysisCategoryScope){
+      return {
+        from:analysisCategoryScope.from,
+        to:analysisCategoryScope.to,
+        label:analysisCategoryScope.label
+      };
+    }
+    return analysisRange();
+  }
+
+  function analysisCategoryList(){
+    const range=analysisCategoryRange();
+    return state.transactions.filter(transaction=>
+      transaction.date>=range.from&&transaction.date<=range.to
+    );
+  }
+
   function analysisCategoryRows(){
-    const records=currentAnalysisList().filter(
+    const records=analysisCategoryList().filter(
       transaction=>transaction.type===analysisFlow
     );
     const amountMap=new Map();
@@ -7246,6 +7615,9 @@
       transaction=>transaction.type===analysisFlow
     );
     const activeCategories=categoryRows.filter(row=>row.amount>0).length;
+    const locked=incomeAnalysisLocked();
+    $("analysisKpiStrip").classList.toggle("year-mode",analysisMode==="year");
+    $("analysisKpi2Card").classList.toggle("wide",analysisMode==="year");
 
     if(analysisMode==="month"){
       const key=currentAnalysisKey();
@@ -7256,9 +7628,11 @@
         :"Month total";
       $("analysisAverageKpi").textContent=analysisFlow==="expense"
         ?budget?`${(currentTotal/budget*100).toFixed(1)}%`:"Not set"
-        :money(currentTotal);
+        :locked?maskedMoney():money(currentTotal);
       $("analysisKpi2Label").textContent="Daily average";
-      $("analysisActiveKpi").textContent=money(currentTotal/elapsed);
+      $("analysisActiveKpi").textContent=locked
+        ?maskedMoney()
+        :money(currentTotal/elapsed);
       $("analysisKpi3Label").textContent="Active categories";
       $("analysisTopKpi").textContent=String(activeCategories);
       $("analysisKpi4Label").textContent="Records";
@@ -7274,12 +7648,12 @@
     const highestIndex=monthTotals.indexOf(highest);
     const activeMonths=monthTotals.filter(amount=>amount>0).length;
     $("analysisKpi1Label").textContent="Average/month";
-    $("analysisAverageKpi").textContent=money(
-      currentTotal/monthsUsedForYearAverage(year)
-    );
+    $("analysisAverageKpi").textContent=locked
+      ?maskedMoney()
+      :money(currentTotal/monthsUsedForYearAverage(year));
     $("analysisKpi2Label").textContent="Highest month";
-    $("analysisActiveKpi").textContent=highest
-      ?`${monthShortName(`${year}-${String(highestIndex+1).padStart(2,"0")}`)} · ${money(highest)}`
+    $("analysisActiveKpi").innerHTML=highest
+      ?`<span>${escapeHtml(monthShortName(`${year}-${String(highestIndex+1).padStart(2,"0")}`))}</span><span>${locked?maskedMoney():money(highest)}</span>`
       :"—";
     $("analysisKpi3Label").textContent="Active months";
     $("analysisTopKpi").textContent=String(activeMonths);
@@ -7322,7 +7696,13 @@
         keys:weeks.map(row=>row.key),
         labels:weeks.map(row=>row.shortLabel),
         values:weeks.map(row=>row.amount),
-        selectable:false,
+        ranges:weeks.map(row=>({
+          key:row.key,
+          from:row.from,
+          to:row.to,
+          label:`${row.label} · ${row.subLabel}`
+        })),
+        selectable:true,
         compactGrid:false
       };
     }
@@ -7335,7 +7715,11 @@
         keys:values.map((_,index)=>`${selectedMonth}-${String(index+1).padStart(2,"0")}`),
         labels:values.map((_,index)=>String(index+1)),
         values,
-        selectable:false,
+        ranges:values.map((_,index)=>{
+          const date=`${selectedMonth}-${String(index+1).padStart(2,"0")}`;
+          return {key:date,from:date,to:date,label:`${dateLabel(date)} · ${selectedMonth.slice(0,4)}`};
+        }),
+        selectable:true,
         compactGrid:true
       };
     }
@@ -7373,6 +7757,7 @@
     });
 
     const data=analysisPeriodChartData();
+    analysisPeriodChartCurrentData=data;
     $("analysisPeriodOverviewTitle").textContent=data.title;
     $("analysisPeriodOverviewSubtitle").textContent=data.subtitle;
 
@@ -7383,7 +7768,9 @@
     $("analysisPeriodValueGrid").innerHTML=data.keys.map((key,index)=>{
       const selected=analysisMode==="year"
         ?key===selectedYear
-        :analysisMonthChartMode==="year"&&key===selectedMonth;
+        :analysisMonthChartMode==="year"
+          ?key===selectedMonth
+          :analysisCategoryScope?.key===key;
       const label=analysisMode==="year"
         ?key
         :analysisMonthChartMode==="year"
@@ -7392,9 +7779,9 @@
             ?data.labels[index]
             :String(index+1);
       const clickable=data.selectable?`data-analysis-period-key="${escapeHtml(key)}"`:"";
-      return `<button type="button" class="analysis-period-value-item ${selected?"selected":""} ${data.values[index]?"":"zero"}" ${clickable} ${data.selectable?"":"disabled"}>
+      return `<button type="button" class="analysis-period-value-item ${selected?"selected category-scope-selected":""} ${data.values[index]?"":"zero"}" ${clickable} ${data.selectable?"":"disabled"}>
         <span>${escapeHtml(label)}</span>
-        <strong>${money(data.values[index])}</strong>
+        <strong>${incomeAnalysisLocked()?maskedMoney():money(data.values[index])}</strong>
       </button>`;
     }).join("");
 
@@ -7405,18 +7792,19 @@
       drawSingleLine(
         "analysisPeriodChart",
         data.labels,
-        data.values,
+        incomeAnalysisLocked()?data.values.map(()=>0):data.values,
         color,
-        analysisMonthChartMode!=="days"||analysisMode==="year"
+        !incomeAnalysisLocked()&&(analysisMonthChartMode!=="days"||analysisMode==="year")
       );
     });
   }
 
   function renderAnalysisCategoryTable(rows,currentTotal){
-    const range=analysisRange();
+    const range=analysisCategoryRange();
     $("analysisCategoryTitle").textContent=`Categories · ${range.label}`;
-    $("analysisCategorySubtitle").textContent=
-      `All ${analysisFlow} categories for the selected ${analysisMode}`;
+    $("analysisCategorySubtitle").innerHTML=analysisCategoryScope
+      ?`Selected from the ${analysisMonthChartMode} chart <span class="analysis-category-scope-note">Tap the selected box again to return to the full month</span>`
+      :`All ${analysisFlow} categories for the selected ${analysisMode}`;
     $("analysisCategoryCount").textContent=
       `${rows.length} categor${rows.length===1?"y":"ies"}`;
     $("analysisCategoryContent").classList.toggle(
@@ -7434,8 +7822,8 @@
     $("analysisCategoryTableBody").innerHTML=rows.length
       ?rows.map(row=>`<tr class="${row.amount?"":"zero"}" ${row.count?`data-analysis-category="${escapeHtml(row.category)}"`:""}>
         <td><div class="analysis-category-name"><span>${categoryIcon(row.category)}</span><strong>${escapeHtml(row.category)}</strong></div></td>
-        <td>${money(row.amount)}</td>
-        <td>${currentTotal?(row.amount/currentTotal*100).toFixed(1):"0.0"}%</td>
+        <td>${incomeAnalysisLocked()?maskedMoney():money(row.amount)}</td>
+        <td>${incomeAnalysisLocked()?"••":currentTotal?(row.amount/currentTotal*100).toFixed(1):"0.0"}${incomeAnalysisLocked()?"":"%"}</td>
       </tr>`).join("")
       :'<tr class="analysis-data-empty-row"><td colspan="3">No categories configured.</td></tr>';
   }
@@ -7447,31 +7835,24 @@
     const currentList=currentAnalysisList();
     const currentTotal=analysisPeriodTotal(currentList);
     const categoryRows=analysisCategoryRows();
+    const categoryTotal=analysisPeriodTotal(analysisCategoryList());
 
+    $("analysisView").classList.toggle("income-mode",analysisFlow==="income");
     $("analysisExpenseBtn").classList.toggle("active",analysisFlow==="expense");
     $("analysisIncomeBtn").classList.toggle("active",analysisFlow==="income");
     $("analysisMonthBtn").classList.toggle("active",analysisMode==="month");
     $("analysisYearBtn").classList.toggle("active",analysisMode==="year");
 
     const activeKey=currentAnalysisKey();
-    $("analysisQuickTabs").innerHTML=analysisOptions().map(option=>
-      `<button type="button" class="${option.value===activeKey?"active":""}" data-analysis-key="${option.value}" title="${escapeHtml(option.fullLabel||option.label)}">${escapeHtml(option.label)}</button>`
-    ).join("");
-    requestAnimationFrame(()=>
-      $("analysisQuickTabs")?.querySelector("button.active")?.scrollIntoView({
-        behavior:"auto",
-        block:"nearest",
-        inline:"center"
-      })
-    );
-
+    $("analysisQuickTabs").innerHTML="";
     $("analysisRangeLabel").textContent=analysisDisplayLabel(activeKey);
-    $("analysisMainAmount").textContent=money(currentTotal);
-    $("analysisCompareButtonLabel").textContent=analysisCompareLabelText();
-    renderAnalysisCompareResult(currentTotal);
+    $("analysisMainAmount").textContent=incomeAnalysisLocked()
+      ?maskedMoney()
+      :money(currentTotal);
+    analysisCompareMode="none";
     renderAnalysisKpis(currentList,currentTotal,categoryRows);
     renderAnalysisPeriodChart();
-    renderAnalysisCategoryTable(categoryRows,currentTotal);
+    renderAnalysisCategoryTable(categoryRows,categoryTotal);
     analysisRenderDirty=false;
   }
 
@@ -8068,8 +8449,12 @@
   }
 
   function openModal(quickCategory=null, id=null){
-    editingId=id;
     const t=id?state.transactions.find(x=>x.id===id):null;
+    if(t?.type==="income"&&incomePrivacyLocked()){
+      requestIncomeUnlock(()=>openModal(quickCategory,id));
+      return;
+    }
+    editingId=id;
     const type=t?.type||"expense";
     $("modalTitle").textContent=t?"Edit record":"Add record";
     $("txnHeaderHint").textContent=t?"→ Swipe right to return":"→ Swipe right to cancel";
@@ -8368,12 +8753,20 @@
   }
 
   function exportCsv(){
+    if(incomePrivacyLocked()){
+      requestIncomeUnlock(()=>exportCsv());
+      return;
+    }
     const headers=["Date","Type","Category","Amount (RMB)","Tag"];
     const rows=sortTxns(state.transactions).map(t=>[t.date,t.type,t.category,t.amount,t.tag]);
     const esc=v=>`"${String(v??"").replaceAll('"','""')}"`;
     downloadFile("daily-budget-rmb.csv",[headers,...rows].map(r=>r.map(esc).join(",")).join("\n"),"text/csv;charset=utf-8");
   }
   function backupJson(){
+    if(incomePrivacyLocked()){
+      requestIncomeUnlock(()=>backupJson());
+      return;
+    }
     downloadFile(
       `daily-budget-full-backup-${todayKey()}.json`,
       JSON.stringify(buildRecoveryPackage(),null,2),
@@ -8622,23 +9015,28 @@
   $("budgetMonth").addEventListener("change",renderBudgetEditor);
   $("analysisExpenseBtn").addEventListener("click",()=>{
     analysisFlow="expense";
+    analysisCategoryScope=null;
     renderAnalysis();
   });
   $("analysisIncomeBtn").addEventListener("click",()=>{
     analysisFlow="income";
+    analysisCategoryScope=null;
     renderAnalysis();
+    if(incomePrivacyLocked())requestIncomeUnlock(()=>renderAnalysis());
   });
   $("analysisMonthBtn").addEventListener("click",()=>{
     analysisMode="month";
     selectedMonth=selectedMonth||currentMonthKey();
     selectedYear=selectedMonth.slice(0,4);
     analysisCompareMode="none";
+    analysisCategoryScope=null;
     renderAnalysis();
   });
   $("analysisYearBtn").addEventListener("click",()=>{
     analysisMode="year";
     selectedYear=selectedYear||currentYearKey();
     analysisCompareMode="none";
+    analysisCategoryScope=null;
     renderAnalysis();
   });
   $("analysisQuickTabs").addEventListener("click",event=>{
@@ -8652,7 +9050,7 @@
     }
     renderAnalysis();
   });
-  $("analysisCompareButton").addEventListener("click",openAnalysisComparePicker);
+  $("analysisCompareButton").addEventListener("click",event=>event.preventDefault());
   $("closeAnalysisCompare").addEventListener("click",closeAnalysisComparePicker);
   $("analysisCompareModal").addEventListener("click",event=>{
     if(event.target===$("analysisCompareModal"))closeAnalysisComparePicker();
@@ -8674,25 +9072,49 @@
     selectedMonth=`${year}-${selectedMonth.slice(5)}`;
     selectedYear=year;
     analysisCompareMode="none";
+    analysisCategoryScope=null;
     renderAnalysis();
   });
   $("analysisMonthChartMode").addEventListener("click",event=>{
     const button=event.target.closest("[data-analysis-chart-mode]");
     if(!button)return;
     analysisMonthChartMode=button.dataset.analysisChartMode;
+    analysisCategoryScope=null;
     renderAnalysis();
   });
   $("analysisPeriodValueGrid").addEventListener("click",event=>{
     const item=event.target.closest("[data-analysis-period-key]");
     if(!item)return;
-    if(analysisMode==="month"){
-      selectedMonth=item.dataset.analysisPeriodKey;
-      selectedYear=selectedMonth.slice(0,4);
-    }else{
-      selectedYear=item.dataset.analysisPeriodKey;
+    const key=item.dataset.analysisPeriodKey;
+
+    if(analysisMode==="year"){
+      selectedYear=key;
+      analysisCategoryScope=null;
+      renderAnalysis();
+      return;
     }
-    analysisCompareMode="none";
-    renderAnalysis();
+
+    if(analysisMonthChartMode==="year"){
+      selectedMonth=key;
+      selectedYear=selectedMonth.slice(0,4);
+      analysisCategoryScope=null;
+      renderAnalysis();
+      return;
+    }
+
+    const range=(analysisPeriodChartCurrentData?.ranges||[])
+      .find(row=>row.key===key);
+    if(!range)return;
+
+    analysisCategoryScope=analysisCategoryScope?.key===key
+      ?null
+      :{...range,mode:analysisMonthChartMode};
+    renderAnalysisPeriodChart();
+    const rows=analysisCategoryRows();
+    renderAnalysisCategoryTable(
+      rows,
+      analysisPeriodTotal(analysisCategoryList())
+    );
   });
   $("analysisCategoryToggle").addEventListener("click",()=>{
     analysisCategoryHidden=!analysisCategoryHidden;
@@ -8976,7 +9398,13 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     setTimeout(updateKeyboardGeometry,80);
   });
   $("typeExpense").addEventListener("click",()=>setTxnType("expense"));
-  $("typeIncome").addEventListener("click",()=>setTxnType("income"));
+  $("typeIncome").addEventListener("click",()=>{
+    if(incomePrivacyLocked()){
+      requestIncomeUnlock(()=>setTxnType("income"));
+      return;
+    }
+    setTxnType("income");
+  });
   $("saveTxn").addEventListener("click",saveTxn);
   $("deleteTxn").addEventListener("click",deleteTxn);
   let swipeState=null;
@@ -9169,6 +9597,30 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     if(snapshot)downloadWeeklyBackupSnapshot(snapshot);
   });
 
+  $("setIncomePin").addEventListener("click",()=>{
+    openIncomePinModal(hasIncomePin()?"change":"setup");
+  });
+  $("lockIncomeNow").addEventListener("click",()=>lockIncomePrivacy({showToast:true}));
+  $("incomePinSubmit").addEventListener("click",submitIncomePin);
+  $("closeIncomePin").addEventListener("click",closeIncomePinModal);
+  $("incomePinModal").addEventListener("click",event=>{
+    if(event.target===$("incomePinModal"))closeIncomePinModal();
+  });
+  ["incomePinCurrent","incomePinNew","incomePinConfirm"].forEach(id=>{
+    $(id).addEventListener("input",event=>{
+      event.target.value=event.target.value.replace(/\D/g,"").slice(0,4);
+      $("incomePinError").classList.add("hidden");
+    });
+    $(id).addEventListener("keydown",event=>{
+      if(event.key==="Enter")submitIncomePin();
+    });
+  });
+  document.addEventListener("click",event=>{
+    if(!incomePrivacyLocked())return;
+    const target=event.target.closest("[data-income-unlock]");
+    if(target)requestIncomeUnlock();
+  });
+
   $("exportCsv").addEventListener("click",exportCsv);
   $("backupJson").addEventListener("click",backupJson);
   $("importJson").addEventListener("click",()=>$("importFile").click());
@@ -9192,9 +9644,11 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   }
 
   document.addEventListener("visibilitychange",()=>{
-    if(document.visibilityState==="visible"){
-      scheduleWeeklyBackupCheck(3000);
+    if(document.visibilityState==="hidden"){
+      lockIncomePrivacy();
+      return;
     }
+    scheduleWeeklyBackupCheck(3000);
   });
 
   window.addEventListener("online",()=>{
@@ -9207,6 +9661,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   });
   registerRightSwipeClose("categoryDetailModal",closeCategoryDetail);
   registerRightSwipeClose("txnModal",closeModal);
+  registerRightSwipeClose("incomePinModal",closeIncomePinModal);
   registerRightSwipeClose("monthPickerModal",closeMonthPicker);
   registerRightSwipeClose("categoryPickerModal",closeCategoryPicker);
   registerRightSwipeClose("analysisCompareModal",closeAnalysisComparePicker);
@@ -9235,7 +9690,12 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("budgetMonth").value=selectedMonth;
   selectedYear=selectedMonth.slice(0,4);
   setTxnType("expense");
+  document.body.classList.add("income-privacy-locked");
   renderAll();
+  renderIncomePrivacySettings();
+  if(!hasIncomePin()){
+    setTimeout(()=>openIncomePinModal("setup"),900);
+  }
   setTimeout(scheduleAutomaticRecurringGeneration,700);
 })();
 </script>
