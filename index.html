@@ -2352,6 +2352,54 @@
       .analysis-kpi-four{grid-template-columns:repeat(2,1fr)}
     }
 
+
+    /* V50 — clear Home order and more readable analysis */
+    .home-summary-card .home-quick-entry-block{margin-top:10px}
+    .analysis-total-data-card{
+      cursor:default!important;
+      grid-template-columns:minmax(0,1fr)!important
+    }
+    .analysis-total-data-card:hover,
+    .analysis-total-data-card:active{transform:none!important}
+    .analysis-period-chart-panel{padding:11px;margin-top:10px}
+    .analysis-trend-head{align-items:center}
+    .analysis-trend-controls{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:210px}
+    .analysis-chart-year-select{min-height:32px;width:72px;padding:5px 7px;border-radius:10px;background:var(--field-bg);font-size:8px;font-weight:800}
+    .analysis-chart-scope-toggle{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border-radius:10px;background:var(--field-bg)}
+    .analysis-chart-scope-toggle button{padding:6px 7px;border-radius:8px;background:transparent;font-size:7px;font-weight:800;white-space:nowrap}
+    .analysis-chart-scope-toggle button.active{background:var(--card);box-shadow:0 2px 7px rgba(30,35,42,.07)}
+    #analysisPeriodChart{width:100%;height:230px;display:block;background:var(--card)}
+    .analysis-period-value-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:8px}
+    .analysis-period-value-item{min-width:0;padding:7px 4px;border:1px solid var(--line);border-radius:10px;background:var(--field-bg);color:var(--ink);text-align:center}
+    .analysis-period-value-item span,.analysis-period-value-item strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .analysis-period-value-item span{color:var(--muted);font-size:7px}
+    .analysis-period-value-item strong{margin-top:3px;font-size:8px}
+    .analysis-period-value-item.selected{border-color:var(--yellow-2);background:var(--yellow-soft)}
+    .analysis-period-value-item.zero{opacity:.68}
+    .analysis-period-value-item:disabled{opacity:1;cursor:default}
+    .analysis-period-value-grid.compact-days{grid-template-columns:repeat(7,minmax(0,1fr))}
+    .analysis-period-value-grid.compact-days .analysis-period-value-item{padding:5px 2px}
+    .analysis-period-value-grid.compact-days .analysis-period-value-item strong{font-size:6px}
+    .analysis-category-head-actions{display:flex;align-items:center;gap:6px}
+    .analysis-category-toggle{padding:5px 8px;font-size:7px}
+    .analysis-category-content{overflow:hidden}
+    .analysis-category-data-table{min-width:0!important;table-layout:fixed}
+    .analysis-category-data-table .category-col{width:52%}
+    .analysis-category-data-table .amount-col{width:29%}
+    .analysis-category-data-table .share-col{width:19%}
+    .analysis-category-data-table th,.analysis-category-data-table td{padding:8px 5px;white-space:normal!important}
+    .analysis-category-data-table th:nth-child(2),.analysis-category-data-table td:nth-child(2),
+    .analysis-category-data-table th:nth-child(3),.analysis-category-data-table td:nth-child(3){text-align:right}
+    .analysis-category-name{min-width:0}
+    .analysis-category-name strong{min-width:0;overflow-wrap:anywhere;line-height:1.25}
+    @media(max-width:390px){
+      .analysis-trend-head{display:grid;grid-template-columns:1fr}
+      .analysis-trend-controls{justify-content:stretch;max-width:none}
+      .analysis-chart-year-select{width:100%}
+      .analysis-period-value-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .analysis-period-value-grid.compact-days{grid-template-columns:repeat(5,minmax(0,1fr))}
+    }
+
 </style>
 </head>
 <body>
@@ -2394,14 +2442,6 @@
           <div class="metric"><div class="label">Balance</div><div id="homeBalance" class="value">¥0.00</div></div>
         </div>
 
-        <div class="home-quick-entry-block">
-          <div class="home-quick-entry-head">
-            <h2>Quick entry</h2>
-            <span>Your first 4 expense categories</span>
-          </div>
-          <div id="quickGrid" class="quick-grid"></div>
-        </div>
-
         <button id="homeBudgetCard" class="home-budget-card" type="button" data-home-action="budget">
           <div class="home-budget-topline">
             <div>
@@ -2421,6 +2461,15 @@
           </div>
           <span id="budgetText" class="hidden">Not set</span>
         </button>
+
+        <div class="home-quick-entry-block">
+          <div class="home-quick-entry-head">
+            <h2>Quick entry</h2>
+            <span>Your first 4 expense categories</span>
+          </div>
+          <div id="quickGrid" class="quick-grid"></div>
+        </div>
+
       </div>
 
       <div class="home-glance-grid">
@@ -2437,7 +2486,7 @@
           <em id="homeMonthCompareAmount">No comparison</em>
         </button>
         <button id="homeFixedLeftCard" class="home-glance-card" type="button" data-home-action="fixed-expenses">
-          <small>Fixed expenses left</small>
+          <small>Upcoming fixed expenses</small>
           <span class="home-glance-icon">◷</span>
           <strong id="homeFixedLeftCount">0 items</strong>
           <em id="homeFixedLeftAmount">¥0.00</em>
@@ -2467,7 +2516,7 @@
         <div id="recordFilterDrawer" class="record-filter-drawer hidden">
           <div class="field"><label>From</label><input type="date" id="filterFrom"></div>
           <div class="field"><label>To</label><input type="date" id="filterTo"></div>
-          <div class="field"><label>Type</label><select id="filterType"><option value="">All types</option><option value="expense">Expense</option><option value="income">Income</option></select></div>
+          <div class="field"><label>Type</label><select id="filterType"><option value="">All types</option><option value="expense" selected>Expense</option><option value="income">Income</option></select></div>
           <div class="field record-category-field">
             <label>Category</label>
             <button id="filterCategoryPickerButton" class="record-category-picker-button" type="button" aria-label="Choose record category filter">
@@ -2514,13 +2563,12 @@
         <div id="analysisQuickTabs" class="analysis-quick-tabs"></div>
 
         <div class="analysis-total-compare-row">
-          <div id="analysisTotalCard" class="analysis-total-card analysis-total-data-card" role="button" tabindex="0" aria-label="Open period records">
+          <div id="analysisTotalCard" class="analysis-total-card analysis-total-data-card" aria-label="Selected period total">
             <div>
               <small id="analysisRangeLabel">July 2026</small>
               <strong id="analysisMainAmount">¥0.00</strong>
               <span id="analysisCompareResult" class="analysis-inline-compare hidden">No comparison</span>
             </div>
-            <span class="analysis-open-arrow" aria-hidden="true">›</span>
           </div>
 
           <button id="analysisCompareButton" class="analysis-compare-button analysis-compare-inline-button" type="button">
@@ -2538,34 +2586,41 @@
         </div>
       </div>
 
-      <div class="panel analysis-data-table-panel">
-        <div class="analysis-data-section-head">
+      <div class="panel analysis-period-chart-panel">
+        <div class="analysis-data-section-head analysis-trend-head">
           <div>
-            <h2 id="analysisPeriodOverviewTitle">Months in 2026</h2>
-            <small id="analysisPeriodOverviewSubtitle">All 12 months · selected month highlighted</small>
+            <h2 id="analysisPeriodOverviewTitle">Monthly spending · 2026</h2>
+            <small id="analysisPeriodOverviewSubtitle">Each point shows the exact amount</small>
           </div>
-          <span class="badge">Tap a row to select</span>
+          <div class="analysis-trend-controls">
+            <select id="analysisChartYearSelect" class="analysis-chart-year-select" aria-label="Choose chart year"></select>
+            <div id="analysisMonthChartMode" class="analysis-chart-scope-toggle" aria-label="Choose monthly chart detail">
+              <button type="button" class="active" data-analysis-chart-mode="year">12 months</button>
+              <button type="button" data-analysis-chart-mode="weeks">Weeks</button>
+              <button type="button" data-analysis-chart-mode="days">Days</button>
+            </div>
+          </div>
         </div>
-        <div class="analysis-table-scroll">
-          <table class="analysis-data-table analysis-period-data-table">
-            <thead id="analysisPeriodTableHead"></thead>
-            <tbody id="analysisPeriodTableBody"></tbody>
-          </table>
-        </div>
+        <canvas id="analysisPeriodChart" aria-label="Period spending line chart"></canvas>
+        <div id="analysisPeriodValueGrid" class="analysis-period-value-grid"></div>
       </div>
 
-      <div class="panel analysis-data-table-panel">
+      <div class="panel analysis-data-table-panel analysis-category-panel">
         <div class="analysis-data-section-head">
           <div>
             <h2 id="analysisCategoryTitle">Categories</h2>
             <small id="analysisCategorySubtitle">All categories in the selected period</small>
           </div>
-          <span id="analysisCategoryCount" class="badge">0 categories</span>
+          <div class="analysis-category-head-actions">
+            <span id="analysisCategoryCount" class="badge">0 categories</span>
+            <button id="analysisCategoryToggle" class="secondary analysis-category-toggle" type="button">Hide</button>
+          </div>
         </div>
-        <div class="analysis-table-scroll">
-          <table class="analysis-data-table analysis-category-data-table">
+        <div id="analysisCategoryContent" class="analysis-category-content">
+          <table id="analysisCategoryTable" class="analysis-data-table analysis-category-data-table">
+            <colgroup><col class="category-col"><col class="amount-col"><col class="share-col"></colgroup>
             <thead>
-              <tr><th>Category</th><th>Amount</th><th>Share</th><th>Records</th></tr>
+              <tr><th>Category</th><th>Amount</th><th>Share</th></tr>
             </thead>
             <tbody id="analysisCategoryTableBody"></tbody>
           </table>
@@ -2908,7 +2963,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 49 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
+            Version 50 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -3173,8 +3228,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=49"></script>
-<script src="firebase-cloud-v49.js?v=49"></script>
+<script src="firebase-config.js?v=50"></script>
+<script src="firebase-cloud-v50.js?v=50"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -3367,8 +3422,10 @@
   let analysisCategorySort = "amount";
   let analysisShowAllCategories = false;
   let analysisChartHitAreas = [];
+  let analysisMonthChartMode = "year";
+  let analysisCategoryHidden = false;
   let preserveAnalysisCompareOnNextOpen = false;
-  let categoryPickerFilterMode = "all";
+  let categoryPickerFilterMode = "expense";
   let categoryDetailCurrent = null;
   let duplicateRepairRunning = false;
   let duplicateWarningShown = false;
@@ -6944,9 +7001,12 @@
       :percent>0?"expense":percent<0?"income":"";
 
     const fixed=fixedExpensesLeftForMonth(selectedMonth);
-    $("homeFixedLeftCount").textContent=
-      `${fixed.count} item${fixed.count===1?"":"s"}`;
-    $("homeFixedLeftAmount").textContent=money(fixed.amount);
+    $("homeFixedLeftCount").textContent=fixed.count
+      ?`${fixed.count} scheduled`
+      :"Nothing pending";
+    $("homeFixedLeftAmount").textContent=fixed.count
+      ?`${money(fixed.amount)} not recorded`
+      :money(0);
   }
   function txnHtml(t){
     const sign=t.type==="income"?"+":"−";
@@ -7227,58 +7287,129 @@
     $("analysisFourthKpi").textContent=String(flowRecords.length);
   }
 
-  function renderAnalysisPeriodTable(){
-    const head=$("analysisPeriodTableHead");
-    const body=$("analysisPeriodTableBody");
+  function dailyMonthTotals(monthKey,flow=analysisFlow){
+    const values=Array(daysInMonth(monthKey)).fill(0);
+    state.transactions.forEach(transaction=>{
+      if(transaction.type!==flow||monthOf(transaction)!==monthKey)return;
+      const day=Number(transaction.date.slice(8));
+      if(day>=1&&day<=values.length){
+        values[day-1]+=Number(transaction.amount)||0;
+      }
+    });
+    return values;
+  }
 
-    if(analysisMode==="month"){
-      const year=selectedMonth.slice(0,4);
-      const rows=Array.from({length:12},(_,index)=>{
-        const key=`${year}-${String(index+1).padStart(2,"0")}`;
-        return {key,amount:monthFlowTotal(key,analysisFlow)};
-      });
-      const total=rows.reduce((sum,row)=>sum+row.amount,0);
-      const selectedAmount=rows.find(row=>row.key===selectedMonth)?.amount||0;
-      const max=Math.max(...rows.map(row=>row.amount),1);
-
-      $("analysisPeriodOverviewTitle").textContent=`Months in ${year}`;
-      $("analysisPeriodOverviewSubtitle").textContent=
-        "All 12 months · selected month highlighted";
-      head.innerHTML="<tr><th>Month</th><th>Amount</th><th>Share of year</th><th>vs selected</th></tr>";
-      body.innerHTML=rows.map(row=>{
-        const selected=row.key===selectedMonth;
-        return `<tr class="${selected?"selected":""} ${row.amount?"":"zero"}" data-analysis-period-key="${row.key}">
-          <td><div class="analysis-table-period"><span>${escapeHtml(monthShortName(row.key))}</span>${selected?'<span class="analysis-table-marker">Selected</span>':""}</div></td>
-          <td>${money(row.amount)}<span class="analysis-table-bar"><span style="width:${row.amount/max*100}%"></span></span></td>
-          <td>${total?(row.amount/total*100).toFixed(1):"0.0"}%</td>
-          <td>${escapeHtml(relativeToSelectedText(row.amount,selectedAmount,selected))}</td>
-        </tr>`;
-      }).join("");
-      return;
+  function analysisPeriodChartData(){
+    if(analysisMode==="year"){
+      const keys=[...analysisAvailableYears()].sort((a,b)=>Number(a)-Number(b));
+      return {
+        title:"Years overview",
+        subtitle:"Every available year · selected year highlighted",
+        keys,
+        labels:keys,
+        values:keys.map(year=>analysisPeriodTotal(txnsForYear(year))),
+        selectable:true,
+        compactGrid:false
+      };
     }
 
-    const years=analysisAvailableYears();
-    const rows=years.map(year=>({
-      key:year,
-      amount:analysisPeriodTotal(txnsForYear(year)),
-      average:analysisPeriodTotal(txnsForYear(year))/monthsUsedForYearAverage(year)
-    }));
-    const selectedAmount=rows.find(row=>row.key===selectedYear)?.amount||0;
-    const max=Math.max(...rows.map(row=>row.amount),1);
+    const year=selectedMonth.slice(0,4);
+    if(analysisMonthChartMode==="weeks"){
+      const weeks=buildMonthWeeks(selectedMonth,analysisFlow);
+      return {
+        title:`Weekly ${analysisFlow} · ${monthLabel(selectedMonth)}`,
+        subtitle:"Selected month grouped by calendar week",
+        keys:weeks.map(row=>row.key),
+        labels:weeks.map(row=>row.shortLabel),
+        values:weeks.map(row=>row.amount),
+        selectable:false,
+        compactGrid:false
+      };
+    }
 
-    $("analysisPeriodOverviewTitle").textContent="Years overview";
-    $("analysisPeriodOverviewSubtitle").textContent=
-      "Selected year compared with every available year";
-    head.innerHTML="<tr><th>Year</th><th>Amount</th><th>Average/month</th><th>vs selected</th></tr>";
-    body.innerHTML=rows.map(row=>{
-      const selected=row.key===selectedYear;
-      return `<tr class="${selected?"selected":""} ${row.amount?"":"zero"}" data-analysis-period-key="${row.key}">
-        <td><div class="analysis-table-period"><span>${row.key}</span>${selected?'<span class="analysis-table-marker">Selected</span>':""}</div></td>
-        <td>${money(row.amount)}<span class="analysis-table-bar"><span style="width:${row.amount/max*100}%"></span></span></td>
-        <td>${money(row.average)}</td>
-        <td>${escapeHtml(relativeToSelectedText(row.amount,selectedAmount,selected))}</td>
-      </tr>`;
+    if(analysisMonthChartMode==="days"){
+      const values=dailyMonthTotals(selectedMonth,analysisFlow);
+      return {
+        title:`Daily ${analysisFlow} · ${monthLabel(selectedMonth)}`,
+        subtitle:"Non-zero days show their amount on the line",
+        keys:values.map((_,index)=>`${selectedMonth}-${String(index+1).padStart(2,"0")}`),
+        labels:values.map((_,index)=>String(index+1)),
+        values,
+        selectable:false,
+        compactGrid:true
+      };
+    }
+
+    const keys=Array.from({length:12},(_,index)=>
+      `${year}-${String(index+1).padStart(2,"0")}`
+    );
+    return {
+      title:`Monthly ${analysisFlow} · ${year}`,
+      subtitle:"All 12 months · choose another year or tap a month",
+      keys,
+      labels:keys.map(monthShortName),
+      values:keys.map(key=>monthFlowTotal(key,analysisFlow)),
+      selectable:true,
+      compactGrid:false
+    };
+  }
+
+  function renderAnalysisPeriodChart(){
+    const years=analysisAvailableYears();
+    const yearSelect=$("analysisChartYearSelect");
+    yearSelect.innerHTML=years.map(year=>
+      `<option value="${year}">${year}</option>`
+    ).join("");
+    yearSelect.value=selectedMonth.slice(0,4);
+
+    const monthMode=analysisMode==="month";
+    yearSelect.classList.toggle("hidden",!monthMode);
+    $("analysisMonthChartMode").classList.toggle("hidden",!monthMode);
+    qsa("#analysisMonthChartMode [data-analysis-chart-mode]").forEach(button=>{
+      button.classList.toggle(
+        "active",
+        button.dataset.analysisChartMode===analysisMonthChartMode
+      );
+    });
+
+    const data=analysisPeriodChartData();
+    $("analysisPeriodOverviewTitle").textContent=data.title;
+    $("analysisPeriodOverviewSubtitle").textContent=data.subtitle;
+
+    $("analysisPeriodValueGrid").classList.toggle(
+      "compact-days",
+      Boolean(data.compactGrid)
+    );
+    $("analysisPeriodValueGrid").innerHTML=data.keys.map((key,index)=>{
+      const selected=analysisMode==="year"
+        ?key===selectedYear
+        :analysisMonthChartMode==="year"&&key===selectedMonth;
+      const label=analysisMode==="year"
+        ?key
+        :analysisMonthChartMode==="year"
+          ?monthShortName(key)
+          :analysisMonthChartMode==="weeks"
+            ?data.labels[index]
+            :String(index+1);
+      const clickable=data.selectable?`data-analysis-period-key="${escapeHtml(key)}"`:"";
+      return `<button type="button" class="analysis-period-value-item ${selected?"selected":""} ${data.values[index]?"":"zero"}" ${clickable} ${data.selectable?"":"disabled"}>
+        <span>${escapeHtml(label)}</span>
+        <strong>${money(data.values[index])}</strong>
+      </button>`;
     }).join("");
+
+    requestAnimationFrame(()=>{
+      const color=analysisFlow==="expense"
+        ?themeCssColor("--chart-expense","#C79A27")
+        :themeCssColor("--chart-income","#4F9874");
+      drawSingleLine(
+        "analysisPeriodChart",
+        data.labels,
+        data.values,
+        color,
+        analysisMonthChartMode!=="days"||analysisMode==="year"
+      );
+    });
   }
 
   function renderAnalysisCategoryTable(rows,currentTotal){
@@ -7288,15 +7419,25 @@
       `All ${analysisFlow} categories for the selected ${analysisMode}`;
     $("analysisCategoryCount").textContent=
       `${rows.length} categor${rows.length===1?"y":"ies"}`;
+    $("analysisCategoryContent").classList.toggle(
+      "hidden",
+      analysisCategoryHidden
+    );
+    $("analysisCategoryToggle").textContent=analysisCategoryHidden
+      ?"Show"
+      :"Hide";
+    $("analysisCategoryToggle").setAttribute(
+      "aria-expanded",
+      String(!analysisCategoryHidden)
+    );
 
     $("analysisCategoryTableBody").innerHTML=rows.length
       ?rows.map(row=>`<tr class="${row.amount?"":"zero"}" ${row.count?`data-analysis-category="${escapeHtml(row.category)}"`:""}>
         <td><div class="analysis-category-name"><span>${categoryIcon(row.category)}</span><strong>${escapeHtml(row.category)}</strong></div></td>
         <td>${money(row.amount)}</td>
         <td>${currentTotal?(row.amount/currentTotal*100).toFixed(1):"0.0"}%</td>
-        <td>${row.count}</td>
       </tr>`).join("")
-      :'<tr class="analysis-data-empty-row"><td colspan="4">No categories configured.</td></tr>';
+      :'<tr class="analysis-data-empty-row"><td colspan="3">No categories configured.</td></tr>';
   }
 
   function renderAnalysis(){
@@ -7329,7 +7470,7 @@
     $("analysisCompareButtonLabel").textContent=analysisCompareLabelText();
     renderAnalysisCompareResult(currentTotal);
     renderAnalysisKpis(currentList,currentTotal,categoryRows);
-    renderAnalysisPeriodTable();
+    renderAnalysisPeriodChart();
     renderAnalysisCategoryTable(categoryRows,currentTotal);
     analysisRenderDirty=false;
   }
@@ -8188,9 +8329,12 @@
     renderRecords({resetPage:true});
   }
   function clearFilters({render=true}={}){
-    ["filterFrom","filterTo","filterType","filterCategory","filterSearch"].forEach(id=>{
+    ["filterFrom","filterTo","filterCategory","filterSearch"].forEach(id=>{
       if($(id))$(id).value="";
     });
+    if($("filterType"))$("filterType").value="expense";
+    categoryPickerFilterMode="expense";
+    renderRecordCategoryControl();
     qsa("#presetChips .chip").forEach(chip=>{
       chip.classList.toggle("active",chip.dataset.preset==="all");
     });
@@ -8508,16 +8652,6 @@
     }
     renderAnalysis();
   });
-  $("analysisTotalCard").addEventListener("click",()=>{
-    const range=analysisRange();
-    openRecordsForPeriod({from:range.from,to:range.to,type:analysisFlow});
-  });
-  $("analysisTotalCard").addEventListener("keydown",event=>{
-    if(event.key!=="Enter"&&event.key!==" ")return;
-    event.preventDefault();
-    const range=analysisRange();
-    openRecordsForPeriod({from:range.from,to:range.to,type:analysisFlow});
-  });
   $("analysisCompareButton").addEventListener("click",openAnalysisComparePicker);
   $("closeAnalysisCompare").addEventListener("click",closeAnalysisComparePicker);
   $("analysisCompareModal").addEventListener("click",event=>{
@@ -8535,17 +8669,37 @@
     }
   });
   $("applyAnalysisCompareCustom").addEventListener("click",applyAnalysisCustomCompare);
-  $("analysisPeriodTableBody").addEventListener("click",event=>{
-    const row=event.target.closest("[data-analysis-period-key]");
-    if(!row)return;
+  $("analysisChartYearSelect").addEventListener("change",event=>{
+    const year=String(event.target.value||currentYearKey());
+    selectedMonth=`${year}-${selectedMonth.slice(5)}`;
+    selectedYear=year;
+    analysisCompareMode="none";
+    renderAnalysis();
+  });
+  $("analysisMonthChartMode").addEventListener("click",event=>{
+    const button=event.target.closest("[data-analysis-chart-mode]");
+    if(!button)return;
+    analysisMonthChartMode=button.dataset.analysisChartMode;
+    renderAnalysis();
+  });
+  $("analysisPeriodValueGrid").addEventListener("click",event=>{
+    const item=event.target.closest("[data-analysis-period-key]");
+    if(!item)return;
     if(analysisMode==="month"){
-      selectedMonth=row.dataset.analysisPeriodKey;
+      selectedMonth=item.dataset.analysisPeriodKey;
       selectedYear=selectedMonth.slice(0,4);
     }else{
-      selectedYear=row.dataset.analysisPeriodKey;
+      selectedYear=item.dataset.analysisPeriodKey;
     }
     analysisCompareMode="none";
     renderAnalysis();
+  });
+  $("analysisCategoryToggle").addEventListener("click",()=>{
+    analysisCategoryHidden=!analysisCategoryHidden;
+    renderAnalysisCategoryTable(
+      analysisCategoryRows(),
+      analysisPeriodTotal(currentAnalysisList())
+    );
   });
   $("analysisCategoryTableBody").addEventListener("click",event=>{
     const row=event.target.closest("[data-analysis-category]");
@@ -9074,6 +9228,9 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   initCloud();
   scheduleWeeklyBackupCheck(12000);
   populateMonths();
+  $("filterType").value="expense";
+  categoryPickerFilterMode="expense";
+  renderRecordCategoryControl();
   $("globalMonth").value=selectedMonth;
   $("budgetMonth").value=selectedMonth;
   selectedYear=selectedMonth.slice(0,4);
