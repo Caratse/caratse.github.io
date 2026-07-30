@@ -2450,6 +2450,70 @@
       letter-spacing:.08em
     }
 
+
+    /* V52 — isolated Analysis period and compact mobile layout */
+    body.analysis-view .top{display:none}
+    body.analysis-view main{padding-top:calc(10px + env(safe-area-inset-top))}
+    .analysis-total-row{margin:10px 0 0}
+    .analysis-total-row .analysis-total-data-card{
+      width:100%;
+      min-height:64px;
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between;
+      gap:14px;
+      padding:11px 13px!important;
+      border:1px solid rgba(92,75,5,.08);
+      border-radius:16px;
+      background:rgba(255,255,255,.68)
+    }
+    .analysis-total-copy{min-width:0}
+    .analysis-total-copy small{
+      display:block;
+      margin:0 0 4px!important;
+      color:#75670E;
+      font-size:7px!important;
+      font-weight:850;
+      letter-spacing:.05em;
+      text-transform:uppercase
+    }
+    .analysis-total-copy span{
+      display:block;
+      overflow:hidden;
+      color:var(--muted);
+      font-size:10px;
+      font-weight:800;
+      text-overflow:ellipsis;
+      white-space:nowrap
+    }
+    .analysis-total-row .analysis-total-data-card>strong{
+      flex:0 1 auto;
+      min-width:0;
+      max-width:62%;
+      overflow:hidden;
+      font-size:22px!important;
+      line-height:1.05;
+      text-align:right;
+      text-overflow:ellipsis;
+      white-space:nowrap
+    }
+    #analysisKpiStrip.year-three{
+      grid-template-columns:repeat(3,minmax(0,1fr))!important
+    }
+    #analysisKpiStrip.year-three .analysis-kpi{
+      padding:9px 5px
+    }
+    .analysis-category-data-table tr.zero{display:none}
+    @media(max-width:360px){
+      .analysis-total-row .analysis-total-data-card>strong{
+        max-width:58%;
+        font-size:20px!important
+      }
+      #analysisKpiStrip.year-three{
+        grid-template-columns:repeat(3,minmax(0,1fr))!important
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -2614,10 +2678,11 @@
 
         <div class="analysis-total-row">
           <div id="analysisTotalCard" class="analysis-total-card analysis-total-data-card" aria-label="Selected period total">
-            <div>
-              <small id="analysisRangeLabel">July 2026</small>
-              <strong id="analysisMainAmount">¥0.00</strong>
+            <div class="analysis-total-copy">
+              <small id="analysisTotalTypeLabel">Expense total</small>
+              <span id="analysisRangeLabel">July 2026</span>
             </div>
+            <strong id="analysisMainAmount">¥0.00</strong>
           </div>
           <button id="analysisCompareButton" class="hidden" type="button" tabindex="-1" aria-hidden="true"></button>
           <span id="analysisCompareResult" class="hidden" aria-hidden="true"></span>
@@ -3038,7 +3103,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 51 simplifies Analysis interactions, adds week/day category scopes and protects every income amount with a session-based four-digit PIN.
+            Version 52 simplifies Analysis interactions, adds week/day category scopes and protects every income amount with a session-based four-digit PIN.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -3330,8 +3395,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=51"></script>
-<script src="firebase-cloud-v51.js?v=51"></script>
+<script src="firebase-config.js?v=52"></script>
+<script src="firebase-cloud-v52.js?v=52"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -3500,6 +3565,8 @@
   let analysisMode = "month";
   let analysisFlow = "expense";
   let selectedYear = String(new Date().getFullYear());
+  let analysisSelectedMonth = selectedMonth;
+  let analysisSelectedYear = selectedYear;
   let selectedWeek = "";
   let categoryMode = "expense";
   let deferredInstallPrompt = null;
@@ -3775,6 +3842,9 @@
       :currentMonthKey();
     budgetSelectedMonth=selectedMonth;
     selectedYear=selectedMonth.slice(0,4);
+    analysisSelectedMonth=selectedMonth;
+    analysisSelectedYear=selectedYear;
+    analysisCategoryScope=null;
 
     populateMonths();
     renderAll();
@@ -5954,14 +6024,14 @@
     )].sort();
 
     // Keep the explicitly selected month visible even when it has no records.
-    if(selectedMonth?.startsWith(`${year}-`)&&!values.includes(selectedMonth)){
-      values.push(selectedMonth);
+    if(analysisSelectedMonth?.startsWith(`${year}-`)&&!values.includes(analysisSelectedMonth)){
+      values.push(analysisSelectedMonth);
       values.sort();
     }
 
     if(!values.length){
-      const fallback=selectedMonth?.startsWith(`${year}-`)
-        ?selectedMonth
+      const fallback=analysisSelectedMonth?.startsWith(`${year}-`)
+        ?analysisSelectedMonth
         :`${year}-${currentMonthKey().slice(5)}`;
       values.push(fallback);
     }
@@ -5982,7 +6052,7 @@
       return arr;
     }
     if(analysisMode==="month"){
-      const year=(selectedMonth||currentMonthKey()).slice(0,4);
+      const year=(analysisSelectedMonth||currentMonthKey()).slice(0,4);
       return Array.from({length:12},(_,index)=>{
         const value=`${year}-${String(index+1).padStart(2,"0")}`;
         return {
@@ -5996,7 +6066,7 @@
     const years=[...new Set([
       ...state.transactions.map(transaction=>Number(transaction.date.slice(0,4))),
       cur,
-      Number(selectedYear)
+      Number(analysisSelectedYear)
     ])].filter(Number.isFinite).sort((a,b)=>a-b);
     const values=years.length?years:Array.from({length:5},(_,index)=>cur-4+index);
     return values.map(value=>({
@@ -6008,12 +6078,21 @@
     if(!selectedWeek) selectedWeek=startOfWeekKey(todayKey());
     const opts=analysisOptions().map(x=>x.value);
     if(analysisMode==="week"&&!opts.includes(selectedWeek)) selectedWeek=opts[opts.length-1];
-    if(analysisMode==="month"&&!opts.includes(selectedMonth)){
-      selectedMonth=opts[opts.length-1]||selectedMonth||currentMonthKey();
+    if(analysisMode==="month"&&!opts.includes(analysisSelectedMonth)){
+      analysisSelectedMonth=opts[opts.length-1]||analysisSelectedMonth||currentMonthKey();
+      analysisSelectedYear=analysisSelectedMonth.slice(0,4);
     }
-    if(analysisMode==="year"&&!opts.includes(selectedYear)) selectedYear=opts[opts.length-1];
+    if(analysisMode==="year"&&!opts.includes(analysisSelectedYear)){
+      analysisSelectedYear=opts[opts.length-1]||currentYearKey();
+    }
   }
-  function currentAnalysisKey(){ return analysisMode==="week"?selectedWeek:(analysisMode==="month"?selectedMonth:selectedYear); }
+  function currentAnalysisKey(){
+    return analysisMode==="week"
+      ?selectedWeek
+      :analysisMode==="month"
+        ?analysisSelectedMonth
+        :analysisSelectedYear;
+  }
   function currentAnalysisList(){
     const key=currentAnalysisKey();
     return analysisMode==="week"?txnsForWeek(key):(analysisMode==="month"?txnsForMonth(key):txnsForYear(key));
@@ -6169,6 +6248,8 @@
       ),
       selectedMonth,
       selectedYear,
+      analysisSelectedMonth,
+      analysisSelectedYear,
       selectedWeek,
       analysisMode,
       analysisFlow,
@@ -6192,6 +6273,8 @@
 
     selectedMonth=snapshot.selectedMonth;
     selectedYear=snapshot.selectedYear;
+    analysisSelectedMonth=snapshot.analysisSelectedMonth||snapshot.selectedMonth||currentMonthKey();
+    analysisSelectedYear=snapshot.analysisSelectedYear||analysisSelectedMonth.slice(0,4);
     selectedWeek=snapshot.selectedWeek;
     analysisMode=snapshot.analysisMode;
     analysisFlow=snapshot.analysisFlow;
@@ -6199,6 +6282,8 @@
     recordFiltersExpanded=snapshot.recordFiltersExpanded;
 
     currentView=snapshot.view;
+    document.body.classList.toggle("settings-view",snapshot.view==="settings");
+    document.body.classList.toggle("analysis-view",snapshot.view==="analysis");
     qsa(".view").forEach(view=>{
       view.classList.toggle("active",view.id===`${snapshot.view}View`);
     });
@@ -6881,11 +6966,6 @@
     selectedMonth=month;
     selectedYear=month.slice(0,4);
 
-    if(currentView==="analysis"){
-      analysisMode="month";
-      analysisDrilldown=true;
-    }
-
     populateMonths();
     renderAll();
     updateGlobalMonthButton();
@@ -7552,8 +7632,7 @@
       amount:amountMap.get(category)||0,
       count:countMap.get(category)||0,
       order:order.has(category)?order.get(category):9999
-    })).sort((a,b)=>
-      (b.amount>0)-(a.amount>0) ||
+    })).filter(row=>row.amount>0).sort((a,b)=>
       b.amount-a.amount ||
       a.order-b.order ||
       a.category.localeCompare(b.category)
@@ -7563,7 +7642,7 @@
   function analysisAvailableYears(){
     const values=[
       ...state.transactions.map(transaction=>Number(transaction.date.slice(0,4))),
-      Number(selectedYear),
+      Number(analysisSelectedYear),
       Number(currentYearKey())
     ].filter(Number.isFinite);
     const minimum=Math.min(...values);
@@ -7614,12 +7693,16 @@
     const flowRecords=currentList.filter(
       transaction=>transaction.type===analysisFlow
     );
-    const activeCategories=categoryRows.filter(row=>row.amount>0).length;
+    const activeCategories=categoryRows.length;
     const locked=incomeAnalysisLocked();
-    $("analysisKpiStrip").classList.toggle("year-mode",analysisMode==="year");
-    $("analysisKpi2Card").classList.toggle("wide",analysisMode==="year");
+    const yearMode=analysisMode==="year";
+    $("analysisKpiStrip").classList.toggle("year-mode",yearMode);
+    $("analysisKpiStrip").classList.toggle("year-three",yearMode);
+    $("analysisKpi2Card").classList.toggle("hidden",yearMode);
+    $("analysisKpi2Card").classList.remove("wide");
 
     if(analysisMode==="month"){
+      $("analysisKpi2Card").classList.remove("hidden");
       const key=currentAnalysisKey();
       const elapsed=Math.max(1,selectedMonthElapsedDays(key));
       const budget=effectiveBudget(key);
@@ -7644,17 +7727,11 @@
     const monthTotals=Array.from({length:12},(_,index)=>
       monthFlowTotal(`${year}-${String(index+1).padStart(2,"0")}`,analysisFlow)
     );
-    const highest=Math.max(...monthTotals,0);
-    const highestIndex=monthTotals.indexOf(highest);
     const activeMonths=monthTotals.filter(amount=>amount>0).length;
     $("analysisKpi1Label").textContent="Average/month";
     $("analysisAverageKpi").textContent=locked
       ?maskedMoney()
       :money(currentTotal/monthsUsedForYearAverage(year));
-    $("analysisKpi2Label").textContent="Highest month";
-    $("analysisActiveKpi").innerHTML=highest
-      ?`<span>${escapeHtml(monthShortName(`${year}-${String(highestIndex+1).padStart(2,"0")}`))}</span><span>${locked?maskedMoney():money(highest)}</span>`
-      :"—";
     $("analysisKpi3Label").textContent="Active months";
     $("analysisTopKpi").textContent=String(activeMonths);
     $("analysisKpi4Label").textContent="Records";
@@ -7687,11 +7764,11 @@
       };
     }
 
-    const year=selectedMonth.slice(0,4);
+    const year=analysisSelectedMonth.slice(0,4);
     if(analysisMonthChartMode==="weeks"){
-      const weeks=buildMonthWeeks(selectedMonth,analysisFlow);
+      const weeks=buildMonthWeeks(analysisSelectedMonth,analysisFlow);
       return {
-        title:`Weekly ${analysisFlow} · ${monthLabel(selectedMonth)}`,
+        title:`Weekly ${analysisFlow} · ${monthLabel(analysisSelectedMonth)}`,
         subtitle:"Selected month grouped by calendar week",
         keys:weeks.map(row=>row.key),
         labels:weeks.map(row=>row.shortLabel),
@@ -7708,16 +7785,16 @@
     }
 
     if(analysisMonthChartMode==="days"){
-      const values=dailyMonthTotals(selectedMonth,analysisFlow);
+      const values=dailyMonthTotals(analysisSelectedMonth,analysisFlow);
       return {
-        title:`Daily ${analysisFlow} · ${monthLabel(selectedMonth)}`,
+        title:`Daily ${analysisFlow} · ${monthLabel(analysisSelectedMonth)}`,
         subtitle:"Non-zero days show their amount on the line",
-        keys:values.map((_,index)=>`${selectedMonth}-${String(index+1).padStart(2,"0")}`),
+        keys:values.map((_,index)=>`${analysisSelectedMonth}-${String(index+1).padStart(2,"0")}`),
         labels:values.map((_,index)=>String(index+1)),
         values,
         ranges:values.map((_,index)=>{
-          const date=`${selectedMonth}-${String(index+1).padStart(2,"0")}`;
-          return {key:date,from:date,to:date,label:`${dateLabel(date)} · ${selectedMonth.slice(0,4)}`};
+          const date=`${analysisSelectedMonth}-${String(index+1).padStart(2,"0")}`;
+          return {key:date,from:date,to:date,label:`${dateLabel(date)} · ${analysisSelectedMonth.slice(0,4)}`};
         }),
         selectable:true,
         compactGrid:true
@@ -7744,7 +7821,7 @@
     yearSelect.innerHTML=years.map(year=>
       `<option value="${year}">${year}</option>`
     ).join("");
-    yearSelect.value=selectedMonth.slice(0,4);
+    yearSelect.value=analysisSelectedMonth.slice(0,4);
 
     const monthMode=analysisMode==="month";
     yearSelect.classList.toggle("hidden",!monthMode);
@@ -7767,9 +7844,9 @@
     );
     $("analysisPeriodValueGrid").innerHTML=data.keys.map((key,index)=>{
       const selected=analysisMode==="year"
-        ?key===selectedYear
+        ?key===analysisSelectedYear
         :analysisMonthChartMode==="year"
-          ?key===selectedMonth
+          ?key===analysisSelectedMonth
           :analysisCategoryScope?.key===key;
       const label=analysisMode==="year"
         ?key
@@ -7820,12 +7897,12 @@
     );
 
     $("analysisCategoryTableBody").innerHTML=rows.length
-      ?rows.map(row=>`<tr class="${row.amount?"":"zero"}" ${row.count?`data-analysis-category="${escapeHtml(row.category)}"`:""}>
+      ?rows.map(row=>`<tr data-analysis-category="${escapeHtml(row.category)}">
         <td><div class="analysis-category-name"><span>${categoryIcon(row.category)}</span><strong>${escapeHtml(row.category)}</strong></div></td>
         <td>${incomeAnalysisLocked()?maskedMoney():money(row.amount)}</td>
         <td>${incomeAnalysisLocked()?"••":currentTotal?(row.amount/currentTotal*100).toFixed(1):"0.0"}${incomeAnalysisLocked()?"":"%"}</td>
       </tr>`).join("")
-      :'<tr class="analysis-data-empty-row"><td colspan="3">No categories configured.</td></tr>';
+      :`<tr class="analysis-data-empty-row"><td colspan="3">No ${analysisFlow} category data for this period.</td></tr>`;
   }
 
   function renderAnalysis(){
@@ -7845,6 +7922,8 @@
 
     const activeKey=currentAnalysisKey();
     $("analysisQuickTabs").innerHTML="";
+    $("analysisTotalTypeLabel").textContent=
+      `${analysisFlow==="expense"?"Expense":"Income"} total`;
     $("analysisRangeLabel").textContent=analysisDisplayLabel(activeKey);
     $("analysisMainAmount").textContent=incomeAnalysisLocked()
       ?maskedMoney()
@@ -8413,6 +8492,7 @@
 
     currentView=view;
     document.body.classList.toggle("settings-view",view==="settings");
+    document.body.classList.toggle("analysis-view",view==="analysis");
 
     if($("brandSubtitle")){
       $("brandSubtitle").textContent={
@@ -9026,15 +9106,15 @@
   });
   $("analysisMonthBtn").addEventListener("click",()=>{
     analysisMode="month";
-    selectedMonth=selectedMonth||currentMonthKey();
-    selectedYear=selectedMonth.slice(0,4);
+    analysisSelectedMonth=analysisSelectedMonth||selectedMonth||currentMonthKey();
+    analysisSelectedYear=analysisSelectedMonth.slice(0,4);
     analysisCompareMode="none";
     analysisCategoryScope=null;
     renderAnalysis();
   });
   $("analysisYearBtn").addEventListener("click",()=>{
     analysisMode="year";
-    selectedYear=selectedYear||currentYearKey();
+    analysisSelectedYear=analysisSelectedYear||currentYearKey();
     analysisCompareMode="none";
     analysisCategoryScope=null;
     renderAnalysis();
@@ -9043,10 +9123,10 @@
     const button=event.target.closest("[data-analysis-key]");
     if(!button)return;
     if(analysisMode==="month"){
-      selectedMonth=button.dataset.analysisKey;
-      selectedYear=selectedMonth.slice(0,4);
+      analysisSelectedMonth=button.dataset.analysisKey;
+      analysisSelectedYear=analysisSelectedMonth.slice(0,4);
     }else{
-      selectedYear=button.dataset.analysisKey;
+      analysisSelectedYear=button.dataset.analysisKey;
     }
     renderAnalysis();
   });
@@ -9069,8 +9149,8 @@
   $("applyAnalysisCompareCustom").addEventListener("click",applyAnalysisCustomCompare);
   $("analysisChartYearSelect").addEventListener("change",event=>{
     const year=String(event.target.value||currentYearKey());
-    selectedMonth=`${year}-${selectedMonth.slice(5)}`;
-    selectedYear=year;
+    analysisSelectedMonth=`${year}-${analysisSelectedMonth.slice(5)}`;
+    analysisSelectedYear=year;
     analysisCompareMode="none";
     analysisCategoryScope=null;
     renderAnalysis();
@@ -9088,15 +9168,15 @@
     const key=item.dataset.analysisPeriodKey;
 
     if(analysisMode==="year"){
-      selectedYear=key;
+      analysisSelectedYear=key;
       analysisCategoryScope=null;
       renderAnalysis();
       return;
     }
 
     if(analysisMonthChartMode==="year"){
-      selectedMonth=key;
-      selectedYear=selectedMonth.slice(0,4);
+      analysisSelectedMonth=key;
+      analysisSelectedYear=analysisSelectedMonth.slice(0,4);
       analysisCategoryScope=null;
       renderAnalysis();
       return;
@@ -9335,14 +9415,18 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
       const category=$("homeTopCategoryCard").dataset.category;
       analysisMode="month";
       analysisFlow="expense";
+      analysisSelectedMonth=selectedMonth;
+      analysisSelectedYear=selectedMonth.slice(0,4);
       analysisCompareMode="none";
       setView("analysis");
       if(category)setTimeout(()=>openCategoryDetail(category),80);
     }else if(action==="month-compare"){
       analysisMode="month";
       analysisFlow="expense";
-      analysisCompareMode="previous";
-      preserveAnalysisCompareOnNextOpen=true;
+      analysisSelectedMonth=selectedMonth;
+      analysisSelectedYear=selectedMonth.slice(0,4);
+      analysisCompareMode="none";
+      preserveAnalysisCompareOnNextOpen=false;
       setView("analysis");
     }
   });
@@ -9689,6 +9773,8 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("globalMonth").value=selectedMonth;
   $("budgetMonth").value=selectedMonth;
   selectedYear=selectedMonth.slice(0,4);
+  analysisSelectedMonth=selectedMonth;
+  analysisSelectedYear=selectedYear;
   setTxnType("expense");
   document.body.classList.add("income-privacy-locked");
   renderAll();
