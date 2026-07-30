@@ -2213,6 +2213,145 @@
       .analysis-kpi-four{grid-template-columns:repeat(2,1fr)}
     }
 
+
+    /* V49 — Home prioritizes immediate entry */
+    .home-quick-entry-block{
+      margin-top:10px;
+      padding:10px;
+      border:1px solid rgba(50,60,70,.07);
+      border-radius:15px;
+      background:var(--field-bg)
+    }
+    .home-quick-entry-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:8px
+    }
+    .home-quick-entry-head h2{margin:0;font-size:11px}
+    .home-quick-entry-head span{color:var(--muted);font-size:7px}
+    .home-quick-entry-block .quick-grid{gap:7px}
+    .home-quick-entry-block .quick{min-height:58px;padding:8px 4px;font-size:8px}
+    .home-quick-entry-block .quick span{margin-bottom:3px;font-size:19px}
+    .home-summary-card .home-budget-card{margin-top:10px}
+
+    /* V49 — Analysis is table-first and comparison is optional */
+    .analysis-data-hero{padding-bottom:12px}
+    .analysis-total-compare-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(118px,.58fr);
+      align-items:stretch;
+      gap:8px;
+      margin:9px 0 0
+    }
+    .analysis-total-data-card{
+      min-width:0;
+      min-height:72px;
+      align-items:center;
+      cursor:pointer
+    }
+    .analysis-total-data-card small{font-size:8px}
+    .analysis-total-data-card strong{font-size:22px}
+    .analysis-open-arrow{align-self:center;color:var(--muted);font-size:20px;font-weight:900}
+    .analysis-inline-compare{
+      display:block;
+      margin-top:4px;
+      color:var(--muted);
+      font-size:7px;
+      line-height:1.35
+    }
+    .analysis-inline-compare.up{color:#C24B52}
+    .analysis-inline-compare.down{color:#3E8760}
+    .analysis-inline-compare.flat{color:var(--muted)}
+    .analysis-compare-inline-button{
+      max-width:none;
+      min-width:0;
+      min-height:72px;
+      align-content:center;
+      background:rgba(255,255,255,.60)
+    }
+    .analysis-data-table-panel{padding:11px;margin-top:10px}
+    .analysis-data-section-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:9px
+    }
+    .analysis-data-section-head h2{margin:0;font-size:12px}
+    .analysis-data-section-head small{display:block;margin-top:2px;color:var(--muted);font-size:7px}
+    .analysis-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .analysis-data-table{
+      width:100%;
+      min-width:430px;
+      border-collapse:separate;
+      border-spacing:0;
+      font-size:8px
+    }
+    .analysis-data-table th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      padding:7px 8px;
+      border-bottom:1px solid var(--line);
+      background:var(--card);
+      color:var(--muted);
+      text-align:right;
+      font-size:7px;
+      font-weight:850;
+      white-space:nowrap
+    }
+    .analysis-data-table th:first-child{text-align:left}
+    .analysis-data-table td{
+      padding:9px 8px;
+      border-bottom:1px solid var(--line);
+      text-align:right;
+      white-space:nowrap
+    }
+    .analysis-data-table td:first-child{text-align:left}
+    .analysis-data-table tbody tr:last-child td{border-bottom:0}
+    .analysis-data-table tbody tr{cursor:pointer}
+    .analysis-data-table tbody tr:active td{background:var(--field-bg)}
+    .analysis-data-table tbody tr.selected td{background:var(--yellow-soft);font-weight:850}
+    .analysis-data-table tbody tr.zero td{color:var(--muted)}
+    .analysis-table-period{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-weight:850
+    }
+    .analysis-table-marker{
+      display:inline-grid;
+      place-items:center;
+      min-width:41px;
+      padding:3px 5px;
+      border-radius:999px;
+      background:var(--yellow-soft);
+      color:var(--accent-ink);
+      font-size:6px
+    }
+    .analysis-table-bar{
+      display:inline-block;
+      width:46px;
+      height:5px;
+      margin-left:5px;
+      overflow:hidden;
+      vertical-align:middle;
+      border-radius:999px;
+      background:var(--field-bg)
+    }
+    .analysis-table-bar>span{display:block;height:100%;border-radius:inherit;background:var(--yellow-2)}
+    .analysis-category-name{display:flex;align-items:center;gap:7px;font-weight:800}
+    .analysis-category-name span:first-child{
+      width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:var(--yellow-soft);font-size:14px
+    }
+    .analysis-data-empty-row td{padding:18px;text-align:center!important;color:var(--muted)}
+    @media(max-width:390px){
+      .analysis-total-compare-row{grid-template-columns:minmax(0,1fr) 122px}
+      .analysis-kpi-four{grid-template-columns:repeat(2,1fr)}
+    }
+
 </style>
 </head>
 <body>
@@ -2255,6 +2394,14 @@
           <div class="metric"><div class="label">Balance</div><div id="homeBalance" class="value">¥0.00</div></div>
         </div>
 
+        <div class="home-quick-entry-block">
+          <div class="home-quick-entry-head">
+            <h2>Quick entry</h2>
+            <span>Your first 4 expense categories</span>
+          </div>
+          <div id="quickGrid" class="quick-grid"></div>
+        </div>
+
         <button id="homeBudgetCard" class="home-budget-card" type="button" data-home-action="budget">
           <div class="home-budget-topline">
             <div>
@@ -2272,20 +2419,8 @@
             <span id="homeBudgetDays">— days left</span>
             <span id="homeBudgetDaily">Daily available —</span>
           </div>
-          <div id="homeBudgetPace" class="home-budget-pace">Add a monthly budget to compare your spending pace.</div>
           <span id="budgetText" class="hidden">Not set</span>
         </button>
-      </div>
-
-      <div class="panel home-pace-panel">
-        <div class="home-section-title">
-          <div>
-            <h2>Spending pace</h2>
-            <small>Actual cumulative spending vs ideal budget pace</small>
-          </div>
-          <span id="homePaceLegend" class="home-chart-legend">Actual · Ideal</span>
-        </div>
-        <canvas id="homePaceCanvas" aria-label="Monthly cumulative spending chart"></canvas>
       </div>
 
       <div class="home-glance-grid">
@@ -2308,18 +2443,6 @@
           <em id="homeFixedLeftAmount">¥0.00</em>
         </button>
       </div>
-
-      <button id="homeInsightCard" class="home-insight-card hidden" type="button" data-home-action="insight">
-        <span class="home-insight-icon">✦</span>
-        <span>
-          <small>Monthly insight</small>
-          <strong id="homeInsightText">—</strong>
-        </span>
-        <span aria-hidden="true">›</span>
-      </button>
-
-      <div class="section-head"><h2>Quick entry</h2><span class="badge">Your first 4 expense categories</span></div>
-      <div id="quickGrid" class="quick-grid"></div>
     </section>
 
     <section id="recordsView" class="view">
@@ -2376,100 +2499,77 @@
     </section>
 
     <section id="analysisView" class="view">
-      <div class="analysis-hero analysis-compare-hero">
+      <div class="analysis-hero analysis-data-hero">
         <div class="analysis-flow-toggle">
           <button id="analysisExpenseBtn" class="active" type="button">Expense</button>
           <button id="analysisIncomeBtn" type="button">Income</button>
         </div>
+
         <div class="analysis-period-toggle analysis-period-two">
           <button id="analysisMonthBtn" class="active" type="button">Month</button>
           <button id="analysisYearBtn" type="button">Year</button>
           <button id="analysisWeekBtn" class="hidden" type="button" tabindex="-1">Week</button>
         </div>
+
         <div id="analysisQuickTabs" class="analysis-quick-tabs"></div>
 
-        <div class="analysis-period-compare-row">
-          <div>
-            <small>Selected period</small>
-            <strong id="analysisSelectedPeriodLabel">July 2026</strong>
+        <div class="analysis-total-compare-row">
+          <div id="analysisTotalCard" class="analysis-total-card analysis-total-data-card" role="button" tabindex="0" aria-label="Open period records">
+            <div>
+              <small id="analysisRangeLabel">July 2026</small>
+              <strong id="analysisMainAmount">¥0.00</strong>
+              <span id="analysisCompareResult" class="analysis-inline-compare hidden">No comparison</span>
+            </div>
+            <span class="analysis-open-arrow" aria-hidden="true">›</span>
           </div>
-          <button id="analysisCompareButton" class="analysis-compare-button" type="button">
+
+          <button id="analysisCompareButton" class="analysis-compare-button analysis-compare-inline-button" type="button">
             <span>Compare</span>
-            <strong id="analysisCompareButtonLabel">Previous month</strong>
+            <strong id="analysisCompareButtonLabel">No comparison</strong>
             <span aria-hidden="true">⌄</span>
           </button>
         </div>
 
-        <div id="analysisTotalCard" class="analysis-total-card analysis-summary-total" role="button" tabindex="0" aria-label="Open period records">
-          <div>
-            <small id="analysisRangeLabel">This month</small>
-            <strong id="analysisMainAmount">¥0.00</strong>
-          </div>
-          <div class="analysis-compare-box">
-            <small id="analysisCompareLabel">vs previous month</small>
-            <strong id="analysisCompareValue">—</strong>
-            <span id="analysisCompareAmount">—</span>
-          </div>
-        </div>
-        <div id="analysisTotalHint" class="analysis-total-hint">Tap the total to open matching records.</div>
-
         <div class="analysis-kpi-strip analysis-kpi-four">
           <div class="analysis-kpi"><small id="analysisKpi1Label">Budget used</small><strong id="analysisAverageKpi">—</strong></div>
           <div class="analysis-kpi"><small id="analysisKpi2Label">Daily average</small><strong id="analysisActiveKpi">¥0.00</strong></div>
-          <div class="analysis-kpi"><small id="analysisKpi3Label">Projected</small><strong id="analysisTopKpi">—</strong></div>
-          <div class="analysis-kpi"><small id="analysisKpi4Label">Top category</small><strong id="analysisFourthKpi">—</strong></div>
+          <div class="analysis-kpi"><small id="analysisKpi3Label">Active categories</small><strong id="analysisTopKpi">0</strong></div>
+          <div class="analysis-kpi"><small id="analysisKpi4Label">Records</small><strong id="analysisFourthKpi">0</strong></div>
         </div>
       </div>
 
-      <div class="panel analysis-chart-panel analysis-comparison-chart-panel">
-        <div class="analysis-chart-head">
+      <div class="panel analysis-data-table-panel">
+        <div class="analysis-data-section-head">
           <div>
-            <h2 id="analysisChartTitle">Monthly comparison</h2>
-            <small id="analysisChartSubtitle">Cumulative spending by day</small>
+            <h2 id="analysisPeriodOverviewTitle">Months in 2026</h2>
+            <small id="analysisPeriodOverviewSubtitle">All 12 months · selected month highlighted</small>
           </div>
-          <span id="analysisChartMode" class="analysis-chart-mode">Cumulative</span>
+          <span class="badge">Tap a row to select</span>
         </div>
-        <div id="analysisChartTooltip" class="analysis-chart-tooltip">Tap the chart to compare a day.</div>
-        <canvas id="trendCanvas"></canvas>
+        <div class="analysis-table-scroll">
+          <table class="analysis-data-table analysis-period-data-table">
+            <thead id="analysisPeriodTableHead"></thead>
+            <tbody id="analysisPeriodTableBody"></tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="panel analysis-highlights-panel">
-        <div class="section-head" style="margin-top:0">
-          <h2>Highlights</h2>
-          <span class="badge">Current period</span>
-        </div>
-        <div id="topCategories" class="top-category-grid analysis-highlight-grid"></div>
-      </div>
-
-      <div class="panel analysis-category-change-panel">
-        <div class="analysis-category-change-head">
+      <div class="panel analysis-data-table-panel">
+        <div class="analysis-data-section-head">
           <div>
-            <h2 id="rankingTitle">Category comparison</h2>
-            <small>Tap a category to open current-period records.</small>
+            <h2 id="analysisCategoryTitle">Categories</h2>
+            <small id="analysisCategorySubtitle">All categories in the selected period</small>
           </div>
-          <div class="analysis-sort-toggle">
-            <button id="analysisSortAmount" class="active" type="button">Amount</button>
-            <button id="analysisSortChange" type="button">Change</button>
-          </div>
+          <span id="analysisCategoryCount" class="badge">0 categories</span>
         </div>
-        <div id="analysisRanking"></div>
-        <button id="analysisShowAllCategories" class="secondary analysis-show-all hidden" type="button">View all categories</button>
-      </div>
-
-      <div class="panel analysis-insight-panel">
-        <div class="section-head" style="margin-top:0">
-          <h2>Summary</h2>
-          <span class="badge">Up to 3 insights</span>
+        <div class="analysis-table-scroll">
+          <table class="analysis-data-table analysis-category-data-table">
+            <thead>
+              <tr><th>Category</th><th>Amount</th><th>Share</th><th>Records</th></tr>
+            </thead>
+            <tbody id="analysisCategoryTableBody"></tbody>
+          </table>
         </div>
-        <div id="analysisInsightList" class="analysis-insight-list"></div>
-      </div>
-
-      <div id="analysisBreakdownPanel" class="panel analysis-breakdown-panel hidden">
-        <div class="section-head" style="margin-top:0">
-          <h2 id="analysisBreakdownTitle">Breakdown</h2>
-          <span id="analysisBreakdownBadge" class="badge">Tap a row to open records</span>
-        </div>
-        <div id="analysisBreakdownList" class="analysis-breakdown-list"></div>
       </div>
     </section>
 
@@ -2808,7 +2908,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 48 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
+            Version 49 completes a full stability audit: local-first recurring expenses, restorable backups, quota-safe cloud reads and verified core workflows.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -3073,14 +3173,15 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=48"></script>
-<script src="firebase-cloud-v48.js?v=48"></script>
+<script src="firebase-config.js?v=49"></script>
+<script src="firebase-cloud-v49.js?v=49"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
   const PENDING_DELETE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_deletes_v1`;
   const PENDING_SAVE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_saves_v1`;
   const PENDING_SETTINGS_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_settings_v1`;
+  const DUPLICATE_REVIEW_STORAGE_KEY = `${STORAGE_KEY}_reviewed_duplicate_groups_v1`;
   const CLOUD_COUNT_STORAGE_KEY = `${STORAGE_KEY}_last_cloud_count_v1`;
   const WEEKLY_BACKUP_STORAGE_KEY = `${STORAGE_KEY}_weekly_backups_v1`;
   const WEEKLY_BACKUP_META_KEY = `${STORAGE_KEY}_weekly_backup_meta_v1`;
@@ -3260,22 +3361,24 @@
   let cloudVerifiedAt = "";
   let cloudLocalCandidate = null;
   let analysisDrilldown = false;
-  let analysisCompareMode = "previous";
+  let analysisCompareMode = "none";
   let analysisCompareCustomMonth = previousMonthKey(currentMonthKey());
   let analysisCompareCustomYear = String(Number(currentYearKey())-1);
   let analysisCategorySort = "amount";
   let analysisShowAllCategories = false;
   let analysisChartHitAreas = [];
+  let preserveAnalysisCompareOnNextOpen = false;
   let categoryPickerFilterMode = "all";
   let categoryDetailCurrent = null;
   let duplicateRepairRunning = false;
   let duplicateWarningShown = false;
   const duplicateKeepChoices = new Map();
-  const duplicateSkippedGroups = new Set(
-    Array.isArray(state.reviewedDuplicateGroups)
+  const duplicateSkippedGroups = new Set([
+    ...(Array.isArray(state.reviewedDuplicateGroups)
       ?state.reviewedDuplicateGroups.map(String)
-      :[]
-  );
+      :[]),
+    ...loadDurableDuplicateReviews()
+  ]);
   let trashExpanded = false;
   let trashMaintenanceTimer = null;
   let suppressSheetClickUntil = 0;
@@ -4108,11 +4211,7 @@
     state.categoryIcons={...(payload.categoryIcons||{})};
     state.budgets=JSON.parse(JSON.stringify(payload.budgets||{}));
     state.recurringExpenses=JSON.parse(JSON.stringify(payload.recurringExpenses||[]));
-    duplicateSkippedGroups.clear();
-    (payload.reviewedDuplicateGroups||[]).forEach(fingerprint=>
-      duplicateSkippedGroups.add(String(fingerprint))
-    );
-    state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
+    mergeReviewedDuplicateGroups(payload.reviewedDuplicateGroups||[]);
     state.appearanceTheme=normalizeAppearanceTheme(payload.appearanceTheme);
     applyAppearanceTheme(state.appearanceTheme);
   }
@@ -4171,21 +4270,54 @@
       state.recurringExpenses=settings.recurringExpenses.map(normalizeRecurringExpense);
     }
     if(Array.isArray(settings.reviewedDuplicateGroups)){
-      duplicateSkippedGroups.clear();
-      settings.reviewedDuplicateGroups.forEach(fingerprint=>
-        duplicateSkippedGroups.add(String(fingerprint))
-      );
-      state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
+      mergeReviewedDuplicateGroups(settings.reviewedDuplicateGroups);
     }
     if(settings.appearanceTheme){
       state.appearanceTheme=normalizeAppearanceTheme(settings.appearanceTheme);
       applyAppearanceTheme(state.appearanceTheme);
     }
   }
-  function saveReviewedDuplicateGroups(){
-    state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
-    saveLocalMirror();
+  function loadDurableDuplicateReviews(){
+    try{
+      const parsed=JSON.parse(
+        localStorage.getItem(DUPLICATE_REVIEW_STORAGE_KEY)||"[]"
+      );
+      return Array.isArray(parsed)?parsed.map(String):[];
+    }catch(error){
+      console.error("Reviewed duplicate decisions could not be loaded",error);
+      return [];
+    }
   }
+
+  function persistDurableDuplicateReviews(){
+    safeLocalStorageSet(
+      DUPLICATE_REVIEW_STORAGE_KEY,
+      JSON.stringify([...duplicateSkippedGroups]),
+      {silent:true}
+    );
+  }
+
+  function mergeReviewedDuplicateGroups(values=[]){
+    const merged=new Set([
+      ...loadDurableDuplicateReviews(),
+      ...duplicateSkippedGroups,
+      ...(Array.isArray(values)?values.map(String):[])
+    ]);
+    duplicateSkippedGroups.clear();
+    merged.forEach(fingerprint=>duplicateSkippedGroups.add(fingerprint));
+    state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
+    persistDurableDuplicateReviews();
+  }
+
+  function saveReviewedDuplicateGroups({sync=true}={}){
+    state.reviewedDuplicateGroups=[...duplicateSkippedGroups];
+    persistDurableDuplicateReviews();
+    saveLocalMirror();
+    if(sync){
+      syncSettingsToCloud(false,"Data accuracy reviewed groups updated");
+    }
+  }
+
   function unresolvedDuplicateGroups(groups=findExactDuplicateGroups()){
     return groups.filter(group=>!duplicateSkippedGroups.has(group.fingerprint));
   }
@@ -5451,11 +5583,14 @@
     }
     if(analysisMode==="month"){
       const year=(selectedMonth||currentMonthKey()).slice(0,4);
-      return monthsWithRecordsForYear(year).map(value=>({
-        value,
-        label:`${monthShortLabel(value)}M`,
-        fullLabel:monthLabel(value)
-      }));
+      return Array.from({length:12},(_,index)=>{
+        const value=`${year}-${String(index+1).padStart(2,"0")}`;
+        return {
+          value,
+          label:`${monthShortLabel(value)}M`,
+          fullLabel:monthLabel(value)
+        };
+      });
     }
     const cur=Number(currentYearKey());
     const years=[...new Set([
@@ -6723,42 +6858,23 @@
     };
   }
 
-  function drawHomePaceChart(monthKey,expense,budget){
-    const days=daysInMonth(monthKey);
-    const actual=cumulativeMonthValues(
-      monthKey,
-      "expense",
-      monthKey===currentMonthKey()
-    );
-    const ideal=Array.from({length:days},(_,index)=>
-      budget?budget*(index+1)/days:0
-    );
-    const labels=Array.from({length:days},(_,index)=>String(index+1));
-    drawDualLineChart(
-      "homePaceCanvas",
-      labels,
-      actual,
-      ideal,
-      {
-        primaryColor:themeCssColor("--chart-expense","#C79A27"),
-        secondaryColor:themeCssColor("--chart-label","#8A8D94"),
-        secondaryDashed:true,
-        compactLabels:true,
-        hitAreas:false
-      }
-    );
-  }
-
   function renderDashboard(){
     const list=txnsForMonth(selectedMonth);
-    const t=totals(list);
-    $("homeIncome").textContent=money(t.income);
-    $("homeExpense").textContent=money(t.expense);
-    $("homeBalance").textContent=money(t.income-t.expense);
+    const totalsForMonth=totals(list);
+    $("homeIncome").textContent=money(totalsForMonth.income);
+    $("homeExpense").textContent=money(totalsForMonth.expense);
+    $("homeBalance").textContent=money(
+      totalsForMonth.income-totalsForMonth.expense
+    );
+
+    const quick=state.expenseCategories.slice(0,4);
+    $("quickGrid").innerHTML=quick.length
+      ?quick.map(category=>`<button class="quick" data-quick="${escapeHtml(category)}"><span>${categoryIcon(category)}</span>${escapeHtml(category)}</button>`).join("")
+      :emptyHtml("No expense categories","Add a category in Settings.");
 
     const budget=effectiveBudget(selectedMonth);
-    const remaining=budget-t.expense;
-    const rate=budget?t.expense/budget*100:0;
+    const remaining=budget-totalsForMonth.expense;
+    const rate=budget?totalsForMonth.expense/budget*100:0;
     const days=daysInMonth(selectedMonth);
     const elapsed=selectedMonthElapsedDays(selectedMonth);
     const daysLeft=selectedMonth<currentMonthKey()
@@ -6769,42 +6885,43 @@
     const dailyAvailable=budget&&remaining>0&&daysLeft
       ?remaining/daysLeft
       :0;
-    const idealSpent=budget&&elapsed?budget*elapsed/days:0;
-    const paceDifference=t.expense-idealSpent;
 
-    $("budgetProgress").style.width=`${Math.max(0,Math.min(rate,100))}%`;
-    $("budgetProgress").style.background=budget&&t.expense>budget
-      ?"#E45151"
-      :`linear-gradient(90deg,${themeCssColor("--yellow-2","#D8AE36")},${themeCssColor("--yellow","#E9C86B")})`;
+    $("budgetProgress").style.width=
+      `${Math.max(0,Math.min(rate,100))}%`;
+    $("budgetProgress").style.background=
+      budget&&totalsForMonth.expense>budget
+        ?"#E45151"
+        :`linear-gradient(90deg,${themeCssColor("--yellow-2","#D8AE36")},${themeCssColor("--yellow","#E9C86B")})`;
     $("budgetText").textContent=budget
-      ?`${money(t.expense)} / ${money(budget)} · ${Math.round(rate)}%`
+      ?`${money(totalsForMonth.expense)} / ${money(budget)} · ${Math.round(rate)}%`
       :"Not set";
     $("homeBudgetRemaining").textContent=budget
-      ?remaining>=0?`${money(remaining)} left`:`${money(Math.abs(remaining))} over`
+      ?remaining>=0
+        ?`${money(remaining)} left`
+        :`${money(Math.abs(remaining))} over`
       :"Not set";
     $("homeBudgetStatus").textContent=budget
       ?remaining>=0?"Budget active":"Over budget"
       :"Set budget";
     $("homeBudgetSpent").textContent=budget
-      ?`${money(t.expense)} spent of ${money(budget)}`
-      :`${money(t.expense)} spent`;
-    $("homeBudgetPercent").textContent=budget?`${rate.toFixed(1)}%`:"—";
-    $("homeBudgetDays").textContent=`${daysLeft} day${daysLeft===1?"":"s"} left`;
-    $("homeBudgetDaily").textContent=budget&&remaining>0
-      ?`Daily available ${money(dailyAvailable)}`
-      :"Daily available —";
-    $("homeBudgetPace").textContent=!budget
-      ?"Add a monthly budget to compare your spending pace."
-      :Math.abs(paceDifference)<Math.max(budget*.02,10)
-        ?"You are close to the ideal spending pace."
-        :paceDifference>0
-          ?`Spending is ${money(paceDifference)} above the ideal pace.`
-          :`Spending is ${money(Math.abs(paceDifference))} below the ideal pace.`;
+      ?`${money(totalsForMonth.expense)} spent of ${money(budget)}`
+      :`${money(totalsForMonth.expense)} spent`;
+    $("homeBudgetPercent").textContent=budget
+      ?`${rate.toFixed(1)}%`
+      :"—";
+    $("homeBudgetDays").textContent=
+      `${daysLeft} day${daysLeft===1?"":"s"} left`;
+    $("homeBudgetDaily").textContent=
+      budget&&remaining>0
+        ?`Daily available ${money(dailyAvailable)}`
+        :"Daily available —";
 
     const expenses=list.filter(transaction=>transaction.type==="expense");
     const byCategory={};
     expenses.forEach(transaction=>{
-      byCategory[transaction.category]=(byCategory[transaction.category]||0)+(Number(transaction.amount)||0);
+      byCategory[transaction.category]=
+        (byCategory[transaction.category]||0)+
+        (Number(transaction.amount)||0);
     });
     const top=Object.entries(byCategory).sort((a,b)=>b[1]-a[1])[0]||null;
     $("homeTopCategoryIcon").textContent=top?categoryIcon(top[0]):"⭐";
@@ -6814,48 +6931,22 @@
 
     const previousMonth=previousMonthKey(selectedMonth);
     const previousExpense=monthFlowTotal(previousMonth,"expense");
-    const delta=t.expense-previousExpense;
-    const pct=previousExpense?delta/previousExpense*100:null;
-    $("homeMonthCompareValue").textContent=pct===null
+    const delta=totalsForMonth.expense-previousExpense;
+    const percent=previousExpense?delta/previousExpense*100:null;
+    $("homeMonthCompareValue").textContent=percent===null
       ?"No baseline"
-      :`${pct>=0?"+":""}${pct.toFixed(1)}%`;
+      :`${percent>=0?"+":""}${percent.toFixed(1)}%`;
     $("homeMonthCompareAmount").textContent=previousExpense
       ?`${delta>=0?"+":"−"}${money(Math.abs(delta))}`
       :`vs ${monthLabel(previousMonth)}`;
-    $("homeMonthCompareValue").className=pct===null
+    $("homeMonthCompareValue").className=percent===null
       ?""
-      :pct>0?"expense":pct<0?"income":"";
+      :percent>0?"expense":percent<0?"income":"";
 
     const fixed=fixedExpensesLeftForMonth(selectedMonth);
-    $("homeFixedLeftCount").textContent=`${fixed.count} item${fixed.count===1?"":"s"}`;
+    $("homeFixedLeftCount").textContent=
+      `${fixed.count} item${fixed.count===1?"":"s"}`;
     $("homeFixedLeftAmount").textContent=money(fixed.amount);
-
-    const insightCard=$("homeInsightCard");
-    let insight="";
-    if(budget&&t.expense>budget){
-      insight=`The monthly budget has been exceeded by ${money(t.expense-budget)}.`;
-    }else if(top){
-      const previousTop=txnsForMonth(previousMonth)
-        .filter(transaction=>transaction.type==="expense"&&transaction.category===top[0])
-        .reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
-      if(previousTop){
-        const topDelta=top[1]-previousTop;
-        const topPct=topDelta/previousTop*100;
-        if(Math.abs(topPct)>=15){
-          insight=`${top[0]} is ${Math.abs(topPct).toFixed(0)}% ${topDelta>0?"higher":"lower"} than last month.`;
-        }
-      }
-      if(!insight)insight=`${top[0]} is the largest expense category at ${money(top[1])}.`;
-    }
-    insightCard.classList.toggle("hidden",!insight);
-    $("homeInsightText").textContent=insight||"—";
-
-    if(currentView==="home"){
-      drawHomePaceChart(selectedMonth,t.expense,budget);
-    }
-
-    const quick=state.expenseCategories.slice(0,4);
-    $("quickGrid").innerHTML=quick.map(category=>`<button class="quick" data-quick="${escapeHtml(category)}"><span>${categoryIcon(category)}</span>${escapeHtml(category)}</button>`).join("");
   }
   function txnHtml(t){
     const sign=t.type==="income"?"+":"−";
@@ -6987,7 +7078,8 @@
   }
 
   function analysisPeriodTotal(list,flow=analysisFlow){
-    return list.filter(transaction=>transaction.type===flow)
+    return list
+      .filter(transaction=>transaction.type===flow)
       .reduce((sum,transaction)=>sum+(Number(transaction.amount)||0),0);
   }
 
@@ -6996,117 +7088,224 @@
     return (current-previous)/previous*100;
   }
 
-  function completeMonthsInYear(year){
-    const current=currentMonthKey();
-    return Array.from({length:12},(_,index)=>`${year}-${String(index+1).padStart(2,"0")}`)
-      .filter(month=>month<current);
+  function analysisConfiguredCategories(){
+    return analysisFlow==="expense"
+      ?[...state.expenseCategories]
+      :[...state.incomeCategories];
   }
 
-  function analysisCategoryComparison(){
-    const current=currentAnalysisList().filter(transaction=>transaction.type===analysisFlow);
-    const comparison=analysisCompareList().filter(transaction=>transaction.type===analysisFlow);
-    const currentMap=new Map();
-    const compareMap=new Map();
-    current.forEach(transaction=>currentMap.set(transaction.category,(currentMap.get(transaction.category)||0)+(Number(transaction.amount)||0)));
-    comparison.forEach(transaction=>compareMap.set(transaction.category,(compareMap.get(transaction.category)||0)+(Number(transaction.amount)||0)));
-    return [...new Set([...currentMap.keys(),...compareMap.keys()])].map(category=>{
-      const currentAmount=currentMap.get(category)||0;
-      const compareAmount=compareMap.get(category)||0;
-      const delta=currentAmount-compareAmount;
-      return {
-        category,
-        currentAmount,
-        compareAmount,
-        delta,
-        percent:compareAmount?delta/compareAmount*100:null
-      };
+  function analysisCategoryRows(){
+    const records=currentAnalysisList().filter(
+      transaction=>transaction.type===analysisFlow
+    );
+    const amountMap=new Map();
+    const countMap=new Map();
+    records.forEach(transaction=>{
+      amountMap.set(
+        transaction.category,
+        (amountMap.get(transaction.category)||0)+(Number(transaction.amount)||0)
+      );
+      countMap.set(
+        transaction.category,
+        (countMap.get(transaction.category)||0)+1
+      );
     });
+
+    const configured=analysisConfiguredCategories();
+    const categories=[...new Set([
+      ...configured,
+      ...records.map(transaction=>transaction.category)
+    ])];
+    const order=new Map(configured.map((category,index)=>[category,index]));
+
+    return categories.map(category=>({
+      category,
+      amount:amountMap.get(category)||0,
+      count:countMap.get(category)||0,
+      order:order.has(category)?order.get(category):9999
+    })).sort((a,b)=>
+      (b.amount>0)-(a.amount>0) ||
+      b.amount-a.amount ||
+      a.order-b.order ||
+      a.category.localeCompare(b.category)
+    );
   }
 
-  function analysisHighlightCards(rows,currentTotal){
-    if(!rows.length){
-      $("topCategories").innerHTML=emptyHtml("No data","Add records to see highlights.");
+  function analysisAvailableYears(){
+    const values=[
+      ...state.transactions.map(transaction=>Number(transaction.date.slice(0,4))),
+      Number(selectedYear),
+      Number(currentYearKey())
+    ].filter(Number.isFinite);
+    const minimum=Math.min(...values);
+    const maximum=Math.max(...values);
+    if(!Number.isFinite(minimum)||!Number.isFinite(maximum)){
+      return [currentYearKey()];
+    }
+    return Array.from(
+      {length:Math.max(1,maximum-minimum+1)},
+      (_,index)=>String(maximum-index)
+    );
+  }
+
+  function monthsUsedForYearAverage(year){
+    if(year<currentYearKey())return 12;
+    if(year>currentYearKey())return 12;
+    return Math.max(1,Number(currentMonthKey().slice(5)));
+  }
+
+  function relativeToSelectedText(amount,selectedAmount,isSelected){
+    if(isSelected)return "Selected";
+    const delta=amount-selectedAmount;
+    if(!selectedAmount){
+      return amount?"No baseline":"Same · ¥0.00";
+    }
+    const percent=delta/selectedAmount*100;
+    return `${delta>=0?"+":"−"}${money(Math.abs(delta))} · ${percent>=0?"+":""}${percent.toFixed(1)}%`;
+  }
+
+  function renderAnalysisCompareResult(currentTotal){
+    const result=$("analysisCompareResult");
+    if(analysisCompareMode==="none"){
+      result.className="analysis-inline-compare hidden";
+      result.textContent="No comparison";
       return;
     }
-    const byAmount=[...rows].sort((a,b)=>b.currentAmount-a.currentAmount);
-    const increase=[...rows].filter(row=>row.delta>0).sort((a,b)=>b.delta-a.delta)[0];
-    const decrease=[...rows].filter(row=>row.delta<0).sort((a,b)=>a.delta-b.delta)[0];
-    const cards=[
-      {label:"Largest category",row:byAmount[0],value:money(byAmount[0].currentAmount)},
-      {label:"Biggest increase",row:increase,value:increase?`+${money(increase.delta)}`:"—"},
-      {label:"Biggest decrease",row:decrease,value:decrease?`−${money(Math.abs(decrease.delta))}`:"—"}
-    ];
-    $("topCategories").innerHTML=cards.map((card,index)=>`<button class="top-category-card" type="button" ${card.row?`data-top-category="${escapeHtml(card.row.category)}"`:"disabled"}>
-      <div class="top-category-icon">${card.row?categoryIcon(card.row.category):index===1?"↑":"↓"}</div>
-      <div class="top-category-name">${escapeHtml(card.label)}</div>
-      <div class="top-category-value">${escapeHtml(card.row?.category||"No change")}</div>
-      <div class="top-category-share">${escapeHtml(card.value)}</div>
-    </button>`).join("");
+
+    const comparisonTotal=analysisPeriodTotal(analysisCompareList());
+    const delta=currentTotal-comparisonTotal;
+    const percent=comparePercent(currentTotal,comparisonTotal);
+    result.className=`analysis-inline-compare ${delta>0?"up":delta<0?"down":"flat"}`;
+    result.textContent=comparisonTotal
+      ?`vs ${analysisCompareLabelText()} · ${delta>=0?"+":"−"}${money(Math.abs(delta))} · ${percent>=0?"+":""}${percent.toFixed(1)}%`
+      :`vs ${analysisCompareLabelText()} · No baseline`;
   }
 
-  function renderAnalysisInsights(rows,currentTotal,compareTotal){
-    const insights=[];
-    const delta=currentTotal-compareTotal;
-    if(analysisCompareMode!=="none"){
-      if(compareTotal){
-        insights.push(`Total ${analysisFlow} ${delta>=0?"increased":"decreased"} by ${money(Math.abs(delta))}, ${Math.abs(delta/compareTotal*100).toFixed(1)}%.`);
-      }else if(currentTotal){
-        insights.push(`The comparison period has no ${analysisFlow} baseline.`);
-      }
-    }
-    const increase=[...rows].filter(row=>row.delta>0).sort((a,b)=>b.delta-a.delta)[0];
-    const decrease=[...rows].filter(row=>row.delta<0).sort((a,b)=>a.delta-b.delta)[0];
-    if(increase)insights.push(`${increase.category} increased the most, up ${money(increase.delta)}.`);
-    if(decrease)insights.push(`${decrease.category} decreased the most, down ${money(Math.abs(decrease.delta))}.`);
-    if(!insights.length&&currentTotal)insights.push(`The largest current ${analysisFlow} category is ${[...rows].sort((a,b)=>b.currentAmount-a.currentAmount)[0]?.category||"—"}.`);
-    $("analysisInsightList").innerHTML=(insights.slice(0,3).length?insights.slice(0,3):["Not enough data for a meaningful comparison."])
-      .map((text,index)=>`<div class="analysis-insight-item"><span>${index+1}</span><span>${escapeHtml(text)}</span></div>`).join("");
-  }
+  function renderAnalysisKpis(currentList,currentTotal,categoryRows){
+    const flowRecords=currentList.filter(
+      transaction=>transaction.type===analysisFlow
+    );
+    const activeCategories=categoryRows.filter(row=>row.amount>0).length;
 
-  function renderAnalysisKpis(currentList,currentTotal,rows){
     if(analysisMode==="month"){
-      const budget=effectiveBudget(currentAnalysisKey());
-      const elapsed=Math.max(selectedMonthElapsedDays(currentAnalysisKey()),1);
-      const projected=currentAnalysisKey()===currentMonthKey()
-        ?currentTotal/elapsed*daysInMonth(currentAnalysisKey())
-        :currentTotal;
-      const top=[...rows].sort((a,b)=>b.currentAmount-a.currentAmount)[0];
-      $("analysisKpi1Label").textContent="Budget used";
-      $("analysisAverageKpi").textContent=budget?`${(currentTotal/budget*100).toFixed(1)}%`:"Not set";
+      const key=currentAnalysisKey();
+      const elapsed=Math.max(1,selectedMonthElapsedDays(key));
+      const budget=effectiveBudget(key);
+      $("analysisKpi1Label").textContent=analysisFlow==="expense"
+        ?"Budget used"
+        :"Month total";
+      $("analysisAverageKpi").textContent=analysisFlow==="expense"
+        ?budget?`${(currentTotal/budget*100).toFixed(1)}%`:"Not set"
+        :money(currentTotal);
       $("analysisKpi2Label").textContent="Daily average";
       $("analysisActiveKpi").textContent=money(currentTotal/elapsed);
-      $("analysisKpi3Label").textContent=currentAnalysisKey()===currentMonthKey()?"Projected":"Month total";
-      $("analysisTopKpi").textContent=money(projected);
-      $("analysisKpi4Label").textContent="Top category";
-      $("analysisFourthKpi").textContent=top?.category||"—";
+      $("analysisKpi3Label").textContent="Active categories";
+      $("analysisTopKpi").textContent=String(activeCategories);
+      $("analysisKpi4Label").textContent="Records";
+      $("analysisFourthKpi").textContent=String(flowRecords.length);
       return;
     }
 
     const year=currentAnalysisKey();
-    const allTotals=totals(currentList);
-    const complete=completeMonthsInYear(year);
-    const monthly=Array.from({length:12},(_,index)=>monthFlowTotal(`${year}-${String(index+1).padStart(2,"0")}`,analysisFlow));
-    const highest=Math.max(...monthly,0);
-    const highestIndex=monthly.indexOf(highest);
-    $("analysisKpi1Label").textContent="Income";
-    $("analysisAverageKpi").textContent=money(allTotals.income);
-    $("analysisKpi2Label").textContent="Expense";
-    $("analysisActiveKpi").textContent=money(allTotals.expense);
-    $("analysisKpi3Label").textContent="Net balance";
-    $("analysisTopKpi").textContent=money(allTotals.income-allTotals.expense);
-    $("analysisKpi4Label").textContent="Highest month";
-    $("analysisFourthKpi").textContent=highest?`${monthShortName(`${year}-${String(highestIndex+1).padStart(2,"0")}`)} · ${money(highest)}`:"—";
+    const monthTotals=Array.from({length:12},(_,index)=>
+      monthFlowTotal(`${year}-${String(index+1).padStart(2,"0")}`,analysisFlow)
+    );
+    const highest=Math.max(...monthTotals,0);
+    const highestIndex=monthTotals.indexOf(highest);
+    const activeMonths=monthTotals.filter(amount=>amount>0).length;
+    $("analysisKpi1Label").textContent="Average/month";
+    $("analysisAverageKpi").textContent=money(
+      currentTotal/monthsUsedForYearAverage(year)
+    );
+    $("analysisKpi2Label").textContent="Highest month";
+    $("analysisActiveKpi").textContent=highest
+      ?`${monthShortName(`${year}-${String(highestIndex+1).padStart(2,"0")}`)} · ${money(highest)}`
+      :"—";
+    $("analysisKpi3Label").textContent="Active months";
+    $("analysisTopKpi").textContent=String(activeMonths);
+    $("analysisKpi4Label").textContent="Records";
+    $("analysisFourthKpi").textContent=String(flowRecords.length);
+  }
+
+  function renderAnalysisPeriodTable(){
+    const head=$("analysisPeriodTableHead");
+    const body=$("analysisPeriodTableBody");
+
+    if(analysisMode==="month"){
+      const year=selectedMonth.slice(0,4);
+      const rows=Array.from({length:12},(_,index)=>{
+        const key=`${year}-${String(index+1).padStart(2,"0")}`;
+        return {key,amount:monthFlowTotal(key,analysisFlow)};
+      });
+      const total=rows.reduce((sum,row)=>sum+row.amount,0);
+      const selectedAmount=rows.find(row=>row.key===selectedMonth)?.amount||0;
+      const max=Math.max(...rows.map(row=>row.amount),1);
+
+      $("analysisPeriodOverviewTitle").textContent=`Months in ${year}`;
+      $("analysisPeriodOverviewSubtitle").textContent=
+        "All 12 months · selected month highlighted";
+      head.innerHTML="<tr><th>Month</th><th>Amount</th><th>Share of year</th><th>vs selected</th></tr>";
+      body.innerHTML=rows.map(row=>{
+        const selected=row.key===selectedMonth;
+        return `<tr class="${selected?"selected":""} ${row.amount?"":"zero"}" data-analysis-period-key="${row.key}">
+          <td><div class="analysis-table-period"><span>${escapeHtml(monthShortName(row.key))}</span>${selected?'<span class="analysis-table-marker">Selected</span>':""}</div></td>
+          <td>${money(row.amount)}<span class="analysis-table-bar"><span style="width:${row.amount/max*100}%"></span></span></td>
+          <td>${total?(row.amount/total*100).toFixed(1):"0.0"}%</td>
+          <td>${escapeHtml(relativeToSelectedText(row.amount,selectedAmount,selected))}</td>
+        </tr>`;
+      }).join("");
+      return;
+    }
+
+    const years=analysisAvailableYears();
+    const rows=years.map(year=>({
+      key:year,
+      amount:analysisPeriodTotal(txnsForYear(year)),
+      average:analysisPeriodTotal(txnsForYear(year))/monthsUsedForYearAverage(year)
+    }));
+    const selectedAmount=rows.find(row=>row.key===selectedYear)?.amount||0;
+    const max=Math.max(...rows.map(row=>row.amount),1);
+
+    $("analysisPeriodOverviewTitle").textContent="Years overview";
+    $("analysisPeriodOverviewSubtitle").textContent=
+      "Selected year compared with every available year";
+    head.innerHTML="<tr><th>Year</th><th>Amount</th><th>Average/month</th><th>vs selected</th></tr>";
+    body.innerHTML=rows.map(row=>{
+      const selected=row.key===selectedYear;
+      return `<tr class="${selected?"selected":""} ${row.amount?"":"zero"}" data-analysis-period-key="${row.key}">
+        <td><div class="analysis-table-period"><span>${row.key}</span>${selected?'<span class="analysis-table-marker">Selected</span>':""}</div></td>
+        <td>${money(row.amount)}<span class="analysis-table-bar"><span style="width:${row.amount/max*100}%"></span></span></td>
+        <td>${money(row.average)}</td>
+        <td>${escapeHtml(relativeToSelectedText(row.amount,selectedAmount,selected))}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderAnalysisCategoryTable(rows,currentTotal){
+    const range=analysisRange();
+    $("analysisCategoryTitle").textContent=`Categories · ${range.label}`;
+    $("analysisCategorySubtitle").textContent=
+      `All ${analysisFlow} categories for the selected ${analysisMode}`;
+    $("analysisCategoryCount").textContent=
+      `${rows.length} categor${rows.length===1?"y":"ies"}`;
+
+    $("analysisCategoryTableBody").innerHTML=rows.length
+      ?rows.map(row=>`<tr class="${row.amount?"":"zero"}" ${row.count?`data-analysis-category="${escapeHtml(row.category)}"`:""}>
+        <td><div class="analysis-category-name"><span>${categoryIcon(row.category)}</span><strong>${escapeHtml(row.category)}</strong></div></td>
+        <td>${money(row.amount)}</td>
+        <td>${currentTotal?(row.amount/currentTotal*100).toFixed(1):"0.0"}%</td>
+        <td>${row.count}</td>
+      </tr>`).join("")
+      :'<tr class="analysis-data-empty-row"><td colspan="4">No categories configured.</td></tr>';
   }
 
   function renderAnalysis(){
     ensureAnalysisSelection();
     if(analysisMode==="week")analysisMode="month";
+
     const currentList=currentAnalysisList();
-    const compareList=analysisCompareList();
     const currentTotal=analysisPeriodTotal(currentList);
-    const compareTotal=analysisPeriodTotal(compareList);
-    const percent=comparePercent(currentTotal,compareTotal);
-    const rows=analysisCategoryComparison();
+    const categoryRows=analysisCategoryRows();
 
     $("analysisExpenseBtn").classList.toggle("active",analysisFlow==="expense");
     $("analysisIncomeBtn").classList.toggle("active",analysisFlow==="income");
@@ -7114,77 +7313,25 @@
     $("analysisYearBtn").classList.toggle("active",analysisMode==="year");
 
     const activeKey=currentAnalysisKey();
-    $("analysisQuickTabs").innerHTML=analysisOptions().map(option=>`<button type="button" class="${option.value===activeKey?"active":""}" data-analysis-key="${option.value}" title="${escapeHtml(option.fullLabel||option.label)}">${escapeHtml(option.label)}</button>`).join("");
-    requestAnimationFrame(()=>$("analysisQuickTabs")?.querySelector("button.active")?.scrollIntoView({behavior:"auto",block:"nearest",inline:"center"}));
+    $("analysisQuickTabs").innerHTML=analysisOptions().map(option=>
+      `<button type="button" class="${option.value===activeKey?"active":""}" data-analysis-key="${option.value}" title="${escapeHtml(option.fullLabel||option.label)}">${escapeHtml(option.label)}</button>`
+    ).join("");
+    requestAnimationFrame(()=>
+      $("analysisQuickTabs")?.querySelector("button.active")?.scrollIntoView({
+        behavior:"auto",
+        block:"nearest",
+        inline:"center"
+      })
+    );
 
-    $("analysisSelectedPeriodLabel").textContent=analysisDisplayLabel(activeKey);
     $("analysisRangeLabel").textContent=analysisDisplayLabel(activeKey);
     $("analysisMainAmount").textContent=money(currentTotal);
     $("analysisCompareButtonLabel").textContent=analysisCompareLabelText();
-    $("analysisCompareLabel").textContent=analysisCompareMode==="none"?"Comparison off":`vs ${analysisCompareLabelText()}`;
-    $("analysisCompareAmount").textContent=analysisCompareMode==="none"?"":compareTotal?`${currentTotal-compareTotal>=0?"+":"−"}${money(Math.abs(currentTotal-compareTotal))}`:"No baseline";
-    const compareElement=$("analysisCompareValue");
-    compareElement.className="";
-    compareElement.textContent=analysisCompareMode==="none"?"—":percent===null?"—":`${percent>=0?"+":""}${percent.toFixed(1)}%`;
-    if(percent!==null)compareElement.classList.add(percent>0?"positive":percent<0?"negative":"");
-    $("analysisTotalHint").textContent="Tap the total to open all matching records.";
-
-    $("analysisChartTitle").textContent=analysisMode==="month"?"Monthly comparison":"Year comparison";
-    $("analysisChartSubtitle").textContent=analysisMode==="month"?"Cumulative amount by day":"Monthly totals across the year";
-    $("analysisChartMode").textContent=analysisMode==="month"?"Cumulative":"12 months";
-    $("analysisChartTooltip").textContent=analysisMode==="month"?"Tap a day to compare values.":"Tap a month to open its records.";
-
-    renderAnalysisKpis(currentList,currentTotal,rows);
-    analysisHighlightCards(rows,currentTotal);
-    renderRanking(rows,currentTotal);
-    renderAnalysisInsights(rows,currentTotal,compareTotal);
-    $("analysisBreakdownPanel").classList.add("hidden");
-    drawAnalysisTrend();
+    renderAnalysisCompareResult(currentTotal);
+    renderAnalysisKpis(currentList,currentTotal,categoryRows);
+    renderAnalysisPeriodTable();
+    renderAnalysisCategoryTable(categoryRows,currentTotal);
     analysisRenderDirty=false;
-  }
-
-  function renderRanking(rows,total){
-    const amountButton=$("analysisSortAmount");
-    const changeButton=$("analysisSortChange");
-    amountButton.classList.toggle("active",analysisCategorySort==="amount");
-    changeButton.classList.toggle("active",analysisCategorySort==="change");
-
-    if(!rows.length){
-      $("analysisRanking").innerHTML=emptyHtml(`No ${analysisFlow} data`,`Add ${analysisFlow} records to see category comparison.`);
-      $("analysisShowAllCategories").classList.add("hidden");
-      return;
-    }
-
-    const sorted=[...rows].sort((a,b)=>analysisCategorySort==="change"
-      ?Math.abs(b.delta)-Math.abs(a.delta)||b.currentAmount-a.currentAmount
-      :b.currentAmount-a.currentAmount
-    );
-    const visible=analysisShowAllCategories?sorted:sorted.slice(0,8);
-    const max=Math.max(...visible.map(row=>row.currentAmount),1);
-
-    $("analysisRanking").innerHTML=visible.map(row=>{
-      const deltaLabel=analysisCompareMode==="none"
-        ?"No comparison"
-        :row.compareAmount
-          ?`${row.percent>=0?"+":""}${row.percent.toFixed(1)}% · ${row.delta>=0?"+":"−"}${money(Math.abs(row.delta))}`
-          :row.currentAmount?"New in period":"No activity";
-      const deltaClass=analysisCompareMode==="none"||!row.delta?"flat":row.delta>0?"up":"down";
-      return `<div class="analysis-change-row" data-ranking-category="${escapeHtml(row.category)}">
-        <div class="analysis-change-icon">${categoryIcon(row.category)}</div>
-        <div>
-          <div class="analysis-change-name-row"><span>${escapeHtml(row.category)}</span><span>${total?(row.currentAmount/total*100).toFixed(1):"0.0"}%</span></div>
-          <div class="analysis-change-bar"><span style="width:${row.currentAmount/max*100}%"></span></div>
-        </div>
-        <div class="analysis-change-amount">
-          <strong>${money(row.currentAmount)}</strong>
-          <small class="${deltaClass}">${escapeHtml(deltaLabel)}</small>
-        </div>
-      </div>`;
-    }).join("");
-
-    const showAllButton=$("analysisShowAllCategories");
-    showAllButton.classList.toggle("hidden",sorted.length<=8);
-    showAllButton.textContent=analysisShowAllCategories?"Show top 8":`View all ${sorted.length} categories`;
   }
 
   function canvasContext(id){
@@ -7351,15 +7498,15 @@
     const current=currentAnalysisKey();
     const presets=analysisMode==="month"
       ?[
+          {mode:"none",title:"No comparison",sub:"Show current month only"},
           {mode:"previous",title:"Previous month",sub:monthLabel(previousMonthKey(current))},
           {mode:"same-last-year",title:"Same month last year",sub:monthLabel(`${Number(current.slice(0,4))-1}-${current.slice(5)}`)},
-          {mode:"custom",title:"Choose another month",sub:monthLabel(analysisCompareCustomMonth)},
-          {mode:"none",title:"No comparison",sub:"Show current period only"}
+          {mode:"custom",title:"Choose another month",sub:monthLabel(analysisCompareCustomMonth)}
         ]
       :[
+          {mode:"none",title:"No comparison",sub:"Show current year only"},
           {mode:"previous",title:"Previous year",sub:String(Number(current)-1)},
-          {mode:"custom",title:"Choose another year",sub:analysisCompareCustomYear},
-          {mode:"none",title:"No comparison",sub:"Show current year only"}
+          {mode:"custom",title:"Choose another year",sub:analysisCompareCustomYear}
         ];
     $("analysisComparePresetList").innerHTML=presets.map(preset=>`<button class="analysis-compare-preset ${analysisCompareMode===preset.mode?"active":""}" type="button" data-analysis-compare-mode="${preset.mode}">
       <span><strong>${escapeHtml(preset.title)}</strong><small>${escapeHtml(preset.sub)}</small></span><span>${analysisCompareMode===preset.mode?"✓":"›"}</span>
@@ -7724,6 +7871,22 @@
 
     if(currentView==="settings"&&view!=="settings"){
       categoryEditing=false;
+      qsa("#settingsView details.settings-card").forEach(section=>{
+        section.open=false;
+      });
+    }
+
+    if(view==="settings"&&changed){
+      qsa("#settingsView details.settings-card").forEach(section=>{
+        section.open=false;
+      });
+    }
+
+    if(view==="analysis"&&changed){
+      if(!preserveAnalysisCompareOnNextOpen){
+        analysisCompareMode="none";
+      }
+      preserveAnalysisCompareOnNextOpen=false;
     }
 
     currentView=view;
@@ -8313,21 +8476,25 @@
     selectGlobalMonth(currentMonthKey());
   });
   $("budgetMonth").addEventListener("change",renderBudgetEditor);
-  $("analysisExpenseBtn").addEventListener("click",()=>{analysisFlow="expense";analysisShowAllCategories=false;renderAnalysis();});
-  $("analysisIncomeBtn").addEventListener("click",()=>{analysisFlow="income";analysisShowAllCategories=false;renderAnalysis();});
+  $("analysisExpenseBtn").addEventListener("click",()=>{
+    analysisFlow="expense";
+    renderAnalysis();
+  });
+  $("analysisIncomeBtn").addEventListener("click",()=>{
+    analysisFlow="income";
+    renderAnalysis();
+  });
   $("analysisMonthBtn").addEventListener("click",()=>{
     analysisMode="month";
     selectedMonth=selectedMonth||currentMonthKey();
     selectedYear=selectedMonth.slice(0,4);
-    if(analysisCompareMode==="same-last-year")analysisCompareMode="previous";
-    analysisShowAllCategories=false;
+    analysisCompareMode="none";
     renderAnalysis();
   });
   $("analysisYearBtn").addEventListener("click",()=>{
     analysisMode="year";
     selectedYear=selectedYear||currentYearKey();
-    if(analysisCompareMode==="same-last-year")analysisCompareMode="previous";
-    analysisShowAllCategories=false;
+    analysisCompareMode="none";
     renderAnalysis();
   });
   $("analysisQuickTabs").addEventListener("click",event=>{
@@ -8339,7 +8506,6 @@
     }else{
       selectedYear=button.dataset.analysisKey;
     }
-    analysisShowAllCategories=false;
     renderAnalysis();
   });
   $("analysisTotalCard").addEventListener("click",()=>{
@@ -8354,7 +8520,9 @@
   });
   $("analysisCompareButton").addEventListener("click",openAnalysisComparePicker);
   $("closeAnalysisCompare").addEventListener("click",closeAnalysisComparePicker);
-  $("analysisCompareModal").addEventListener("click",event=>{if(event.target===$("analysisCompareModal"))closeAnalysisComparePicker();});
+  $("analysisCompareModal").addEventListener("click",event=>{
+    if(event.target===$("analysisCompareModal"))closeAnalysisComparePicker();
+  });
   $("analysisComparePresetList").addEventListener("click",event=>{
     const button=event.target.closest("[data-analysis-compare-mode]");
     if(!button)return;
@@ -8362,48 +8530,27 @@
     if(mode==="custom"){
       analysisCompareMode="custom";
       openAnalysisComparePicker();
-    }else setAnalysisCompareMode(mode);
-  });
-  $("applyAnalysisCompareCustom").addEventListener("click",applyAnalysisCustomCompare);
-  $("analysisSortAmount").addEventListener("click",()=>{analysisCategorySort="amount";renderAnalysis();});
-  $("analysisSortChange").addEventListener("click",()=>{analysisCategorySort="change";renderAnalysis();});
-  $("analysisShowAllCategories").addEventListener("click",()=>{analysisShowAllCategories=!analysisShowAllCategories;renderAnalysis();});
-  $("trendCanvas").addEventListener("click",event=>{
-    if(!analysisChartHitAreas.length)return;
-    const rect=$("trendCanvas").getBoundingClientRect();
-    const x=event.clientX-rect.left;
-    const scale=rect.width/Math.max(320,rect.width);
-    const targetX=x/Math.max(scale,0.001);
-    const point=analysisChartHitAreas.reduce((best,item)=>Math.abs(item.x-targetX)<Math.abs(best.x-targetX)?item:best,analysisChartHitAreas[0]);
-    if(analysisMode==="year"){
-      const month=`${currentAnalysisKey()}-${String(point.index+1).padStart(2,"0")}`;
-      openAnalysisPeriodDetail({
-        from:`${month}-01`,to:`${month}-${String(daysInMonth(month)).padStart(2,"0")}`,
-        label:`${monthLabel(month)} records`,subtitle:`${analysisFlow==="income"?"Income":"Expense"} · ${money(point.primary||0)}`
-      });
     }else{
-      $("analysisChartTooltip").textContent=`Day ${point.index+1}: ${analysisDisplayLabel()} ${money(point.primary||0)} · ${analysisCompareLabelText()} ${money(point.secondary||0)}`;
+      setAnalysisCompareMode(mode);
     }
   });
-  $("analysisRanking").addEventListener("click",e=>{
-    const row=e.target.closest("[data-ranking-category]");
+  $("applyAnalysisCompareCustom").addEventListener("click",applyAnalysisCustomCompare);
+  $("analysisPeriodTableBody").addEventListener("click",event=>{
+    const row=event.target.closest("[data-analysis-period-key]");
     if(!row)return;
-    openCategoryDetail(row.dataset.rankingCategory);
+    if(analysisMode==="month"){
+      selectedMonth=row.dataset.analysisPeriodKey;
+      selectedYear=selectedMonth.slice(0,4);
+    }else{
+      selectedYear=row.dataset.analysisPeriodKey;
+    }
+    analysisCompareMode="none";
+    renderAnalysis();
   });
-  $("topCategories").addEventListener("click",e=>{
-    const card=e.target.closest("[data-top-category]");
-    if(!card)return;
-    openCategoryDetail(card.dataset.topCategory);
-  });
-  $("analysisBreakdownList").addEventListener("click",e=>{
-    const row=e.target.closest("[data-breakdown-from]");
+  $("analysisCategoryTableBody").addEventListener("click",event=>{
+    const row=event.target.closest("[data-analysis-category]");
     if(!row)return;
-    openAnalysisPeriodDetail({
-      from:row.dataset.breakdownFrom,
-      to:row.dataset.breakdownTo,
-      label:row.dataset.breakdownLabel||"Period records",
-      subtitle:row.dataset.breakdownSub||""
-    });
+    openCategoryDetail(row.dataset.analysisCategory);
   });
   $("closeCategoryDetail").addEventListener("click",closeCategoryDetail);
   $("duplicatePrevPage").addEventListener("click",()=>{
@@ -8610,10 +8757,17 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
       setTimeout(()=>$("recurringSection").scrollIntoView({behavior:"auto",block:"start"}),60);
     }else if(action==="top-category"){
       const category=$("homeTopCategoryCard").dataset.category;
-      analysisMode="month";analysisFlow="expense";setView("analysis");
+      analysisMode="month";
+      analysisFlow="expense";
+      analysisCompareMode="none";
+      setView("analysis");
       if(category)setTimeout(()=>openCategoryDetail(category),80);
-    }else{
-      analysisMode="month";analysisFlow="expense";analysisCompareMode="previous";setView("analysis");
+    }else if(action==="month-compare"){
+      analysisMode="month";
+      analysisFlow="expense";
+      analysisCompareMode="previous";
+      preserveAnalysisCompareOnNextOpen=true;
+      setView("analysis");
     }
   });
   $("quickGrid").addEventListener("click",e=>{const b=e.target.closest("[data-quick]");if(b)openModal(b.dataset.quick);});

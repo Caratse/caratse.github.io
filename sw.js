@@ -1,10 +1,10 @@
-const CACHE_NAME = "daily-budget-cloud-v48-dashboard-comparison-20260730";
+const CACHE_NAME = "daily-budget-cloud-v49-data-tables-20260730";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./firebase-config.js?v=48",
-  "./firebase-cloud-v48.js?v=48",
+  "./firebase-config.js?v=49",
+  "./firebase-cloud-v49.js?v=49",
   "./icon-192.png",
   "./icon-512.png"
 ];
