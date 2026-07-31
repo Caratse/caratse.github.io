@@ -2803,6 +2803,37 @@
       line-height:1.4
     }
 
+
+    /* V56 — free, resumable batch sync */
+    .cloud-sync-summary-grid{grid-template-columns:1fr 1fr}
+    .cloud-sync-last-card{grid-column:1/-1}
+    .cloud-sync-last-card strong{font-size:10px!important}
+    .cloud-sync-background-note{
+      padding:9px 10px;border-radius:12px;background:var(--field-bg);
+      line-height:1.5
+    }
+    .cloud-sync-progress{
+      display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center
+    }
+    .cloud-sync-progress.hidden{display:none}
+    .cloud-sync-progress-track{grid-column:1/-1;margin-top:0}
+    .cloud-sync-progress-count{font-size:9px;white-space:nowrap}
+    .cloud-problems-panel{
+      border:1px solid rgba(191,125,0,.20);border-radius:14px;background:#FFF9EC;
+      overflow:hidden
+    }
+    .cloud-problems-panel.hidden{display:none}
+    .cloud-problems-head{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px
+    }
+    .cloud-problems-head strong{display:block;font-size:10px}
+    .cloud-problems-head small{display:block;margin-top:2px;color:var(--muted);font-size:7px}
+    .cloud-problems-panel .cloud-record-result-list{padding:0 8px 8px}
+    .cloud-problem-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+    .cloud-problem-actions button{white-space:nowrap}
+    .cloud-record-result.invalid{border-color:#E9B5B5}
+    .cloud-record-result.different{border-color:#E7D095}
+
 </style>
 </head>
 <body>
@@ -3094,96 +3125,76 @@
 
             <section id="cloudSyncCenter" class="cloud-sync-center">
               <div id="cloudSyncHeadline" class="cloud-sync-headline">
-                <span id="cloudSyncStatusIcon" class="cloud-sync-status-icon">…</span>
+                <span id="cloudSyncStatusIcon" class="cloud-sync-status-icon">☁️</span>
                 <div>
-                  <strong id="cloudSyncStatusTitle">Checking local and cloud status</strong>
-                  <small id="cloudSyncStatusDetail">Your records remain available on this device.</small>
+                  <strong id="cloudSyncStatusTitle">Ready to sync</strong>
+                  <small id="cloudSyncStatusDetail">Pending changes are protected on this device.</small>
                 </div>
               </div>
 
-              <div class="cloud-sync-instruction">
-                <strong>What should I do?</strong>
-                <span>Tap <b>Sync all changes</b>. Success is shown only when no device-only records or unresolved recent checks remain.</span>
-              </div>
-
-              <button id="cloudSyncAllNow" type="button" class="primary cloud-sync-main-button">Sync all changes</button>
-              <button id="verifyRecentCloudRecords" type="button" class="secondary cloud-sync-check-button">Check records from last 24 hours</button>
-
-              <div id="cloudSyncProgress" class="cloud-sync-progress hidden">
+              <div class="cloud-sync-count-grid cloud-sync-summary-grid">
                 <div>
-                  <strong id="cloudSyncProgressTitle">Starting…</strong>
-                  <small id="cloudSyncProgressDetail">Preparing cloud sync.</small>
-                </div>
-                <div class="cloud-sync-progress-track"><i id="cloudSyncProgressBar"></i></div>
-              </div>
-
-              <div class="cloud-sync-count-grid">
-                <div>
-                  <small>Only on this device</small>
+                  <small>Waiting on device</small>
                   <strong id="cloudDeviceOnlyCount">0</strong>
                 </div>
                 <div>
-                  <small>Verified in Firebase</small>
-                  <strong id="cloudVerifiedCount">0</strong>
-                </div>
-                <div>
-                  <small>Need attention</small>
+                  <small>Problems to fix</small>
                   <strong id="cloudAttentionCount">0</strong>
                 </div>
-                <div>
-                  <small>Other pending</small>
-                  <strong id="cloudOtherPendingCount">0</strong>
+                <div class="cloud-sync-last-card">
+                  <small>Last completed</small>
+                  <strong id="cloudLastCompleted">Not yet</strong>
                 </div>
               </div>
 
-              <p class="cloud-sync-scope-note">
-                “Verified in Firebase” covers records directly checked during the most recent 24-hour check.
-                “Only on this device” is exact for records currently waiting to upload.
+              <button id="cloudSyncAllNow" type="button" class="primary cloud-sync-main-button">Sync now</button>
+
+              <p class="cloud-sync-scope-note cloud-sync-background-note">
+                Uploads run in 50-record batches. You may leave this page. If iPhone pauses the App in the background, the completed batches stay saved and syncing resumes automatically when the App becomes active again.
               </p>
 
-              <details id="cloudDeviceOnlySection" class="cloud-result-section">
-                <summary>
-                  <span>Only on this device</span>
-                  <span id="cloudDeviceOnlyBadge" class="cloud-result-badge">0</span>
-                </summary>
-                <div id="cloudDeviceOnlyList" class="cloud-record-result-list"></div>
-              </details>
+              <div id="cloudSyncProgress" class="cloud-sync-progress hidden">
+                <div class="cloud-sync-progress-copy">
+                  <strong id="cloudSyncProgressTitle">Starting…</strong>
+                  <small id="cloudSyncProgressDetail">Preparing the first batch.</small>
+                </div>
+                <strong id="cloudSyncProgressCount" class="cloud-sync-progress-count">0 / 0</strong>
+                <div class="cloud-sync-progress-track"><i id="cloudSyncProgressBar"></i></div>
+              </div>
 
-              <details id="cloudAttentionSection" class="cloud-result-section">
-                <summary>
-                  <span>Need attention</span>
+              <section id="cloudProblemsPanel" class="cloud-problems-panel hidden">
+                <div class="cloud-problems-head">
+                  <div>
+                    <strong>Problems to fix</strong>
+                    <small>Only records that did not finish correctly are listed.</small>
+                  </div>
                   <span id="cloudAttentionBadge" class="cloud-result-badge warning">0</span>
-                </summary>
+                </div>
                 <div id="cloudAttentionList" class="cloud-record-result-list"></div>
-              </details>
-
-              <details id="cloudVerifiedSection" class="cloud-result-section">
-                <summary>
-                  <span>Verified in Firebase</span>
-                  <span id="cloudVerifiedBadge" class="cloud-result-badge success">0</span>
-                </summary>
-                <div id="cloudVerifiedList" class="cloud-record-result-list"></div>
-              </details>
-
-              <details id="cloudOtherPendingSection" class="cloud-result-section">
-                <summary>
-                  <span>Other pending changes</span>
-                  <span id="cloudOtherPendingBadge" class="cloud-result-badge">0</span>
-                </summary>
-                <div id="cloudOtherPendingList" class="cloud-record-result-list"></div>
-              </details>
+              </section>
 
               <details class="cloud-advanced-section">
-                <summary>Advanced cloud tools</summary>
-                <p>
-                  Use these only for troubleshooting. Refreshing from cloud is not the normal upload action.
-                </p>
+                <summary>Advanced tools</summary>
+                <p>These are for troubleshooting only. The normal action is Sync now.</p>
                 <div class="cloud-actions">
                   <button id="cloudRetrySync" class="secondary">Check connection</button>
                   <button id="cloudFullRefresh" class="secondary">Refresh local view from cloud</button>
+                  <button id="verifyRecentCloudRecords" class="secondary" style="grid-column:1/-1">Check recent cloud copies</button>
                   <button id="cloudSignOut" class="secondary" style="grid-column:1/-1">Sign out</button>
                 </div>
               </details>
+
+              <div class="legacy-cloud-state" aria-hidden="true">
+                <span id="cloudVerifiedCount">0</span>
+                <span id="cloudOtherPendingCount">0</span>
+                <span id="cloudDeviceOnlyBadge">0</span>
+                <span id="cloudVerifiedBadge">0</span>
+                <span id="cloudOtherPendingBadge">0</span>
+                <details id="cloudDeviceOnlySection"><div id="cloudDeviceOnlyList"></div></details>
+                <details id="cloudAttentionSection"></details>
+                <details id="cloudVerifiedSection"><div id="cloudVerifiedList"></div></details>
+                <details id="cloudOtherPendingSection"><div id="cloudOtherPendingList"></div></details>
+              </div>
             </section>
 
             <div id="cloudMigrationBox" class="cloud-warning hidden">
@@ -3512,7 +3523,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 55 replaces confusing cloud controls with one sync center and exact per-record device/cloud status.</p>
+            Version 56 adds no-cost 50-record batch sync, checkpoint resume, automatic foreground recovery and problem-only results.</p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
       </details>
@@ -3804,8 +3815,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=55"></script>
-<script src="firebase-cloud-v55.js?v=55"></script>
+<script src="firebase-config.js?v=56"></script>
+<script src="firebase-cloud-v56.js?v=56"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -3814,6 +3825,9 @@
   const PENDING_SETTINGS_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_settings_v1`;
   const CLOUD_AUDIT_STORAGE_KEY = `${STORAGE_KEY}_cloud_audit_v1`;
   const CLOUD_AUDIT_RESULTS_STORAGE_KEY = `${STORAGE_KEY}_cloud_audit_results_v1`;
+  const CLOUD_BATCH_SYNC_STATE_KEY = `${STORAGE_KEY}_cloud_batch_sync_v1`;
+  const CLOUD_BATCH_SIZE = 50;
+  const CLOUD_AUTO_RESUME_DELAY_MS = 1800;
   const DUPLICATE_REVIEW_STORAGE_KEY = `${STORAGE_KEY}_reviewed_duplicate_groups_v1`;
   const CLOUD_COUNT_STORAGE_KEY = `${STORAGE_KEY}_last_cloud_count_v1`;
   const WEEKLY_BACKUP_STORAGE_KEY = `${STORAGE_KEY}_weekly_backups_v1`;
@@ -4045,6 +4059,8 @@
   let cloudAuditRunning = false;
   let cloudSyncCenterRunning = false;
   let cloudSyncCenterProgress = null;
+  let cloudBatchSyncState = loadCloudBatchSyncState();
+  let cloudAutoResumeTimer = null;
   let incomePinConfig = loadIncomePinConfig();
   let incomePrivacyUnlocked = false;
   let incomePinModalMode = "unlock";
@@ -4102,251 +4118,255 @@
         localStorage.getItem(CLOUD_AUDIT_RESULTS_STORAGE_KEY)||"[]"
       );
       return Array.isArray(parsed)
-        ?parsed.filter(item=>item&&item.id&&item.transaction)
+        ?parsed.filter(item=>item&&item.id&&item.transaction&&item.status!=="verified")
         :[];
     }catch(error){
-      console.error("Cloud audit result details could not be loaded",error);
+      console.error("Cloud issue details could not be loaded",error);
       return [];
     }
   }
 
   function saveCloudAuditResults(){
+    cloudAuditResults=cloudAuditResults
+      .filter(item=>item&&item.id&&item.transaction&&item.status!=="verified")
+      .slice(0,200);
     try{
       localStorage.setItem(
         CLOUD_AUDIT_RESULTS_STORAGE_KEY,
-        JSON.stringify(cloudAuditResults.slice(0,100))
+        JSON.stringify(cloudAuditResults)
       );
     }catch(error){
-      console.error("Cloud audit result details could not be saved",error);
+      console.error("Cloud issue details could not be saved",error);
     }
     renderCloudSyncCenter();
   }
 
-  function cloudRecordResultHtml(transaction,status,{
-    actionId="",
-    actionLabel="",
-    detail=""
-  }={}){
-    const statusLabel={
-      pending:"Device only",
-      missing:"Missing in cloud",
-      different:"Different in cloud",
-      verified:"Cloud verified",
-      delete:"Delete cleanup",
-      settings:"Settings"
-    }[status]||status;
+  function loadCloudBatchSyncState(){
+    try{
+      const parsed=JSON.parse(
+        localStorage.getItem(CLOUD_BATCH_SYNC_STATE_KEY)||"null"
+      );
+      return parsed&&typeof parsed==="object"
+        ?{
+          requested:Boolean(parsed.requested),
+          status:String(parsed.status||"idle"),
+          initialTotal:Number(parsed.initialTotal)||0,
+          completed:Number(parsed.completed)||0,
+          startedAt:Number(parsed.startedAt)||0,
+          lastProgressAt:Number(parsed.lastProgressAt)||0,
+          completedAt:Number(parsed.completedAt)||0,
+          lastError:String(parsed.lastError||"")
+        }
+        :{
+          requested:false,status:"idle",initialTotal:0,completed:0,
+          startedAt:0,lastProgressAt:0,completedAt:0,lastError:""
+        };
+    }catch(_){
+      return {
+        requested:false,status:"idle",initialTotal:0,completed:0,
+        startedAt:0,lastProgressAt:0,completedAt:0,lastError:""
+      };
+    }
+  }
 
-    const statusClass=status==="verified"?"success":
-      (status==="missing"||status==="different")?"warning":"";
+  function saveCloudBatchSyncState(patch={}){
+    cloudBatchSyncState={
+      ...cloudBatchSyncState,
+      ...patch,
+      lastProgressAt:Date.now()
+    };
+    try{
+      localStorage.setItem(
+        CLOUD_BATCH_SYNC_STATE_KEY,
+        JSON.stringify(cloudBatchSyncState)
+      );
+    }catch(error){
+      console.error("Cloud batch sync state could not be saved",error);
+    }
+    renderCloudSyncCenter();
+  }
 
-    const name=transaction?.tag||transaction?.category||"Record";
-    const category=transaction?.category||"Uncategorized";
-    const date=transaction?.date||"Unknown date";
-    const amount=transaction
-      ?privacyMoney(transaction.amount,transaction.type)
-      :"";
+  function validatePendingTransaction(transaction){
+    if(!transaction?.id)return "Missing record ID";
+    if(!Number.isFinite(Number(transaction.amount))||Number(transaction.amount)<=0){
+      return "Amount must be greater than zero";
+    }
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(transaction.date||""))){
+      return "Date is invalid";
+    }
+    if(!transaction.category)return "Category is missing";
+    if(transaction.type!=="expense"&&transaction.type!=="income"){
+      return "Record type is invalid";
+    }
+    return "";
+  }
 
-    return `<div class="cloud-record-result">
+  function cloudIssueLabel(status){
+    return {
+      pending:"Waiting on device",
+      missing:"Missing in Firebase",
+      different:"Device and cloud differ",
+      invalid:"Fix record",
+      failed:"Upload paused"
+    }[status]||"Needs attention";
+  }
+
+  function cloudProblemHtml(result){
+    const transaction=result.transaction||{};
+    const status=String(result.status||"failed");
+    const name=transaction.tag||transaction.category||"Record";
+    const amount=privacyMoney(transaction.amount,transaction.type);
+    const detail=result.message||(
+      status==="missing"
+        ?"Firebase did not return this record after upload."
+        :status==="different"
+          ?"Choose which version should be kept."
+          :status==="invalid"
+            ?"Edit the record, then sync again."
+            :"The record remains protected on this device."
+    );
+
+    let actions="";
+    if(status==="different"){
+      actions=`<div class="cloud-problem-actions">
+        <button type="button" class="secondary" data-cloud-use-device-id="${escapeHtml(String(result.id))}">Keep device</button>
+        <button type="button" class="secondary" data-cloud-use-remote-id="${escapeHtml(String(result.id))}">Use cloud</button>
+      </div>`;
+    }else if(status==="invalid"){
+      actions=`<div class="cloud-problem-actions">
+        <button type="button" class="secondary" data-cloud-edit-id="${escapeHtml(String(result.id))}">Edit record</button>
+      </div>`;
+    }else{
+      actions=`<div class="cloud-problem-actions">
+        <button type="button" class="secondary" data-cloud-retry-id="${escapeHtml(String(result.id))}">Retry upload</button>
+      </div>`;
+    }
+
+    return `<div class="cloud-record-result ${escapeHtml(status)}">
       <div class="cloud-record-result-main">
         <div class="cloud-record-result-title">
           <strong>${escapeHtml(name)}</strong>
-          <span class="cloud-record-result-status ${statusClass}">${escapeHtml(statusLabel)}</span>
+          <span class="cloud-record-result-status warning">${escapeHtml(cloudIssueLabel(status))}</span>
         </div>
         <div class="cloud-record-result-meta">
-          ${escapeHtml(date)} · ${escapeHtml(category)}
-          ${detail?`<br>${escapeHtml(detail)}`:""}
+          ${escapeHtml(transaction.date||"Unknown date")} · ${escapeHtml(transaction.category||"Uncategorized")}<br>
+          ${escapeHtml(detail)}
         </div>
       </div>
       <div class="cloud-record-result-side">
-        ${amount?`<span class="cloud-record-result-amount">${escapeHtml(amount)}</span>`:""}
-        ${actionId?`<button type="button" class="secondary" data-cloud-upload-id="${escapeHtml(actionId)}">${escapeHtml(actionLabel||"Upload")}</button>`:""}
+        <span class="cloud-record-result-amount">${escapeHtml(amount)}</span>
+        ${actions}
       </div>
     </div>`;
   }
 
-  function renderCloudSyncCenter(){
-    if(!$("cloudSyncCenter"))return;
+  function currentCloudIssueResults(){
+    const localIds=new Set(state.transactions.map(item=>String(item.id)));
+    const stored=cloudAuditResults.filter(item=>localIds.has(String(item.id)));
+    const byId=new Map(stored.map(item=>[String(item.id),item]));
 
-    const pendingRecords=[...pendingCloudSaves.values()]
-      .map(entry=>entry?.transaction)
-      .filter(Boolean)
-      .sort((a,b)=>
-        Math.max(Number(b.updatedAtLocal)||0,Number(b.createdAt)||0)-
-        Math.max(Number(a.updatedAtLocal)||0,Number(a.createdAt)||0)
-      );
-
-    const currentIds=new Set(
-      state.transactions.map(item=>String(item.id))
-    );
-
-    const currentAudit=cloudAuditResults
-      .filter(item=>currentIds.has(String(item.id)));
-
-    const verified=currentAudit.filter(item=>item.status==="verified");
-    const attention=currentAudit.filter(
-      item=>item.status==="missing"||item.status==="different"
-    );
-
-    const otherPendingCount=
-      pendingCloudDeletes.size+
-      (pendingCloudSettings?1:0);
-
-    const headline=$("cloudSyncHeadline");
-    headline.className="cloud-sync-headline";
-
-    let title="";
-    let detail="";
-    let icon="☁️";
-
-    if(cloudSyncCenterRunning||cloudAuditRunning){
-      title=cloudSyncCenterRunning
-        ?"Syncing device changes"
-        :"Checking recent records";
-      detail=cloudSyncCenterProgress?.detail||
-        "Keep this page open until the result is shown.";
-      icon="↻";
-    }else if(
-      !pendingRecords.length&&
-      !attention.length&&
-      !otherPendingCount&&
-      cloudAuditMeta.status==="success"
-    ){
-      title="All checked changes are synced";
-      detail=`${verified.length} recent record${verified.length===1?"":"s"} verified in Firebase. No device-only changes remain.`;
-      icon="✓";
-      headline.classList.add("success");
-    }else if(pendingRecords.length){
-      title=`${pendingRecords.length} record${pendingRecords.length===1?" is":"s are"} only on this device`;
-      detail="These records are safe on this phone but are not yet confirmed in Firebase.";
-      icon="!";
-      headline.classList.add("warning");
-    }else if(attention.length){
-      title=`${attention.length} recent record${attention.length===1?" needs":"s need"} action`;
-      detail="Missing means Firebase could not find the record. Different means the cloud copy does not match this phone.";
-      icon="!";
-      headline.classList.add("warning");
-    }else if(otherPendingCount){
-      title=`${otherPendingCount} non-record change${otherPendingCount===1?" is":"s are"} pending`;
-      detail="A settings update or cloud deletion cleanup still needs to finish.";
-      icon="!";
-      headline.classList.add("warning");
-    }else{
-      title="No device changes are waiting";
-      detail=cloudAuditMeta.checkedAt
-        ?"Run the recent-record check again when you need direct Firebase confirmation."
-        :"Tap Check records from last 24 hours to confirm recent entries in Firebase.";
-      icon="i";
-    }
-
-    $("cloudSyncStatusIcon").textContent=icon;
-    $("cloudSyncStatusTitle").textContent=title;
-    $("cloudSyncStatusDetail").textContent=detail;
-
-    const syncButton=$("cloudSyncAllNow");
-    syncButton.disabled=cloudSyncCenterRunning||cloudAuditRunning;
-    syncButton.textContent=cloudSyncCenterRunning
-      ?"Syncing…"
-      :"Sync all changes";
-
-    const checkButton=$("verifyRecentCloudRecords");
-    checkButton.disabled=cloudSyncCenterRunning||cloudAuditRunning;
-    checkButton.textContent=cloudAuditRunning
-      ?"Checking recent records…"
-      :"Check records from last 24 hours";
-
-    $("cloudDeviceOnlyCount").textContent=String(pendingRecords.length);
-    $("cloudVerifiedCount").textContent=String(verified.length);
-    $("cloudAttentionCount").textContent=String(attention.length);
-    $("cloudOtherPendingCount").textContent=String(otherPendingCount);
-
-    $("cloudDeviceOnlyBadge").textContent=String(pendingRecords.length);
-    $("cloudVerifiedBadge").textContent=String(verified.length);
-    $("cloudAttentionBadge").textContent=String(attention.length);
-    $("cloudOtherPendingBadge").textContent=String(otherPendingCount);
-
-    $("cloudDeviceOnlySection").open=pendingRecords.length>0;
-    $("cloudAttentionSection").open=attention.length>0;
-
-    $("cloudDeviceOnlyList").innerHTML=pendingRecords.length
-      ?pendingRecords.map(transaction=>
-        cloudRecordResultHtml(transaction,"pending",{
-          actionId:String(transaction.id),
-          actionLabel:"Upload now",
-          detail:pendingCloudSaves.get(String(transaction.id))?.lastError||"Waiting for cloud upload"
-        })
-      ).join("")
-      :`<div class="cloud-empty-result">No records are waiting only on this device.</div>`;
-
-    $("cloudAttentionList").innerHTML=attention.length
-      ?attention.map(result=>
-        cloudRecordResultHtml(result.transaction,result.status,{
-          actionId:String(result.id),
-          actionLabel:result.status==="different"
-            ?"Upload local version"
-            :"Upload now",
-          detail:result.status==="different"
-            ?"The Firebase copy has different values."
-            :"Firebase did not find this record ID."
-        })
-      ).join("")
-      :`<div class="cloud-empty-result">No checked records need attention.</div>`;
-
-    $("cloudVerifiedList").innerHTML=verified.length
-      ?verified.map(result=>
-        cloudRecordResultHtml(result.transaction,"verified",{
-          detail:`Directly checked ${weeklyBackupDateTime(result.checkedAt||cloudAuditMeta.checkedAt)}`
-        })
-      ).join("")
-      :`<div class="cloud-empty-result">No recent records have been directly verified yet.</div>`;
-
-    const otherItems=[];
-    if(pendingCloudSettings){
-      otherItems.push(`<div class="cloud-record-result">
-        <div class="cloud-record-result-main">
-          <div class="cloud-record-result-title">
-            <strong>App settings</strong>
-            <span class="cloud-record-result-status">Device only</span>
-          </div>
-          <div class="cloud-record-result-meta">${escapeHtml(pendingCloudSettings.reason||"Settings changed locally")}</div>
-        </div>
-      </div>`);
-    }
-    pendingCloudDeletes.forEach(entry=>{
-      otherItems.push(
-        cloudRecordResultHtml(entry.transaction,"delete",{
-          detail:"Hidden on this device · Firebase deletion still pending"
-        })
-      );
+    pendingCloudSaves.forEach(entry=>{
+      const id=String(entry.id);
+      if(byId.has(id))return;
+      const validation=validatePendingTransaction(entry.transaction);
+      if(validation){
+        byId.set(id,{
+          id,status:"invalid",transaction:{...entry.transaction},message:validation
+        });
+      }
     });
 
-    $("cloudOtherPendingList").innerHTML=otherItems.length
-      ?otherItems.join("")
-      :`<div class="cloud-empty-result">No settings or deletion cleanup is waiting.</div>`;
-
-    const progress=$("cloudSyncProgress");
-    progress.classList.toggle(
-      "hidden",
-      !cloudSyncCenterRunning&&!cloudAuditRunning
+    return [...byId.values()].sort((a,b)=>
+      String(b.transaction?.date||"").localeCompare(String(a.transaction?.date||""))
     );
-    if(cloudSyncCenterRunning||cloudAuditRunning){
-      const done=Number(cloudSyncCenterProgress?.done)||0;
-      const total=Math.max(1,Number(cloudSyncCenterProgress?.total)||1);
-      $("cloudSyncProgressTitle").textContent=
-        cloudSyncCenterProgress?.title||
-        (cloudAuditRunning?"Checking Firebase":"Syncing");
-      $("cloudSyncProgressDetail").textContent=
-        cloudSyncCenterProgress?.detail||
-        "Please keep the App open.";
-      $("cloudSyncProgressBar").style.width=
-        `${Math.min(100,done/total*100)}%`;
-    }else{
-      $("cloudSyncProgressBar").style.width="0%";
-    }
   }
 
-  function setCloudSyncCenterProgress(title,done,total,detail=""){
+  function renderCloudSyncCenter(){
+    if(!$('cloudSyncCenter'))return;
+
+    const pendingCount=pendingCloudSaves.size;
+    const issues=currentCloudIssueResults();
+    const otherPending=pendingCloudDeletes.size+(pendingCloudSettings?1:0);
+    const totalWaiting=pendingCount+otherPending;
+    const headline=$('cloudSyncHeadline');
+    headline.className='cloud-sync-headline';
+
+    let title='Ready to sync';
+    let detail=totalWaiting
+      ?`${totalWaiting} change${totalWaiting===1?' is':'s are'} protected on this device.`
+      :'No local upload is waiting.';
+    let icon='☁️';
+
+    if(cloudSyncCenterRunning){
+      title='Syncing in batches';
+      detail=cloudSyncCenterProgress?.detail||'Completed batches are removed from the local queue immediately.';
+      icon='↻';
+    }else if(issues.length){
+      title=`${issues.length} problem${issues.length===1?' needs':'s need'} your decision`;
+      detail='Only unresolved records are shown below.';
+      icon='!';
+      headline.classList.add('warning');
+    }else if(cloudBatchSyncState.status==='success'&&!totalWaiting){
+      title='All changes synced';
+      detail='No unresolved record or pending device change remains.';
+      icon='✓';
+      headline.classList.add('success');
+    }else if(cloudBatchSyncState.status==='paused'&&totalWaiting){
+      title='Sync paused · will resume automatically';
+      detail=cloudBatchSyncState.lastError||'Return to the App with a working network to continue.';
+      icon='↻';
+      headline.classList.add('warning');
+    }
+
+    $('cloudSyncStatusIcon').textContent=icon;
+    $('cloudSyncStatusTitle').textContent=title;
+    $('cloudSyncStatusDetail').textContent=detail;
+    $('cloudDeviceOnlyCount').textContent=String(totalWaiting);
+    $('cloudAttentionCount').textContent=String(issues.length);
+    $('cloudAttentionBadge').textContent=String(issues.length);
+    $('cloudLastCompleted').textContent=cloudBatchSyncState.completedAt
+      ?weeklyBackupDateTime(cloudBatchSyncState.completedAt)
+      :'Not yet';
+
+    const button=$('cloudSyncAllNow');
+    button.disabled=cloudSyncCenterRunning||cloudAuditRunning||!cloudUser;
+    button.textContent=cloudSyncCenterRunning?'Syncing…':'Sync now';
+
+    const progress=$('cloudSyncProgress');
+    progress.classList.toggle('hidden',!cloudSyncCenterRunning);
+    if(cloudSyncCenterRunning){
+      const done=Number(cloudSyncCenterProgress?.done)||0;
+      const total=Math.max(1,Number(cloudSyncCenterProgress?.total)||1);
+      $('cloudSyncProgressTitle').textContent=cloudSyncCenterProgress?.title||'Syncing';
+      $('cloudSyncProgressDetail').textContent=cloudSyncCenterProgress?.detail||'Processing the next batch.';
+      $('cloudSyncProgressCount').textContent=`${done} / ${total}`;
+      $('cloudSyncProgressBar').style.width=`${Math.min(100,done/total*100)}%`;
+    }else{
+      $('cloudSyncProgressBar').style.width='0%';
+      $('cloudSyncProgressCount').textContent='0 / 0';
+    }
+
+    $('cloudProblemsPanel').classList.toggle('hidden',issues.length===0);
+    $('cloudAttentionList').innerHTML=issues.length
+      ?issues.map(cloudProblemHtml).join('')
+      :'<div class="cloud-empty-result">No record problem needs attention.</div>';
+
+    // Compatibility values retained for existing status code.
+    $('cloudVerifiedCount').textContent=String(Number(cloudAuditMeta.verifiedCount)||0);
+    $('cloudOtherPendingCount').textContent=String(otherPending);
+    $('cloudDeviceOnlyBadge').textContent=String(totalWaiting);
+    $('cloudVerifiedBadge').textContent=String(Number(cloudAuditMeta.verifiedCount)||0);
+    $('cloudOtherPendingBadge').textContent=String(otherPending);
+  }
+
+  function setCloudSyncCenterProgress(title,done,total,detail=''){
     cloudSyncCenterProgress={title,done,total,detail};
-    renderCloudSyncCenter();
+    saveCloudBatchSyncState({
+      status:'running',
+      completed:done,
+      initialTotal:Math.max(Number(cloudBatchSyncState.initialTotal)||0,total),
+      lastError:''
+    });
   }
 
   function cloudTransactionMatches(local,remote){
@@ -4412,176 +4432,93 @@
     }
   }
 
-  async function verifyRecentCloudRecords(
-    hours=24,
-    {silent=false}={}
-  ){
+  async function verifyRecentCloudRecords(hours=24,{silent=false}={}){
     if(cloudAuditRunning)return false;
     if(!cloudApi?.configured||!cloudUser){
-      if(!silent)toast("Sign in before checking cloud records.");
+      if(!silent)toast('Sign in before checking cloud records.');
       return false;
     }
     if(!navigator.onLine){
-      if(!silent)toast("No network. Records remain available locally.");
+      if(!silent)toast('No network. Records remain on this device.');
       return false;
     }
 
-    const allCandidates=recentCloudCandidates(hours);
-    const candidates=allCandidates.slice(0,100);
-
+    const candidates=recentCloudCandidates(hours).slice(0,100);
     if(!candidates.length){
       cloudAuditResults=[];
-      saveCloudAuditResults();
       cloudAuditMeta={
-        ...cloudAuditMeta,
-        checkedAt:Date.now(),
-        hours,
-        candidateCount:0,
-        checkedCount:0,
-        verifiedCount:0,
-        missingCount:0,
-        mismatchCount:0,
-        limited:false,
-        status:"empty",
-        message:""
+        ...cloudAuditMeta,checkedAt:Date.now(),hours,candidateCount:0,
+        checkedCount:0,verifiedCount:0,missingCount:0,mismatchCount:0,
+        limited:false,status:'empty',message:''
       };
-      saveCloudAuditMeta();
-      renderRecentCloudAudit();
-      renderCloudSyncCenter();
-      if(!silent)toast("No records were added or edited in the last 24 hours.");
+      saveCloudAuditMeta();saveCloudAuditResults();renderRecentCloudAudit();
+      if(!silent)toast('No recent records need checking.');
       return true;
     }
 
     cloudAuditRunning=true;
-    const results=[];
-    let verified=0;
-    let missing=0;
-    let mismatch=0;
-    let checked=0;
-    let lastError="";
-
     setCloudSyncCenterProgress(
-      "Checking recent records",
-      0,
-      candidates.length,
-      "Reading each record directly from Firebase."
+      'Checking recent cloud copies',0,candidates.length,
+      'One batch read checks up to 100 records.'
     );
-    renderRecentCloudAudit({
-      done:0,
-      total:candidates.length,
-      message:"Starting direct server verification…"
-    });
 
-    for(const transaction of candidates){
-      try{
-        const remote=await withTimeout(
-          cloudApi.verifyTransaction(cloudUser.uid,transaction.id),
-          8000
-        );
-
-        if(cloudTransactionMatches(transaction,remote)){
-          verified++;
-          results.push({
-            id:String(transaction.id),
-            status:"verified",
-            checkedAt:Date.now(),
-            transaction:{...transaction}
-          });
-        }else{
-          mismatch++;
-          results.push({
-            id:String(transaction.id),
-            status:"different",
-            checkedAt:Date.now(),
-            transaction:{...transaction},
-            remote:{...remote}
-          });
-        }
-      }catch(error){
-        lastError=error.message||"Cloud verification failed";
-
-        if(/not found/i.test(lastError)){
-          missing++;
-          results.push({
-            id:String(transaction.id),
-            status:"missing",
-            checkedAt:Date.now(),
-            transaction:{...transaction}
-          });
-        }else{
-          cloudAuditResults=results;
-          saveCloudAuditResults();
-          cloudAuditMeta={
-            ...cloudAuditMeta,
-            checkedAt:Date.now(),
-            hours,
-            candidateCount:allCandidates.length,
-            checkedCount:checked,
-            verifiedCount:verified,
-            missingCount:missing,
-            mismatchCount:mismatch,
-            limited:allCandidates.length>100,
-            status:"failed",
-            message:lastError
-          };
-          saveCloudAuditMeta();
-          cloudAuditRunning=false;
-          cloudSyncCenterProgress=null;
-          renderRecentCloudAudit();
-          renderCloudSyncCenter();
-          setLocalMode(lastError);
-          if(!silent)toast("Cloud check stopped. Records remain on this device.");
-          return false;
-        }
-      }
-
-      checked++;
-      setCloudSyncCenterProgress(
-        "Checking recent records",
-        checked,
-        candidates.length,
-        `${verified} verified · ${missing} missing · ${mismatch} different`
+    try{
+      const result=await withTimeout(
+        cloudApi.verifyTransactionsBatch(
+          cloudUser.uid,
+          candidates.map(item=>item.id)
+        ),
+        90000
       );
-      renderRecentCloudAudit({
-        done:checked,
-        total:candidates.length,
-        message:`${verified} verified · ${missing} missing · ${mismatch} different`
+
+      const issues=[];
+      let verified=0;
+      let missing=0;
+      let mismatch=0;
+
+      candidates.forEach(transaction=>{
+        const remote=result?.records?.[String(transaction.id)]||null;
+        if(!remote){
+          missing++;
+          issues.push({
+            id:String(transaction.id),status:'missing',checkedAt:Date.now(),
+            transaction:{...transaction},message:'Firebase did not find this record ID.'
+          });
+        }else if(!cloudTransactionMatches(transaction,remote)){
+          mismatch++;
+          issues.push({
+            id:String(transaction.id),status:'different',checkedAt:Date.now(),
+            transaction:{...transaction},remote:{...remote},
+            message:'The device and Firebase values are different.'
+          });
+        }else{
+          verified++;
+        }
       });
+
+      cloudAuditResults=issues;
+      cloudAuditMeta={
+        ...cloudAuditMeta,checkedAt:Date.now(),hours,
+        candidateCount:candidates.length,checkedCount:candidates.length,
+        verifiedCount:verified,missingCount:missing,mismatchCount:mismatch,
+        limited:recentCloudCandidates(hours).length>100,
+        status:issues.length?'partial':'success',message:''
+      };
+      saveCloudAuditMeta();saveCloudAuditResults();
+      if(!issues.length)markServerVerified();
+      if(!silent)toast(issues.length?`${issues.length} problem${issues.length===1?'':'s'} found.`:`${verified} recent records matched Firebase.`);
+      return issues.length===0;
+    }catch(error){
+      console.error('Recent batch verification failed',error);
+      cloudAuditMeta={...cloudAuditMeta,checkedAt:Date.now(),status:'failed',message:error.message||'Cloud check failed'};
+      saveCloudAuditMeta();
+      if(!silent)localModeToast(error,'Cloud check');
+      return false;
+    }finally{
+      cloudAuditRunning=false;
+      cloudSyncCenterProgress=null;
+      renderRecentCloudAudit();renderCloudSyncCenter();
     }
-
-    cloudAuditResults=results;
-    saveCloudAuditResults();
-
-    cloudAuditMeta={
-      ...cloudAuditMeta,
-      checkedAt:Date.now(),
-      hours,
-      candidateCount:allCandidates.length,
-      checkedCount:checked,
-      verifiedCount:verified,
-      missingCount:missing,
-      mismatchCount:mismatch,
-      limited:allCandidates.length>100,
-      status:(missing||mismatch)?"partial":"success",
-      message:lastError
-    };
-
-    saveCloudAuditMeta();
-    cloudAuditRunning=false;
-    cloudSyncCenterProgress=null;
-    renderRecentCloudAudit();
-    renderCloudSyncCenter();
-
-    if(!missing&&!mismatch){
-      markServerVerified();
-      if(!silent){
-        toast(`${verified} recent record${verified===1?"":"s"} verified in Firebase.`);
-      }
-    }else if(!silent){
-      toast(`${missing} missing · ${mismatch} different. Open Need attention.`);
-    }
-
-    return !missing&&!mismatch;
   }
 
   function loadWeeklyBackupMeta(){
@@ -5276,7 +5213,13 @@
       lastAttemptAt:errorMessage?Date.now():(existing?.lastAttemptAt||0),
       lastError:errorMessage||existing?.lastError||""
     });
+    saveCloudBatchSyncState({
+      requested:true,
+      status:errorMessage?'paused':'waiting',
+      lastError:errorMessage||cloudBatchSyncState.lastError||''
+    });
     savePendingCloudSaves();
+    scheduleCloudAutoResume();
   }
   function restorePendingCloudSaveEntry(entry){
     if(!entry?.id||!entry?.transaction)return;
@@ -6061,6 +6004,7 @@
         cloudUser=user||null;
         if(user){
           startCloudSubscription(user);
+          scheduleCloudAutoResume(1200);
         }else{
           stopCloudSubscription();
           cloudTrash=[];
@@ -9664,195 +9608,288 @@
     }
   }
 
-  async function syncCloudRecordById(id,{showToast=true}={}){
+  function replaceCloudIssue(result){
+    const id=String(result.id);
+    cloudAuditResults=cloudAuditResults.filter(item=>String(item.id)!==id);
+    cloudAuditResults.push({...result,id});
+    saveCloudAuditResults();
+  }
+
+  function removeCloudIssue(id){
     const key=String(id);
-    let pending=pendingCloudSaves.get(key);
+    const before=cloudAuditResults.length;
+    cloudAuditResults=cloudAuditResults.filter(item=>String(item.id)!==key);
+    if(cloudAuditResults.length!==before)saveCloudAuditResults();
+  }
 
-    if(!pending){
-      const audit=cloudAuditResults.find(
-        item=>String(item.id)===key&&
-        (item.status==="missing"||item.status==="different")
+  function clearPendingCloudSaveBatch(ids){
+    let newRecords=0;
+    ids.forEach(id=>{
+      const entry=pendingCloudSaves.get(String(id));
+      if(entry?.isNew)newRecords++;
+      pendingCloudSaves.delete(String(id));
+      pendingSaveOperations.delete(String(id));
+      removeCloudIssue(id);
+    });
+    savePendingCloudSaves();
+    if(newRecords)setCloudRecordCount(cloudRemoteRecordCount+newRecords);
+  }
+
+  function updateStateFromVerifiedBatch(entries,remoteRecords){
+    const byId=new Map(state.transactions.map(item=>[String(item.id),item]));
+    entries.forEach(entry=>{
+      const id=String(entry.id);
+      const remote=remoteRecords[id];
+      if(!remote)return;
+      const local=entry.transaction;
+      byId.set(id,{
+        ...remote,
+        createdAt:Number(local.createdAt)||Number(remote.createdAt)||Date.now(),
+        updatedAtLocal:Number(local.updatedAtLocal)||Date.now()
+      });
+    });
+    state.transactions=[...byId.values()];
+    saveLocalMirror();
+  }
+
+  function isGlobalSyncFailure(error){
+    return /rest-endpoint-unreachable|UNAUTHENTICATED|PERMISSION_DENIED|RESOURCE_EXHAUSTED|UNAVAILABLE|http-429|http-5/i.test(
+      `${error?.code||''} ${error?.message||''}`
+    );
+  }
+
+  async function uploadPendingBatch(entries){
+    if(!entries.length)return {completed:0,issues:[],paused:false};
+
+    const valid=[];
+    const issues=[];
+    entries.forEach(entry=>{
+      const message=validatePendingTransaction(entry.transaction);
+      if(message){
+        issues.push({
+          id:String(entry.id),status:'invalid',transaction:{...entry.transaction},message
+        });
+      }else valid.push(entry);
+    });
+
+    issues.forEach(replaceCloudIssue);
+    if(!valid.length)return {completed:0,issues,paused:false};
+
+    try{
+      await withTimeout(
+        cloudApi.saveTransactionsBatch(cloudUser.uid,valid),
+        90000
       );
-      const transaction=audit?.transaction||
-        state.transactions.find(item=>String(item.id)===key);
+      const verification=await withTimeout(
+        cloudApi.verifyTransactionsBatch(
+          cloudUser.uid,
+          valid.map(entry=>entry.id)
+        ),
+        90000
+      );
 
-      if(!transaction){
-        if(showToast)toast("The local record could not be found.");
-        return false;
+      const completedIds=[];
+      valid.forEach(entry=>{
+        const id=String(entry.id);
+        const remote=verification?.records?.[id]||null;
+        if(!remote){
+          const issue={
+            id,status:'missing',transaction:{...entry.transaction},
+            message:'Firebase did not return this record after the batch upload.'
+          };
+          issues.push(issue);replaceCloudIssue(issue);
+        }else if(!cloudTransactionMatches(entry.transaction,remote)){
+          const issue={
+            id,status:'different',transaction:{...entry.transaction},
+            remote:{...remote},message:'The uploaded Firebase copy differs from this device.'
+          };
+          issues.push(issue);replaceCloudIssue(issue);
+        }else{
+          completedIds.push(id);
+        }
+      });
+
+      updateStateFromVerifiedBatch(valid,verification?.records||{});
+      clearPendingCloudSaveBatch(completedIds);
+      markServerVerified();
+      return {completed:completedIds.length,issues,paused:false};
+    }catch(error){
+      console.error('Cloud batch upload failed',error);
+      if(isGlobalSyncFailure(error)){
+        return {completed:0,issues,paused:true,error};
       }
 
-      queuePendingCloudSave(transaction,null);
-      pending=pendingCloudSaves.get(key);
-    }
+      if(valid.length>1){
+        const middle=Math.ceil(valid.length/2);
+        const left=await uploadPendingBatch(valid.slice(0,middle));
+        if(left.paused)return left;
+        const right=await uploadPendingBatch(valid.slice(middle));
+        return {
+          completed:left.completed+right.completed,
+          issues:[...issues,...left.issues,...right.issues],
+          paused:right.paused,
+          error:right.error
+        };
+      }
 
-    const success=await syncOnePendingCloudSave(
-      key,
-      {showToast:false}
-    );
-
-    if(success){
-      const index=cloudAuditResults.findIndex(
-        item=>String(item.id)===key
-      );
-      const transaction=state.transactions.find(
-        item=>String(item.id)===key
-      )||pending?.transaction;
-
-      const verifiedResult={
-        id:key,
-        status:"verified",
-        checkedAt:Date.now(),
-        transaction:{...transaction}
+      const entry=valid[0];
+      const issue={
+        id:String(entry.id),status:'failed',transaction:{...entry.transaction},
+        message:error.message||'Upload failed for this record.'
       };
+      replaceCloudIssue(issue);
+      return {completed:0,issues:[...issues,issue],paused:false};
+    }
+  }
 
-      if(index>=0)cloudAuditResults[index]=verifiedResult;
-      else cloudAuditResults.unshift(verifiedResult);
-
-      saveCloudAuditResults();
-      if(showToast)toast("Record uploaded and verified in Firebase.");
-    }else if(showToast){
-      toast("Upload did not finish. The record remains safe on this device.");
+  async function syncCloudRecordById(id,{showToast=true}={}){
+    const key=String(id);
+    let entry=pendingCloudSaves.get(key);
+    if(!entry){
+      const issue=cloudAuditResults.find(item=>String(item.id)===key);
+      const transaction=issue?.transaction||state.transactions.find(item=>String(item.id)===key);
+      if(!transaction){
+        if(showToast)toast('The local record could not be found.');
+        return false;
+      }
+      queuePendingCloudSave(transaction,null);
+      entry=pendingCloudSaves.get(key);
     }
 
-    renderCloudSyncCenter();
+    const result=await uploadPendingBatch([entry]);
+    renderAll();renderCloudPanel();renderCloudSyncCenter();
+    const success=result.completed===1&&!result.issues.length;
+    if(showToast)toast(success?'Record uploaded and verified.':'The record still needs attention.');
     return success;
   }
 
-  async function syncAllCloudChanges(){
+  async function useCloudRecordVersion(id){
+    const key=String(id);
+    const issue=cloudAuditResults.find(item=>String(item.id)===key);
+    if(!issue?.remote){toast('The Firebase version is not available.');return;}
+
+    const index=state.transactions.findIndex(item=>String(item.id)===key);
+    if(index>=0)state.transactions[index]={
+      ...issue.remote,
+      createdAt:Number(issue.remote.createdAt)||Number(issue.transaction?.createdAt)||Date.now(),
+      updatedAtLocal:Date.now()
+    };
+    else state.transactions.push({...issue.remote,updatedAtLocal:Date.now()});
+
+    pendingCloudSaves.delete(key);
+    savePendingCloudSaves();
+    removeCloudIssue(key);
+    saveLocalMirror();renderAll();renderCloudSyncCenter();
+    toast('Firebase version kept on this device.');
+  }
+
+  function scheduleCloudAutoResume(delay=CLOUD_AUTO_RESUME_DELAY_MS){
+    clearTimeout(cloudAutoResumeTimer);
+    // Automatic retry is only for an interrupted or newly queued sync.
+    // Data conflicts and invalid records wait for the user's decision.
+    if(!cloudBatchSyncState.requested)return;
+    cloudAutoResumeTimer=setTimeout(()=>{
+      if(!cloudUser||!cloudApi?.configured||!navigator.onLine||document.visibilityState==='hidden')return;
+      syncAllCloudChanges({manual:false});
+    },delay);
+  }
+
+  async function syncAllCloudChanges({manual=true}={}){
     if(cloudSyncCenterRunning||cloudAuditRunning)return;
     if(!cloudApi?.configured||!cloudUser){
-      toast("Sign in before syncing.");
+      if(manual)toast('Sign in before syncing.');
       return;
     }
     if(!navigator.onLine){
-      toast("No network. Everything remains saved on this device.");
+      saveCloudBatchSyncState({requested:true,status:'paused',lastError:'No network. Sync will resume automatically.'});
+      if(manual)toast('No network. Sync will resume automatically.');
       return;
     }
 
     cloudSyncCenterRunning=true;
-
-    const attention=cloudAuditResults.filter(
-      item=>item.status==="missing"||item.status==="different"
-    );
-
-    attention.forEach(item=>{
-      if(!pendingCloudSaves.has(String(item.id))){
-        queuePendingCloudSave(item.transaction,null);
-      }
+    const initialRecordCount=pendingCloudSaves.size;
+    const initialTotal=initialRecordCount+pendingCloudDeletes.size+(pendingCloudSettings?1:0);
+    saveCloudBatchSyncState({
+      requested:true,status:'running',initialTotal,completed:0,
+      startedAt:cloudBatchSyncState.startedAt||Date.now(),lastError:''
     });
 
-    const recordIds=[...pendingCloudSaves.keys()];
-    const total=
-      recordIds.length+
-      (pendingCloudSettings?1:0)+
-      pendingCloudDeletes.size+
-      1;
+    let completed=0;
+    let paused=false;
+    let pauseError=null;
 
-    let done=0;
-    let failed=false;
-
-    setCloudSyncCenterProgress(
-      "Uploading device records",
-      done,
-      total,
-      recordIds.length
-        ?`0 of ${recordIds.length} records`
-        :"No record uploads are waiting"
-    );
-
-    for(let index=0;index<recordIds.length;index++){
-      const id=recordIds[index];
-      const success=await syncCloudRecordById(
-        id,
-        {showToast:false}
-      );
-
-      if(!success){
-        failed=true;
-        break;
-      }
-
-      done++;
-      setCloudSyncCenterProgress(
-        "Uploading device records",
-        done,
-        total,
-        `${index+1} of ${recordIds.length} records uploaded and verified`
-      );
-    }
-
-    if(!failed&&pendingCloudSettings){
-      setCloudSyncCenterProgress(
-        "Uploading settings",
-        done,
-        total,
-        "Categories, budget and App preferences"
-      );
-      const success=await syncOnePendingCloudSettings(
-        {showToast:false}
-      );
-      if(success)done++;
-      else failed=true;
-    }
-
-    if(!failed&&pendingCloudDeletes.size){
-      const deleteIds=[...pendingCloudDeletes.keys()];
-
-      for(let index=0;index<deleteIds.length;index++){
+    try{
+      while(pendingCloudSaves.size){
+        const batch=[...pendingCloudSaves.values()].slice(0,CLOUD_BATCH_SIZE);
         setCloudSyncCenterProgress(
-          "Cleaning cloud deletions",
-          done,
-          total,
-          `${index+1} of ${deleteIds.length} deletions`
+          'Uploading records in batches',completed,initialTotal,
+          `${batch.length} records in the current batch · ${pendingCloudSaves.size} still waiting`
         );
+        const result=await uploadPendingBatch(batch);
+        completed+=result.completed;
+        if(result.paused){paused=true;pauseError=result.error;break;}
 
-        const success=await syncOnePendingCloudDelete(
-          deleteIds[index],
-          {showToast:false}
-        );
-
-        if(!success){
-          failed=true;
-          break;
-        }
-        done++;
+        saveCloudBatchSyncState({completed});
+        await new Promise(resolve=>setTimeout(resolve,30));
       }
+
+      if(!paused&&pendingCloudSettings){
+        setCloudSyncCenterProgress('Uploading settings',completed,initialTotal,'Categories, budget and appearance');
+        const ok=await syncOnePendingCloudSettings({showToast:false});
+        if(ok)completed++;
+        else{paused=true;pauseError=new Error('Settings upload did not finish.');}
+      }
+
+      if(!paused&&pendingCloudDeletes.size){
+        const ids=[...pendingCloudDeletes.keys()];
+        for(const id of ids){
+          setCloudSyncCenterProgress('Cleaning cloud deletions',completed,initialTotal,`${pendingCloudDeletes.size} deletion${pendingCloudDeletes.size===1?'':'s'} waiting`);
+          const ok=await syncOnePendingCloudDelete(id,{showToast:false});
+          if(!ok){paused=true;pauseError=new Error('Cloud deletion cleanup did not finish.');break;}
+          completed++;
+        }
+      }
+
+      if(!paused&&manual&&!pendingCloudSaves.size){
+        setCloudSyncCenterProgress('Checking recent cloud copies',completed,Math.max(initialTotal,completed+1),'Only problems will be displayed.');
+        await verifyRecentCloudRecords(24,{silent:true});
+      }
+    }finally{
+      cloudSyncCenterRunning=false;
+      cloudSyncCenterProgress=null;
     }
 
-    if(!failed){
-      setCloudSyncCenterProgress(
-        "Confirming recent records",
-        done,
-        total,
-        "Reading recent records back from Firebase"
-      );
-      await verifyRecentCloudRecords(
-        24,
-        {silent:true}
-      );
-      done=total;
-    }
+    const issues=currentCloudIssueResults();
+    const remaining=pendingCloudSaves.size+pendingCloudDeletes.size+(pendingCloudSettings?1:0);
 
-    cloudSyncCenterRunning=false;
-    cloudSyncCenterProgress=null;
-    renderCloudPanel();
-    renderCloudSyncCenter();
-
-    const attentionLeft=cloudAuditResults.filter(
-      item=>item.status==="missing"||item.status==="different"
-    ).length;
-
-    const remaining=
-      pendingCloudSaves.size+
-      pendingCloudDeletes.size+
-      (pendingCloudSettings?1:0)+
-      attentionLeft;
-
-    if(!remaining&&!failed){
-      toast("Success · all checked changes are synced.");
+    if(paused){
+      saveCloudBatchSyncState({
+        requested:true,status:'paused',completed,
+        lastError:pauseError?.message||'Sync was interrupted and will resume automatically.'
+      });
+      setLocalMode(pauseError?.message||'Sync paused');
+      if(manual)toast('Sync paused. Completed batches are safe; the rest will resume automatically.');
+    }else if(issues.length){
+      saveCloudBatchSyncState({
+        requested:false,status:'issues',completed,
+        completedAt:Date.now(),lastError:''
+      });
+      if(manual)toast(`${issues.length} problem${issues.length===1?'':'s'} need your decision.`);
+    }else if(!remaining){
+      saveCloudBatchSyncState({
+        requested:false,status:'success',completed,
+        completedAt:Date.now(),lastError:''
+      });
+      if(manual)toast('All changes synced.');
     }else{
-      toast(`${remaining} item${remaining===1?" remains":"s remain"} on this device or need attention.`);
+      saveCloudBatchSyncState({
+        requested:true,status:'paused',completed,
+        lastError:'Some non-record changes remain and will be retried.'
+      });
     }
+
+    saveLocalMirror();renderAll();renderCloudPanel();renderCloudSyncCenter();
+    if(cloudBatchSyncState.requested)scheduleCloudAutoResume(5000);
   }
 
   async function retryPendingCloudSaves(){
@@ -10534,21 +10571,34 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("cloudResetPassword").addEventListener("click",()=>cloudAuthAction("reset"));
   $("cloudSyncAllNow").addEventListener(
     "click",
-    syncAllCloudChanges
+    ()=>syncAllCloudChanges({manual:true})
   );
 
   $("cloudSyncCenter").addEventListener("click",async event=>{
-    const button=event.target.closest("[data-cloud-upload-id]");
-    if(!button)return;
+    const retry=event.target.closest("[data-cloud-retry-id]");
+    const useDevice=event.target.closest("[data-cloud-use-device-id]");
+    const useRemote=event.target.closest("[data-cloud-use-remote-id]");
+    const edit=event.target.closest("[data-cloud-edit-id]");
 
-    const id=button.dataset.cloudUploadId;
-    button.disabled=true;
-    button.textContent="Uploading…";
+    if(retry||useDevice){
+      const button=retry||useDevice;
+      const id=button.dataset.cloudRetryId||button.dataset.cloudUseDeviceId;
+      button.disabled=true;
+      button.textContent="Uploading…";
+      await syncCloudRecordById(id,{showToast:true});
+      return;
+    }
 
-    await syncCloudRecordById(
-      id,
-      {showToast:true}
-    );
+    if(useRemote){
+      await useCloudRecordVersion(useRemote.dataset.cloudUseRemoteId);
+      return;
+    }
+
+    if(edit){
+      const id=edit.dataset.cloudEditId;
+      setView('records');
+      setTimeout(()=>openModal(null,id),80);
+    }
   });
 
   $("cloudSignOut").addEventListener("click",async()=>{
@@ -10994,15 +11044,20 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="hidden"){
       lockIncomePrivacy();
+      // Do not cancel an in-flight batch. iOS may allow it to finish.
       return;
     }
     scheduleWeeklyBackupCheck(3000);
+    scheduleCloudAutoResume(500);
   });
 
   window.addEventListener("online",()=>{
     if(cloudUser&&cloudStatus!=="error")setLocalMode("Network available");
     scheduleWeeklyBackupCheck(3000);
+    scheduleCloudAutoResume(500);
   });
+  window.addEventListener("pageshow",()=>scheduleCloudAutoResume(700));
+  window.addEventListener("focus",()=>scheduleCloudAutoResume(700));
   window.addEventListener("offline",()=>{
     if(cloudUser)setLocalMode("Offline · local records remain available");
     else setCloudStatus("signedout");
