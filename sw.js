@@ -1,10 +1,10 @@
-const CACHE_NAME = "daily-budget-cloud-v53-status-trends-quick-add-20260731";
+const CACHE_NAME = "daily-budget-cloud-v55-clear-sync-center-20260731";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./firebase-config.js?v=53",
-  "./firebase-cloud-v52.js?v=53",
+  "./firebase-config.js?v=55",
+  "./firebase-cloud-v55.js?v=55",
   "./icon-192.png",
   "./icon-512.png"
 ];
