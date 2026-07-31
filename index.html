@@ -2539,12 +2539,8 @@
     .records-sort-control{flex:0 0 130px;display:block}
     .records-sort-control span{display:block;margin-bottom:3px;color:var(--muted);font-size:7px;font-weight:800}
     .records-sort-control select{width:100%;height:30px;border:1px solid rgba(60,65,73,.10);border-radius:9px;background:var(--field-bg);padding:0 7px;font-size:8px;color:var(--ink)}
-    #recordsTrendChart{display:block;width:100%;height:180px;margin-top:5px;background:var(--card)}
+    #recordsTrendChart{display:block;width:100%;height:196px;margin-top:7px;background:var(--card)}
     .records-trend-locked{display:flex;align-items:center;justify-content:center;min-height:118px;margin-top:8px;border-radius:12px;background:var(--field-bg);color:var(--muted);font-size:9px;font-weight:750;text-align:center}
-    .records-trend-value-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:3px}
-    .records-trend-value{min-width:0;padding:5px 4px;border-radius:8px;background:var(--field-bg);text-align:center}
-    .records-trend-value small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:6px}
-    .records-trend-value strong{display:block;overflow:hidden;margin-top:2px;text-overflow:ellipsis;white-space:nowrap;font-size:7px}
 
     .txn-sticky-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     .txn-save-another-button{min-width:0;padding-left:7px!important;padding-right:7px!important;font-size:9px!important}
@@ -2557,7 +2553,6 @@
     .appearance-check{align-self:center!important}
     @media(max-width:360px){
       .records-sort-control{flex-basis:118px}
-      .records-trend-value-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
       .appearance-choices{grid-template-columns:1fr!important}
     }
 
@@ -2987,7 +2982,6 @@
         </div>
         <div id="recordsTrendLocked" class="records-trend-locked hidden" data-income-unlock="true">Unlock income to view this trend.</div>
         <canvas id="recordsTrendChart" aria-label="Filtered records trend chart"></canvas>
-        <div id="recordsTrendValueGrid" class="records-trend-value-grid"></div>
       </div>
 
       <div id="recordsList" class="list records-page-list"></div>
@@ -3523,7 +3517,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 56 adds no-cost 50-record batch sync, checkpoint resume, automatic foreground recovery and problem-only results.</p>
+            Version 57 simplifies the Records trend chart and adds complete, edge-safe date labels.</p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
       </details>
@@ -3815,8 +3809,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=56"></script>
-<script src="firebase-cloud-v56.js?v=56"></script>
+<script src="firebase-config.js?v=57"></script>
+<script src="firebase-cloud-v57.js?v=57"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -8423,53 +8417,204 @@
     return {keys,labels,expense,income,bucket,first,last};
   }
 
+  function recordsTrendAxisLabelLines(data){
+    const crossesYear=data.first.slice(0,4)!==data.last.slice(0,4);
+
+    return data.keys.map(key=>{
+      if(data.bucket==="year"){
+        return [String(key)];
+      }
+
+      if(data.bucket==="month"){
+        const date=dateFromKey(`${key}-01`);
+        return [
+          new Intl.DateTimeFormat("en-US",{month:"short"}).format(date),
+          String(date.getFullYear())
+        ];
+      }
+
+      const date=dateFromKey(key);
+      const lines=[
+        new Intl.DateTimeFormat("en-US",{
+          month:"short",
+          day:"numeric"
+        }).format(date)
+      ];
+
+      if(crossesYear){
+        lines.push(String(date.getFullYear()));
+      }
+      return lines;
+    });
+  }
+
+  function chartLabelIndexes(length,maxCount=5){
+    if(length<=0)return [];
+    if(length<=maxCount){
+      return Array.from({length},(_,index)=>index);
+    }
+
+    return [...new Set(
+      Array.from(
+        {length:maxCount},
+        (_,index)=>Math.round(
+          index*(length-1)/(maxCount-1)
+        )
+      )
+    )];
+  }
+
+  function drawChartXAxisLabels(
+    ctx,
+    labels,
+    {
+      left,
+      right,
+      width,
+      height,
+      bottom,
+      labelLines=null,
+      maxLabels=6,
+      font="9px Arial",
+      color="#8A8D94"
+    }
+  ){
+    const indexes=chartLabelIndexes(labels.length,maxLabels);
+    const lastIndex=labels.length-1;
+
+    ctx.fillStyle=color;
+    ctx.font=font;
+
+    indexes.forEach(index=>{
+      const x=left+
+        (width-left-right)*
+        (labels.length===1?0:index/lastIndex);
+
+      if(index===0){
+        ctx.textAlign="left";
+      }else if(index===lastIndex){
+        ctx.textAlign="right";
+      }else{
+        ctx.textAlign="center";
+      }
+
+      const lines=Array.isArray(labelLines?.[index])
+        ?labelLines[index]
+        :[String(labels[index])];
+
+      const baseY=height-bottom+15;
+      lines.slice(0,2).forEach((line,lineIndex)=>{
+        ctx.fillText(
+          String(line),
+          index===0?left:index===lastIndex?width-right:x,
+          baseY+lineIndex*10
+        );
+      });
+    });
+
+    ctx.textAlign="start";
+  }
+
   function renderRecordsTrend(list){
     const data=recordTrendData(list);
     const type=$("filterType").value;
     const chart=$("recordsTrendChart");
     const locked=$("recordsTrendLocked");
-    const grid=$("recordsTrendValueGrid");
     const title=$("recordsTrendTitle");
     const subtitle=$("recordsTrendSubtitle");
 
     if(!data){
-      title.textContent="Filtered trend";subtitle.textContent="No matching records to chart.";
-      chart.classList.add("hidden");locked.classList.add("hidden");grid.innerHTML="";return;
+      title.textContent="Filtered trend";
+      subtitle.textContent="No matching records to chart.";
+      chart.classList.add("hidden");
+      locked.classList.add("hidden");
+      return;
     }
 
     const incomeOnly=type==="income";
     if(incomeOnly&&incomePrivacyLocked()){
-      title.textContent="Income trend";subtitle.textContent="The trend is protected by your income PIN.";
-      chart.classList.add("hidden");locked.classList.remove("hidden");grid.innerHTML="";return;
+      title.textContent="Income trend";
+      subtitle.textContent="The trend is protected by your income PIN.";
+      chart.classList.add("hidden");
+      locked.classList.remove("hidden");
+      return;
     }
 
-    chart.classList.remove("hidden");locked.classList.add("hidden");
-    const unit=data.bucket==="day"?"Daily":data.bucket==="month"?"Monthly":"Yearly";
+    chart.classList.remove("hidden");
+    locked.classList.add("hidden");
+
+    const unit=data.bucket==="day"
+      ?"Daily"
+      :data.bucket==="month"
+        ?"Monthly"
+        :"Yearly";
     const expenseColor=themeCssColor("--chart-expense","#C79A27");
     const incomeColor=themeCssColor("--chart-income","#4F9874");
+    const axisOptions={
+      height:220,
+      bottom:data.bucket==="year"?38:50,
+      xAxisLabelLines:recordsTrendAxisLabelLines(data),
+      maxXAxisLabels:data.bucket==="year"?6:5,
+      showPointValues:data.labels.length<=12
+    };
+
+    chart.dataset.trendBucket=data.bucket;
+    chart.dataset.axisLabels=JSON.stringify(
+      axisOptions.xAxisLabelLines
+    );
+    chart.dataset.axisIndexes=JSON.stringify(
+      chartLabelIndexes(
+        data.labels.length,
+        axisOptions.maxXAxisLabels
+      )
+    );
 
     if(type==="expense"){
-      title.textContent="Expense trend";subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
-      drawSingleLine("recordsTrendChart",data.labels,data.expense,expenseColor,data.labels.length<=12);
+      title.textContent="Expense trend";
+      subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
+      drawSingleLine(
+        "recordsTrendChart",
+        data.labels,
+        data.expense,
+        expenseColor,
+        axisOptions
+      );
     }else if(type==="income"){
-      title.textContent="Income trend";subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
-      drawSingleLine("recordsTrendChart",data.labels,data.income,incomeColor,data.labels.length<=12);
+      title.textContent="Income trend";
+      subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
+      drawSingleLine(
+        "recordsTrendChart",
+        data.labels,
+        data.income,
+        incomeColor,
+        axisOptions
+      );
     }else if(incomePrivacyLocked()){
-      title.textContent="Expense trend · income locked";subtitle.textContent=`${unit} expense totals · unlock income to include the income line`;
-      drawSingleLine("recordsTrendChart",data.labels,data.expense,expenseColor,data.labels.length<=12);
+      title.textContent="Expense trend · income locked";
+      subtitle.textContent=`${unit} expense totals · unlock income to include the income line`;
+      drawSingleLine(
+        "recordsTrendChart",
+        data.labels,
+        data.expense,
+        expenseColor,
+        axisOptions
+      );
     }else{
-      title.textContent="Income and expense trend";subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
-      drawDualLineChart("recordsTrendChart",data.labels,data.expense,data.income,{primaryColor:expenseColor,secondaryColor:incomeColor});
+      title.textContent="Income and expense trend";
+      subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
+      drawDualLineChart(
+        "recordsTrendChart",
+        data.labels,
+        data.expense,
+        data.income,
+        {
+          primaryColor:expenseColor,
+          secondaryColor:incomeColor,
+          hitAreas:false,
+          ...axisOptions
+        }
+      );
     }
-
-    const maxCells=12;
-    const indexes=data.labels.length<=maxCells
-      ?data.labels.map((_,index)=>index)
-      :Array.from({length:maxCells},(_,index)=>Math.round(index*(data.labels.length-1)/(maxCells-1)));
-    grid.innerHTML=[...new Set(indexes)].map(index=>{
-      const value=type==="income"?data.income[index]:type==="expense"?data.expense[index]:data.expense[index]+data.income[index];
-      return `<div class="records-trend-value"><small>${escapeHtml(data.labels[index])}</small><strong>${type==="income"&&incomePrivacyLocked()?maskedMoney():money(value)}</strong></div>`;
-    }).join("");
   }
 
   function renderRecords({
@@ -8927,43 +9072,120 @@
     analysisRenderDirty=false;
   }
 
-  function canvasContext(id){
+  function canvasContext(id,height=210){
     const canvas=$(id),rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
-    canvas.width=Math.max(320,rect.width*ratio);canvas.height=210*ratio;
+    canvas.width=Math.max(320,rect.width*ratio);
+    canvas.height=height*ratio;
     const ctx=canvas.getContext("2d");
-    ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,canvas.width/ratio,canvas.height/ratio);
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.clearRect(0,0,canvas.width/ratio,canvas.height/ratio);
     return {canvas,ctx,w:canvas.width/ratio,h:canvas.height/ratio};
   }
   function compact(v){return v>=10000?(v/10000).toFixed(v>=100000?0:1)+"w":v>=1000?(v/1000).toFixed(1)+"k":Math.round(v);}
   function themeCssColor(variable,fallback){
     return getComputedStyle(document.documentElement).getPropertyValue(variable).trim()||fallback;
   }
-  function drawSingleLine(id,labels,values,color,showPointValues=false){
-    const {ctx,w,h}=canvasContext(id);const left=40,right=12,top=18,bottom=34;const max=Math.max(...values,1);
+  function drawSingleLine(
+    id,
+    labels,
+    values,
+    color,
+    showPointValues=false,
+    options={}
+  ){
+    if(
+      showPointValues&&
+      typeof showPointValues==="object"
+    ){
+      options=showPointValues;
+      showPointValues=Boolean(options.showPointValues);
+    }
+
+    const chartHeight=Number(options.height)||210;
+    const {ctx,w,h}=canvasContext(id,chartHeight);
+    const left=40;
+    const right=12;
+    const top=18;
+    const bottom=Number(options.bottom)||34;
+    const max=Math.max(...values,1);
     const gridColor=themeCssColor("--chart-grid","#ECEDEF");
     const labelColor=themeCssColor("--chart-label","#8A8D94");
     const tooltipBackground=themeCssColor("--card","#FFFFFF");
     const tooltipInk=themeCssColor("--ink","#35383D");
-    ctx.font="10px Arial";ctx.fillStyle=labelColor;ctx.strokeStyle=gridColor;ctx.lineWidth=1;
-    for(let i=0;i<4;i++){
-      const y=top+(h-top-bottom)*i/3;
-      ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
-      ctx.fillText(compact(max*(1-i/3)),2,y+4);
+
+    ctx.font="10px Arial";
+    ctx.fillStyle=labelColor;
+    ctx.strokeStyle=gridColor;
+    ctx.lineWidth=1;
+
+    for(let index=0;index<4;index++){
+      const y=top+(h-top-bottom)*index/3;
+      ctx.beginPath();
+      ctx.moveTo(left,y);
+      ctx.lineTo(w-right,y);
+      ctx.stroke();
+      ctx.fillText(compact(max*(1-index/3)),2,y+4);
     }
-    const points=values.map((v,i)=>({x:left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),y:top+(h-top-bottom)*(1-v/max),value:v}));
-    ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
-    ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.stroke();
-    points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3.1,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.2;ctx.stroke();});
-    const step=Math.max(1,Math.ceil(labels.length/6));ctx.textAlign="center";ctx.fillStyle=labelColor;ctx.font="10px Arial";
-    labels.forEach((lab,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lab,left+(w-left-right)*(labels.length===1?0:i/(labels.length-1)),h-10);});
+
+    const points=values.map((value,index)=>({
+      x:left+
+        (w-left-right)*
+        (labels.length===1?0:index/(labels.length-1)),
+      y:top+(h-top-bottom)*(1-value/max),
+      value
+    }));
+
+    ctx.beginPath();
+    points.forEach((point,index)=>
+      index
+        ?ctx.lineTo(point.x,point.y)
+        :ctx.moveTo(point.x,point.y)
+    );
+    ctx.strokeStyle=color;
+    ctx.lineWidth=2.2;
+    ctx.stroke();
+
+    points.forEach(point=>{
+      ctx.beginPath();
+      ctx.arc(point.x,point.y,3.1,0,Math.PI*2);
+      ctx.fillStyle=color;
+      ctx.fill();
+      ctx.strokeStyle="#fff";
+      ctx.lineWidth=1.2;
+      ctx.stroke();
+    });
+
+    drawChartXAxisLabels(
+      ctx,
+      labels,
+      {
+        left,
+        right,
+        width:w,
+        height:h,
+        bottom,
+        labelLines:options.xAxisLabelLines||null,
+        maxLabels:Number(options.maxXAxisLabels)||6,
+        font:options.xAxisFont||"9px Arial",
+        color:labelColor
+      }
+    );
+
     if(showPointValues){
       ctx.font="9px Arial";
-      points.forEach((p,index)=>{
-        if(!p.value)return;
-        const text=compact(p.value);
+      points.forEach((point,index)=>{
+        if(!point.value)return;
+        const text=compact(point.value);
         const width=ctx.measureText(text).width+8;
-        let x=Math.max(left+width/2,Math.min(w-right-width/2,p.x));
-        let y=Math.max(11,p.y-12-(index%2?8:0));
+        const x=Math.max(
+          left+width/2,
+          Math.min(w-right-width/2,point.x)
+        );
+        const y=Math.max(
+          11,
+          point.y-12-(index%2?8:0)
+        );
+
         ctx.fillStyle=tooltipBackground;
         ctx.beginPath();
         ctx.roundRect(x-width/2,y-10,width,14,6);
@@ -8979,49 +9201,106 @@
     return Math.max(1,...series.flat().filter(value=>Number.isFinite(value)));
   }
 
-  function drawDualLineChart(id,labels,primary,secondary,options={}){
-    const {ctx,w,h}=canvasContext(id);
-    const left=38,right=12,top=18,bottom=28;
+  function drawDualLineChart(
+    id,
+    labels,
+    primary,
+    secondary,
+    options={}
+  ){
+    const chartHeight=Number(options.height)||210;
+    const {ctx,w,h}=canvasContext(id,chartHeight);
+    const left=38;
+    const right=12;
+    const top=18;
+    const bottom=Number(options.bottom)||28;
     const max=chartValueMax([primary,secondary]);
     const gridColor=themeCssColor("--chart-grid","#ECEDEF");
     const labelColor=themeCssColor("--chart-label","#8A8D94");
-    const primaryColor=options.primaryColor||themeCssColor("--chart-expense","#C79A27");
-    const secondaryColor=options.secondaryColor||themeCssColor("--chart-label","#8A8D94");
-    ctx.font="9px Arial";ctx.fillStyle=labelColor;ctx.strokeStyle=gridColor;ctx.lineWidth=1;
+    const primaryColor=options.primaryColor||
+      themeCssColor("--chart-expense","#C79A27");
+    const secondaryColor=options.secondaryColor||
+      themeCssColor("--chart-label","#8A8D94");
+
+    ctx.font="9px Arial";
+    ctx.fillStyle=labelColor;
+    ctx.strokeStyle=gridColor;
+    ctx.lineWidth=1;
+
     for(let index=0;index<4;index++){
       const y=top+(h-top-bottom)*index/3;
-      ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(left,y);
+      ctx.lineTo(w-right,y);
+      ctx.stroke();
       ctx.fillText(compact(max*(1-index/3)),2,y+3);
     }
+
     const point=(value,index)=>({
-      x:left+(w-left-right)*(labels.length===1?0:index/(labels.length-1)),
+      x:left+
+        (w-left-right)*
+        (labels.length===1?0:index/(labels.length-1)),
       y:top+(h-top-bottom)*(1-value/max)
     });
-    const draw=(values,color,dashed=false)=>{
-      ctx.save();ctx.strokeStyle=color;ctx.lineWidth=dashed?1.5:2.3;ctx.setLineDash(dashed?[5,4]:[]);
-      ctx.beginPath();let started=false;
+
+    const draw=(values,lineColor,dashed=false)=>{
+      ctx.save();
+      ctx.strokeStyle=lineColor;
+      ctx.lineWidth=dashed?1.5:2.3;
+      ctx.setLineDash(dashed?[5,4]:[]);
+      ctx.beginPath();
+
+      let started=false;
       values.forEach((value,index)=>{
-        if(!Number.isFinite(value)){started=false;return;}
-        const p=point(value,index);
-        if(!started){ctx.moveTo(p.x,p.y);started=true;}else ctx.lineTo(p.x,p.y);
+        if(!Number.isFinite(value)){
+          started=false;
+          return;
+        }
+        const current=point(value,index);
+        if(!started){
+          ctx.moveTo(current.x,current.y);
+          started=true;
+        }else{
+          ctx.lineTo(current.x,current.y);
+        }
       });
-      ctx.stroke();ctx.restore();
+
+      ctx.stroke();
+      ctx.restore();
     };
-    draw(secondary,secondaryColor,options.secondaryDashed!==false);
+
+    draw(
+      secondary,
+      secondaryColor,
+      options.secondaryDashed!==false
+    );
     draw(primary,primaryColor,false);
-    const step=Math.max(1,Math.ceil(labels.length/6));
-    ctx.fillStyle=labelColor;ctx.textAlign="center";ctx.font="9px Arial";
-    labels.forEach((label,index)=>{
-      if(index%step===0||index===labels.length-1){
-        ctx.fillText(label,left+(w-left-right)*(labels.length===1?0:index/(labels.length-1)),h-8);
+
+    drawChartXAxisLabels(
+      ctx,
+      labels,
+      {
+        left,
+        right,
+        width:w,
+        height:h,
+        bottom,
+        labelLines:options.xAxisLabelLines||null,
+        maxLabels:Number(options.maxXAxisLabels)||6,
+        font:options.xAxisFont||"9px Arial",
+        color:labelColor
       }
-    });
-    ctx.textAlign="start";
+    );
+
     if(options.hitAreas!==false){
       analysisChartHitAreas=labels.map((label,index)=>({
-        index,label,
-        x:left+(w-left-right)*(labels.length===1?0:index/(labels.length-1)),
-        primary:primary[index],secondary:secondary[index]
+        index,
+        label,
+        x:left+
+          (w-left-right)*
+          (labels.length===1?0:index/(labels.length-1)),
+        primary:primary[index],
+        secondary:secondary[index]
       }));
     }
   }
