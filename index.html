@@ -2514,6 +2514,53 @@
       }
     }
 
+
+    /* V53 — precise cloud status, filtered Records trend and compact palettes */
+    .cloud-recent-audit{
+      display:grid;gap:7px;margin-top:9px;padding:10px;
+      border:1px solid rgba(68,94,122,.12);border-radius:13px;background:var(--field-bg)
+    }
+    .cloud-recent-audit small{display:block;color:var(--muted);font-size:7px}
+    .cloud-recent-audit strong{display:block;margin-top:3px;font-size:10px}
+    .cloud-recent-audit span{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}
+    .cloud-recent-audit-progress,.weekly-cloud-run-progress{height:5px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--chart-grid) 70%,transparent)}
+    .cloud-recent-audit-progress i,.weekly-cloud-run-progress i{display:block;width:0;height:100%;border-radius:inherit;background:var(--yellow-2);transition:width .18s ease}
+
+    .weekly-cloud-status-cell span{display:block;margin-top:3px;color:var(--muted);font-size:7px}
+    .weekly-cloud-run-status{margin-top:9px;padding:9px 10px;border:1px solid rgba(55,64,78,.09);border-radius:12px;background:var(--card)}
+    .weekly-cloud-run-copy strong{display:block;font-size:9px}
+    .weekly-cloud-run-copy small{display:block;margin-top:3px;color:var(--muted);font-size:7px;line-height:1.4}
+    .weekly-cloud-run-progress{margin-top:7px}
+
+    .records-trend-panel{margin-top:8px;padding:10px 10px 8px;overflow:hidden}
+    .records-trend-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+    .records-trend-head h2{margin:0;font-size:11px}
+    .records-trend-head small{display:block;margin-top:3px;color:var(--muted);font-size:7px;line-height:1.35}
+    .records-sort-control{flex:0 0 130px;display:block}
+    .records-sort-control span{display:block;margin-bottom:3px;color:var(--muted);font-size:7px;font-weight:800}
+    .records-sort-control select{width:100%;height:30px;border:1px solid rgba(60,65,73,.10);border-radius:9px;background:var(--field-bg);padding:0 7px;font-size:8px;color:var(--ink)}
+    #recordsTrendChart{display:block;width:100%;height:180px;margin-top:5px;background:var(--card)}
+    .records-trend-locked{display:flex;align-items:center;justify-content:center;min-height:118px;margin-top:8px;border-radius:12px;background:var(--field-bg);color:var(--muted);font-size:9px;font-weight:750;text-align:center}
+    .records-trend-value-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:3px}
+    .records-trend-value{min-width:0;padding:5px 4px;border-radius:8px;background:var(--field-bg);text-align:center}
+    .records-trend-value small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:6px}
+    .records-trend-value strong{display:block;overflow:hidden;margin-top:2px;text-overflow:ellipsis;white-space:nowrap;font-size:7px}
+
+    .txn-sticky-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    .txn-save-another-button{min-width:0;padding-left:7px!important;padding-right:7px!important;font-size:9px!important}
+
+    .appearance-choices{grid-template-columns:1fr 1fr!important;gap:8px!important}
+    .appearance-choice{min-height:58px!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) 16px!important;align-items:center!important;gap:8px!important;padding:8px 9px!important;border-radius:14px!important;overflow:visible!important}
+    .appearance-color-strip{display:flex;align-items:center;gap:3px;width:42px;height:28px;padding:4px;border:1px solid rgba(0,0,0,.07);border-radius:9px;background:var(--preview-card)}
+    .appearance-color-strip i{display:block;flex:1;height:100%;border-radius:5px;border:1px solid rgba(0,0,0,.05)}
+    .appearance-choice-copy small{font-size:7px!important}
+    .appearance-check{align-self:center!important}
+    @media(max-width:360px){
+      .records-sort-control{flex-basis:118px}
+      .records-trend-value-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .appearance-choices{grid-template-columns:1fr!important}
+    }
+
 </style>
 </head>
 <body>
@@ -2647,6 +2694,27 @@
         <span class="record-summary-item">Records <strong id="recordCount">0</strong></span>
         <span class="record-summary-item income-unlock-target" data-income-unlock="true">Income <strong id="recordIncome">¥••••</strong></span>
         <span class="record-summary-item">Expense <strong id="recordExpense">¥0.00</strong></span>
+      </div>
+
+      <div id="recordsTrendPanel" class="panel records-trend-panel">
+        <div class="records-trend-head">
+          <div>
+            <h2 id="recordsTrendTitle">Filtered trend</h2>
+            <small id="recordsTrendSubtitle">The chart follows the filters above.</small>
+          </div>
+          <label class="records-sort-control">
+            <span>Sort</span>
+            <select id="recordsSortMode" aria-label="Sort filtered records">
+              <option value="time-desc">Newest first</option>
+              <option value="time-asc">Oldest first</option>
+              <option value="amount-desc">Amount high to low</option>
+              <option value="amount-asc">Amount low to high</option>
+            </select>
+          </label>
+        </div>
+        <div id="recordsTrendLocked" class="records-trend-locked hidden" data-income-unlock="true">Unlock income to view this trend.</div>
+        <canvas id="recordsTrendChart" aria-label="Filtered records trend chart"></canvas>
+        <div id="recordsTrendValueGrid" class="records-trend-value-grid"></div>
       </div>
 
       <div id="recordsList" class="list records-page-list"></div>
@@ -2783,6 +2851,17 @@
               <span class="cloud-transport-note">Local-first mode · no automatic cloud calls</span>
             </div>
 
+            <div id="cloudRecentAudit" class="cloud-recent-audit">
+              <div>
+                <small>Recent cloud verification</small>
+                <strong id="cloudRecentAuditTitle">Not checked</strong>
+                <span id="cloudRecentAuditDetail">Verify records added or edited during the last 24 hours.</span>
+              </div>
+              <div id="cloudRecentAuditProgress" class="cloud-recent-audit-progress hidden">
+                <i id="cloudRecentAuditProgressBar"></i>
+              </div>
+            </div>
+
             <div id="pendingCloudSaveBox" class="pending-cloud-save-box hidden">
               <div>
                 <strong><span id="pendingCloudSaveCount">0</span> record<span id="pendingCloudSavePlural">s</span> saved locally</strong>
@@ -2815,6 +2894,7 @@
               <button id="openAccuracy" class="secondary" style="grid-column:1/-1">Open data accuracy check</button>
               <button id="cloudRetrySync" class="secondary">Check cloud availability</button>
               <button id="cloudFullRefresh" class="secondary">Refresh from cloud</button>
+              <button id="verifyRecentCloudRecords" class="secondary" style="grid-column:1/-1">Verify records from last 24 hours</button>
               <button id="cloudSignOut" class="secondary" style="grid-column:1/-1">Sign out</button>
             </div>
           </div>
@@ -2886,7 +2966,7 @@
           </span>
         </summary>
         <div class="settings-card-body">
-          <p class="appearance-intro">Changes the app background, top banner, analysis header, buttons and supporting surfaces. Gentle palettes are applied across all pages and saved to cloud.</p>
+          <p class="appearance-intro">Choose a palette by name. The small color chips show the background, card and accent colors.</p>
           <div id="appearanceChoices" class="appearance-choices"></div>
         </div>
       </details>
@@ -3056,15 +3136,24 @@
                 <small>Saved snapshots</small>
                 <strong id="weeklyBackupCount">0</strong>
               </div>
-              <div>
+              <div class="weekly-cloud-status-cell">
                 <small>Last cloud attempt</small>
                 <strong id="weeklyBackupCloudStatus">Not attempted</strong>
+                <span id="weeklyBackupCloudTime">—</span>
               </div>
             </div>
 
             <div class="weekly-backup-actions">
               <button id="runWeeklyBackupNow" type="button" class="primary">Run now</button>
               <button id="downloadLatestWeeklyBackup" type="button" class="secondary">Download latest</button>
+            </div>
+
+            <div id="weeklyCloudRunStatus" class="weekly-cloud-run-status">
+              <div class="weekly-cloud-run-copy">
+                <strong id="weeklyCloudRunTitle">No sync running</strong>
+                <small id="weeklyCloudRunDetail">Success means every pending record, setting and deletion has finished.</small>
+              </div>
+              <div id="weeklyCloudRunProgress" class="weekly-cloud-run-progress hidden"><i id="weeklyCloudRunProgressBar"></i></div>
             </div>
 
             <div id="weeklyBackupArchive" class="weekly-backup-archive"></div>
@@ -3103,7 +3192,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 52 simplifies Analysis interactions, adds week/day category scopes and protects every income amount with a session-based four-digit PIN.
+            Version 53 simplifies Analysis interactions, adds week/day category scopes and protects every income amount with a session-based four-digit PIN.
           </p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
@@ -3240,6 +3329,7 @@
 
     <div class="modal-actions sticky-actions txn-sticky-actions">
       <button id="deleteTxn" class="txn-delete-button hidden">Delete</button>
+      <button id="saveAndAddTxn" class="secondary txn-save-another-button">Save & add another</button>
       <button id="saveTxn" class="txn-save-button">Save record</button>
     </div>
   </div>
@@ -3395,14 +3485,15 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=52"></script>
-<script src="firebase-cloud-v52.js?v=52"></script>
+<script src="firebase-config.js?v=53"></script>
+<script src="firebase-cloud-v52.js?v=53"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
   const PENDING_DELETE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_deletes_v1`;
   const PENDING_SAVE_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_saves_v1`;
   const PENDING_SETTINGS_STORAGE_KEY = `${STORAGE_KEY}_pending_cloud_settings_v1`;
+  const CLOUD_AUDIT_STORAGE_KEY = `${STORAGE_KEY}_cloud_audit_v1`;
   const DUPLICATE_REVIEW_STORAGE_KEY = `${STORAGE_KEY}_reviewed_duplicate_groups_v1`;
   const CLOUD_COUNT_STORAGE_KEY = `${STORAGE_KEY}_last_cloud_count_v1`;
   const WEEKLY_BACKUP_STORAGE_KEY = `${STORAGE_KEY}_weekly_backups_v1`;
@@ -3612,6 +3703,7 @@
   let trashMaintenanceTimer = null;
   let suppressSheetClickUntil = 0;
   let recordFiltersExpanded = false;
+  let recordsSortMode = "time-desc";
   let editingRecurringId = null;
   let budgetSelectedMonth = currentMonthKey();
   let monthPickerYear = Number(currentMonthKey().slice(0,4));
@@ -3627,6 +3719,9 @@
   let pendingDeleteCleanupRunning = false;
   let weeklyBackupRunning = false;
   let weeklyBackupMeta = loadWeeklyBackupMeta();
+  let weeklyCloudProgress = null;
+  let cloudAuditMeta = loadCloudAuditMeta();
+  let cloudAuditRunning = false;
   let incomePinConfig = loadIncomePinConfig();
   let incomePrivacyUnlocked = false;
   let incomePinModalMode = "unlock";
@@ -3648,6 +3743,138 @@
   const $ = id => document.getElementById(id);
   const qsa = sel => [...document.querySelectorAll(sel)];
 
+  function loadCloudAuditMeta(){
+    const fallback={
+      checkedAt:0,
+      hours:24,
+      candidateCount:0,
+      checkedCount:0,
+      verifiedCount:0,
+      missingCount:0,
+      mismatchCount:0,
+      limited:false,
+      status:"never",
+      message:""
+    };
+    try{
+      const parsed=JSON.parse(localStorage.getItem(CLOUD_AUDIT_STORAGE_KEY)||"null");
+      return {...fallback,...(parsed&&typeof parsed==="object"?parsed:{})};
+    }catch(error){
+      console.error("Cloud audit metadata could not be loaded",error);
+      return fallback;
+    }
+  }
+
+  function saveCloudAuditMeta(){
+    try{
+      localStorage.setItem(CLOUD_AUDIT_STORAGE_KEY,JSON.stringify(cloudAuditMeta));
+    }catch(error){
+      console.error("Cloud audit metadata could not be saved",error);
+    }
+  }
+
+  function cloudTransactionMatches(local,remote){
+    return Boolean(remote)&&
+      String(local.id)===String(remote.id)&&
+      String(local.type)===String(remote.type)&&
+      Math.abs((Number(local.amount)||0)-(Number(remote.amount)||0))<.005&&
+      String(local.date||"")===String(remote.date||"")&&
+      String(local.category||"")===String(remote.category||"")&&
+      String(local.tag||"")===String(remote.tag||"");
+  }
+
+  function recentCloudCandidates(hours=24){
+    const cutoff=Date.now()-Math.max(1,Number(hours)||24)*60*60*1000;
+    return state.transactions
+      .filter(transaction=>Math.max(
+        Number(transaction.updatedAtLocal)||0,
+        Number(transaction.createdAt)||0
+      )>=cutoff)
+      .sort((a,b)=>Math.max(Number(b.updatedAtLocal)||0,Number(b.createdAt)||0)-Math.max(Number(a.updatedAtLocal)||0,Number(a.createdAt)||0));
+  }
+
+  function renderRecentCloudAudit(progress=null){
+    if(!$('cloudRecentAuditTitle'))return;
+    const title=$('cloudRecentAuditTitle');
+    const detail=$('cloudRecentAuditDetail');
+    const progressWrap=$('cloudRecentAuditProgress');
+    const progressBar=$('cloudRecentAuditProgressBar');
+    const button=$('verifyRecentCloudRecords');
+
+    button.disabled=cloudAuditRunning;
+    button.textContent=cloudAuditRunning?'Verifying recent records…':'Verify records from last 24 hours';
+
+    if(progress){
+      title.textContent=`Checking ${progress.done} of ${progress.total}`;
+      detail.textContent=progress.message||'Reading each recent record back from Firebase.';
+      progressWrap.classList.remove('hidden');
+      progressBar.style.width=`${progress.total?Math.min(100,progress.done/progress.total*100):0}%`;
+      return;
+    }
+
+    progressWrap.classList.add('hidden');
+    progressBar.style.width='0%';
+    if(!cloudAuditMeta.checkedAt){
+      title.textContent='Not checked';
+      detail.textContent='Verify records added or edited during the last 24 hours.';
+      return;
+    }
+
+    const time=weeklyBackupDateTime(cloudAuditMeta.checkedAt);
+    if(cloudAuditMeta.status==='success'){
+      title.textContent=`Verified ${cloudAuditMeta.verifiedCount} of ${cloudAuditMeta.candidateCount}`;
+      detail.textContent=`All checked records match Firebase · ${time}${cloudAuditMeta.limited?' · newest 100 checked':''}`;
+    }else if(cloudAuditMeta.status==='empty'){
+      title.textContent='No recent local records';
+      detail.textContent=`Nothing was added or edited in the last 24 hours · ${time}`;
+    }else if(cloudAuditMeta.status==='partial'){
+      title.textContent=`${cloudAuditMeta.verifiedCount} verified · ${cloudAuditMeta.missingCount+cloudAuditMeta.mismatchCount} need attention`;
+      detail.textContent=`Missing ${cloudAuditMeta.missingCount} · different ${cloudAuditMeta.mismatchCount} · ${time}`;
+    }else{
+      title.textContent='Verification could not finish';
+      detail.textContent=`${cloudAuditMeta.message||'Cloud unavailable'} · ${time}`;
+    }
+  }
+
+  async function verifyRecentCloudRecords(hours=24){
+    if(cloudAuditRunning)return;
+    if(!cloudApi?.configured||!cloudUser){toast('Sign in before verifying cloud records.');return;}
+    if(!navigator.onLine){toast('No network. Recent records remain available locally.');return;}
+
+    const allCandidates=recentCloudCandidates(hours);
+    const candidates=allCandidates.slice(0,100);
+    if(!candidates.length){
+      cloudAuditMeta={...cloudAuditMeta,checkedAt:Date.now(),hours,candidateCount:0,checkedCount:0,verifiedCount:0,missingCount:0,mismatchCount:0,limited:false,status:'empty',message:''};
+      saveCloudAuditMeta();renderRecentCloudAudit();toast('No records were added or edited in the last 24 hours.');return;
+    }
+
+    cloudAuditRunning=true;
+    let verified=0,missing=0,mismatch=0,checked=0,lastError='';
+    renderRecentCloudAudit({done:0,total:candidates.length,message:'Starting direct server verification…'});
+
+    for(const transaction of candidates){
+      try{
+        const remote=await withTimeout(cloudApi.verifyTransaction(cloudUser.uid,transaction.id),8000);
+        if(cloudTransactionMatches(transaction,remote))verified++;
+        else mismatch++;
+      }catch(error){
+        lastError=error.message||'Cloud verification failed';
+        if(/not found/i.test(lastError))missing++;
+        else{
+          cloudAuditMeta={...cloudAuditMeta,checkedAt:Date.now(),hours,candidateCount:allCandidates.length,checkedCount:checked,verifiedCount:verified,missingCount:missing,mismatchCount:mismatch,limited:allCandidates.length>100,status:'failed',message:lastError};
+          saveCloudAuditMeta();cloudAuditRunning=false;renderRecentCloudAudit();setLocalMode(lastError);toast('Recent cloud verification stopped.');return;
+        }
+      }
+      checked++;
+      renderRecentCloudAudit({done:checked,total:candidates.length,message:`${verified} verified · ${missing} missing · ${mismatch} different`});
+    }
+
+    cloudAuditMeta={...cloudAuditMeta,checkedAt:Date.now(),hours,candidateCount:allCandidates.length,checkedCount:checked,verifiedCount:verified,missingCount:missing,mismatchCount:mismatch,limited:allCandidates.length>100,status:(missing||mismatch)?'partial':'success',message:lastError};
+    saveCloudAuditMeta();cloudAuditRunning=false;renderRecentCloudAudit();
+    if(!missing&&!mismatch){markServerVerified();toast(`${verified} recent record${verified===1?'':'s'} verified in Firebase.`);}
+    else toast(`${verified} verified · ${missing+mismatch} need attention.`);
+  }
+
   function loadWeeklyBackupMeta(){
     const fallback={
       enabled:true,
@@ -3657,6 +3884,13 @@
       lastCloudAttemptAt:0,
       lastCloudStatus:"never",
       lastCloudMessage:"",
+      lastCloudDurationMs:0,
+      lastCloudUploaded:0,
+      lastCloudCleaned:0,
+      lastCloudSettingsUploaded:0,
+      lastCloudRemainingSaves:0,
+      lastCloudRemainingDeletes:0,
+      lastCloudRemainingSettings:0,
       lastSnapshotId:""
     };
 
@@ -3751,7 +3985,7 @@
   function buildRecoveryPackage(format="daily-budget-full-backup-v2"){
     return {
       format,
-      appVersion:46,
+      appVersion:53,
       createdAt:new Date().toISOString(),
       createdAtMs:Date.now(),
       selectedMonth,
@@ -3901,12 +4135,29 @@
 
   function weeklyCloudStatusLabel(){
     const status=weeklyBackupMeta.lastCloudStatus;
-    if(status==="success")return "Uploaded pending changes";
-    if(status==="partial")return "Some changes still pending";
-    if(status==="failed")return "Upload attempt failed";
-    if(status==="nothing")return "Nothing pending";
-    if(status==="skipped")return "Waiting for sign-in/network";
+    if(status==="success")return "Success · all changes uploaded";
+    if(status==="partial")return "Incomplete · changes remain local";
+    if(status==="failed")return "Failed · changes remain local";
+    if(status==="nothing")return "Success · nothing pending";
+    if(status==="skipped")return "Not uploaded · sign-in/network unavailable";
     return "Not attempted";
+  }
+
+  function weeklyCloudStatusDetail(){
+    const saves=Number(weeklyBackupMeta.lastCloudRemainingSaves)||0;
+    const deletes=Number(weeklyBackupMeta.lastCloudRemainingDeletes)||0;
+    const settings=Number(weeklyBackupMeta.lastCloudRemainingSettings)||0;
+    if(weeklyBackupMeta.lastCloudStatus==="success"){
+      return `${Number(weeklyBackupMeta.lastCloudUploaded)||0} record${Number(weeklyBackupMeta.lastCloudUploaded)===1?"":"s"} uploaded and server-verified · ${Number(weeklyBackupMeta.lastCloudCleaned)||0} deletion${Number(weeklyBackupMeta.lastCloudCleaned)===1?"":"s"} cleaned · ${Number(weeklyBackupMeta.lastCloudSettingsUploaded)||0} settings update${Number(weeklyBackupMeta.lastCloudSettingsUploaded)===1?"":"s"}`;
+    }
+    if(weeklyBackupMeta.lastCloudStatus==="nothing")return "There were no pending records, settings or deletions.";
+    if(weeklyBackupMeta.lastCloudStatus==="never")return "Success is shown only when every pending change is finished.";
+    return `${saves} record${saves===1?"":"s"} · ${settings} settings update${settings===1?"":"s"} · ${deletes} deletion${deletes===1?"":"s"} still pending`;
+  }
+
+  function setWeeklyCloudProgress(stage,done,total,detail=""){
+    weeklyCloudProgress={stage,done:Number(done)||0,total:Number(total)||0,detail};
+    renderWeeklyBackupPanel();
   }
 
   function renderWeeklyBackupPanel(){
@@ -3938,6 +4189,25 @@
       `${snapshots.length} / ${WEEKLY_BACKUP_MAX_SNAPSHOTS}`;
 
     $("weeklyBackupCloudStatus").textContent=weeklyCloudStatusLabel();
+    $("weeklyBackupCloudTime").textContent=weeklyBackupMeta.lastCloudAttemptAt
+      ?`${weeklyBackupDateTime(weeklyBackupMeta.lastCloudAttemptAt)}${weeklyBackupMeta.lastCloudDurationMs?` · ${(weeklyBackupMeta.lastCloudDurationMs/1000).toFixed(1)}s`:""}`
+      :"—";
+
+    const runTitle=$("weeklyCloudRunTitle");
+    const runDetail=$("weeklyCloudRunDetail");
+    const runProgress=$("weeklyCloudRunProgress");
+    const runProgressBar=$("weeklyCloudRunProgressBar");
+    if(weeklyCloudProgress){
+      runTitle.textContent=weeklyCloudProgress.stage;
+      runDetail.textContent=weeklyCloudProgress.detail||`${weeklyCloudProgress.done} of ${weeklyCloudProgress.total}`;
+      runProgress.classList.remove("hidden");
+      runProgressBar.style.width=`${weeklyCloudProgress.total?Math.min(100,weeklyCloudProgress.done/weeklyCloudProgress.total*100):5}%`;
+    }else{
+      runTitle.textContent=weeklyCloudStatusLabel();
+      runDetail.textContent=weeklyCloudStatusDetail();
+      runProgress.classList.add("hidden");
+      runProgressBar.style.width="0%";
+    }
 
     const runButton=$("runWeeklyBackupNow");
     runButton.disabled=weeklyBackupRunning;
@@ -3974,134 +4244,109 @@
     const beforeSaves=pendingCloudSaves.size;
     const beforeDeletes=pendingCloudDeletes.size;
     const beforeSettings=pendingCloudSettings?1:0;
+    const total=beforeSaves+beforeDeletes+beforeSettings;
 
-    if(!beforeSaves&&!beforeDeletes&&!beforeSettings){
-      return {
-        status:"nothing",
-        uploaded:0,
-        cleaned:0,
-        settingsUploaded:0,
-        remaining:0,
-        message:"No pending cloud changes"
-      };
+    if(!total){
+      return {status:"nothing",uploaded:0,cleaned:0,settingsUploaded:0,remaining:0,remainingSaves:0,remainingDeletes:0,remainingSettings:0,message:"No pending cloud changes"};
     }
 
     if(!cloudApi?.configured||!cloudUser||!navigator.onLine){
-      return {
-        status:"skipped",
-        uploaded:0,
-        cleaned:0,
-        settingsUploaded:0,
-        remaining:beforeSaves+beforeDeletes+beforeSettings,
-        message:"Waiting for sign-in or network"
-      };
+      return {status:"skipped",uploaded:0,cleaned:0,settingsUploaded:0,remaining:total,remainingSaves:beforeSaves,remainingDeletes:beforeDeletes,remainingSettings:beforeSettings,message:"Waiting for sign-in or network"};
     }
 
-    let uploaded=0;
-    let cleaned=0;
-    let settingsUploaded=0;
+    let uploaded=0,cleaned=0,settingsUploaded=0,done=0;
+    setWeeklyCloudProgress("Uploading records",done,total,`${beforeSaves} record${beforeSaves===1?"":"s"} waiting`);
 
     for(const id of [...pendingCloudSaves.keys()]){
+      setWeeklyCloudProgress("Uploading and verifying records",done,total,`Record ${uploaded+1} of ${beforeSaves}`);
       const success=await syncOnePendingCloudSave(id,{showToast:false});
       if(!success)break;
-      uploaded++;
+      uploaded++;done++;
+      setWeeklyCloudProgress("Uploading and verifying records",done,total,`${uploaded} record${uploaded===1?"":"s"} server-verified`);
     }
 
     if(pendingCloudSettings){
+      setWeeklyCloudProgress("Uploading settings",done,total,"Saving the latest categories, budget and preferences");
       const success=await syncOnePendingCloudSettings({showToast:false});
-      if(success)settingsUploaded=1;
+      if(success){settingsUploaded=1;done++;}
     }
 
     if(!pendingCloudSaves.size&&!pendingCloudSettings){
       for(const id of [...pendingCloudDeletes.keys()]){
+        setWeeklyCloudProgress("Cleaning cloud deletions",done,total,`Deletion ${cleaned+1} of ${beforeDeletes}`);
         const success=await syncOnePendingCloudDelete(id,{showToast:false});
         if(!success)break;
-        cleaned++;
+        cleaned++;done++;
       }
     }
 
-    const remaining=
-      pendingCloudSaves.size+
-      pendingCloudDeletes.size+
-      (pendingCloudSettings?1:0);
-
+    const remainingSaves=pendingCloudSaves.size;
+    const remainingDeletes=pendingCloudDeletes.size;
+    const remainingSettings=pendingCloudSettings?1:0;
+    const remaining=remainingSaves+remainingDeletes+remainingSettings;
     return {
-      status:remaining
-        ?(uploaded||cleaned||settingsUploaded?"partial":"failed")
-        :"success",
-      uploaded,
-      cleaned,
-      settingsUploaded,
-      remaining,
-      message:remaining
-        ?`${remaining} cloud change${remaining===1?"":"s"} still pending`
-        :"All pending cloud changes uploaded"
+      status:remaining?(uploaded||cleaned||settingsUploaded?"partial":"failed"):"success",
+      uploaded,cleaned,settingsUploaded,remaining,remainingSaves,remainingDeletes,remainingSettings,
+      message:remaining?`${remaining} cloud change${remaining===1?"":"s"} still pending`:"All pending cloud changes uploaded and verified"
     };
   }
 
-  async function runWeeklyAutoBackup({
-    force=false,
-    manual=false
-  }={}){
+  async function runWeeklyAutoBackup({force=false,manual=false}={}){
     if(weeklyBackupRunning)return false;
     if(weeklyBackupMeta.enabled===false&&!manual)return false;
 
     const now=Date.now();
-    const dueAt=weeklyBackupMeta.nextDueAt||
-      (weeklyBackupMeta.lastRunAt
-        ?weeklyBackupMeta.lastRunAt+WEEKLY_BACKUP_INTERVAL_MS
-        :0);
-
+    const dueAt=weeklyBackupMeta.nextDueAt||(weeklyBackupMeta.lastRunAt?weeklyBackupMeta.lastRunAt+WEEKLY_BACKUP_INTERVAL_MS:0);
     if(!force&&dueAt&&now<dueAt)return false;
 
     weeklyBackupRunning=true;
-    renderWeeklyBackupPanel();
+    setWeeklyCloudProgress("Creating local backup",0,1,"Saving a complete device snapshot first");
+    const startedAt=Date.now();
 
     try{
       createWeeklyBackupSnapshot();
-
       weeklyBackupMeta.lastRunAt=now;
       weeklyBackupMeta.nextDueAt=now+WEEKLY_BACKUP_INTERVAL_MS;
-      weeklyBackupMeta.lastCloudAttemptAt=Date.now();
+      setWeeklyCloudProgress("Checking pending cloud changes",0,Math.max(1,pendingCloudSaves.size+pendingCloudDeletes.size+(pendingCloudSettings?1:0)),"The status will update after each item");
 
       const cloudResult=await attemptWeeklyCloudUpload();
+      weeklyBackupMeta.lastCloudAttemptAt=Date.now();
+      weeklyBackupMeta.lastCloudDurationMs=Date.now()-startedAt;
       weeklyBackupMeta.lastCloudStatus=cloudResult.status;
       weeklyBackupMeta.lastCloudMessage=cloudResult.message;
+      weeklyBackupMeta.lastCloudUploaded=cloudResult.uploaded;
+      weeklyBackupMeta.lastCloudCleaned=cloudResult.cleaned;
+      weeklyBackupMeta.lastCloudSettingsUploaded=cloudResult.settingsUploaded;
+      weeklyBackupMeta.lastCloudRemainingSaves=cloudResult.remainingSaves;
+      weeklyBackupMeta.lastCloudRemainingDeletes=cloudResult.remainingDeletes;
+      weeklyBackupMeta.lastCloudRemainingSettings=cloudResult.remainingSettings;
       saveWeeklyBackupMeta();
-
-      renderWeeklyBackupPanel();
-      renderCloudPanel();
+      weeklyCloudProgress=null;
+      renderWeeklyBackupPanel();renderCloudPanel();
 
       if(manual){
-        if(cloudResult.status==="success"){
-          toast("Weekly backup saved · pending cloud changes uploaded.");
-        }else if(cloudResult.status==="nothing"){
-          toast("Weekly backup saved · nothing was waiting to upload.");
-        }else{
-          toast(
-            `Weekly backup saved · ${cloudResult.remaining} cloud change`+
-            `${cloudResult.remaining===1?"":"s"} still pending.`
-          );
-        }
+        if(cloudResult.status==="success")toast("Backup saved · all pending cloud changes uploaded and verified.");
+        else if(cloudResult.status==="nothing")toast("Backup saved · no pending cloud changes.");
+        else if(cloudResult.status==="skipped")toast("Backup saved locally · cloud upload did not start.");
+        else toast(`Backup saved · ${cloudResult.remaining} cloud change${cloudResult.remaining===1?"":"s"} still pending.`);
       }
-
       return true;
     }catch(error){
       console.error("Weekly automatic backup failed",error);
       weeklyBackupMeta.lastRunAt=now;
       weeklyBackupMeta.nextDueAt=now+WEEKLY_BACKUP_INTERVAL_MS;
+      weeklyBackupMeta.lastCloudAttemptAt=Date.now();
+      weeklyBackupMeta.lastCloudDurationMs=Date.now()-startedAt;
       weeklyBackupMeta.lastCloudStatus="failed";
       weeklyBackupMeta.lastCloudMessage=error.message||"Backup failed";
-      saveWeeklyBackupMeta();
-      renderWeeklyBackupPanel();
-
-      if(manual){
-        toast(error.message||"Weekly backup failed.");
-      }
+      weeklyBackupMeta.lastCloudRemainingSaves=pendingCloudSaves.size;
+      weeklyBackupMeta.lastCloudRemainingDeletes=pendingCloudDeletes.size;
+      weeklyBackupMeta.lastCloudRemainingSettings=pendingCloudSettings?1:0;
+      saveWeeklyBackupMeta();weeklyCloudProgress=null;renderWeeklyBackupPanel();
+      if(manual)toast(error.message||"Weekly backup failed.");
       return false;
     }finally{
-      weeklyBackupRunning=false;
-      renderWeeklyBackupPanel();
+      weeklyBackupRunning=false;weeklyCloudProgress=null;renderWeeklyBackupPanel();
     }
   }
 
@@ -4280,6 +4525,7 @@
     renderPendingCloudSaves();
     renderPendingCloudDeletes();
     renderPendingCloudSettings();
+    renderRecentCloudAudit();
   }
 
   function loadPendingCloudSaves(){
@@ -5310,10 +5556,12 @@
       if(usedIds.has(id))id=`${id}_${occurrence}`;
       usedIds.add(id);
 
+      const createdAt=Number(t.createdAt)||deterministicLegacyCreatedAt(normalized.date,i,occurrence);
       return {
         id,
         ...normalized,
-        createdAt:Number(t.createdAt)||deterministicLegacyCreatedAt(normalized.date,i,occurrence)
+        createdAt,
+        updatedAtLocal:Number(t.updatedAtLocal)||createdAt
       };
     });
 
@@ -5419,28 +5667,15 @@
     const current=normalizeAppearanceTheme(state.appearanceTheme);
     $("appearanceSummaryText").textContent=THEME_PRESETS[current].name;
     $("appearanceChoices").innerHTML=Object.entries(THEME_PRESETS).map(([id,theme])=>`
-      <button
-        class="appearance-choice ${id===current?"active":""}"
-        type="button"
-        data-appearance-theme="${id}"
-        style="
-          --preview-bg:${theme.bg};
-          --preview-card:${theme.card};
-          --preview-accent:${theme.accent};
-          --preview-line:${theme.chartExpense};
-          --preview-ink:${theme.ink};
-        "
-      >
-        <span class="appearance-mini-app" aria-hidden="true">
-          <span class="appearance-mini-header"><i></i><b></b></span>
-          <span class="appearance-mini-content">
-            <span class="appearance-mini-summary"><i></i><i></i><i></i></span>
-            <span class="appearance-mini-chart"><i></i></span>
-          </span>
+      <button class="appearance-choice ${id===current?"active":""}" type="button" data-appearance-theme="${id}" style="--preview-card:${theme.card}">
+        <span class="appearance-color-strip" aria-hidden="true">
+          <i style="background:${theme.bg}"></i>
+          <i style="background:${theme.card}"></i>
+          <i style="background:${theme.accent}"></i>
         </span>
         <span class="appearance-choice-copy">
           <span class="appearance-name">${escapeHtml(theme.name)}</span>
-          <small>${id===current?"Currently applied":"Tap to apply"}</small>
+          <small>${id===current?"Currently applied":"Background · card · accent"}</small>
         </span>
         <span class="appearance-check">${id===current?"✓":""}</span>
       </button>
@@ -7471,18 +7706,117 @@
     button.classList.toggle("active",recordFiltersExpanded||count>0);
   }
 
-  function filteredRecords(){
+  function filteredRecordSet(){
     let list=[...state.transactions];
-    const from=$("filterFrom").value, to=$("filterTo").value;
-    const type=$("filterType").value, cat=$("filterCategory").value;
-    const s=$("filterSearch").value.trim().toLowerCase();
-    if(from) list=list.filter(t=>t.date>=from);
-    if(to) list=list.filter(t=>t.date<=to);
-    if(type) list=list.filter(t=>t.type===type);
-    if(cat) list=list.filter(t=>t.category===cat);
-    if(s) list=list.filter(t=>String(t.tag||"").toLowerCase().includes(s));
-    return sortTxns(list);
+    const from=$("filterFrom").value,to=$("filterTo").value;
+    const type=$("filterType").value,cat=$("filterCategory").value;
+    const search=$("filterSearch").value.trim().toLowerCase();
+    if(from)list=list.filter(transaction=>transaction.date>=from);
+    if(to)list=list.filter(transaction=>transaction.date<=to);
+    if(type)list=list.filter(transaction=>transaction.type===type);
+    if(cat)list=list.filter(transaction=>transaction.category===cat);
+    if(search)list=list.filter(transaction=>String(transaction.tag||"").toLowerCase().includes(search));
+    return list;
   }
+
+  function sortFilteredRecords(list){
+    const sorted=[...list];
+    const timeValue=transaction=>`${transaction.date}|${String(Number(transaction.createdAt)||0).padStart(16,"0")}`;
+    sorted.sort((a,b)=>{
+      if(recordsSortMode==="time-asc")return timeValue(a).localeCompare(timeValue(b));
+      if(recordsSortMode==="amount-desc")return (Number(b.amount)||0)-(Number(a.amount)||0)||timeValue(b).localeCompare(timeValue(a));
+      if(recordsSortMode==="amount-asc")return (Number(a.amount)||0)-(Number(b.amount)||0)||timeValue(b).localeCompare(timeValue(a));
+      return timeValue(b).localeCompare(timeValue(a));
+    });
+    return sorted;
+  }
+
+  function filteredRecords(){return sortFilteredRecords(filteredRecordSet());}
+
+  function recordTrendData(list){
+    if(!list.length)return null;
+    const dates=list.map(transaction=>transaction.date).filter(date=>/^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
+    if(!dates.length)return null;
+    const first=dates[0],last=dates[dates.length-1];
+    const span=Math.max(0,Math.round((dateFromKey(last)-dateFromKey(first))/86400000));
+    let keys=[],labels=[],bucket="day";
+
+    if(span<=45){
+      keys=Array.from({length:span+1},(_,index)=>addDays(first,index));
+      labels=keys.map(key=>dateLabel(key));
+    }else if(span<=1095){
+      bucket="month";
+      const start=first.slice(0,7),end=last.slice(0,7);
+      keys=monthsBetween(start,end).slice(-36);
+      labels=keys.map(key=>new Intl.DateTimeFormat("en-US",{month:"short",year:"2-digit"}).format(new Date(`${key}-01T00:00:00`)));
+    }else{
+      bucket="year";
+      const startYear=Number(first.slice(0,4)),endYear=Number(last.slice(0,4));
+      keys=Array.from({length:endYear-startYear+1},(_,index)=>String(startYear+index));
+      labels=[...keys];
+    }
+
+    const expense=Array(keys.length).fill(0),income=Array(keys.length).fill(0);
+    const indexByKey=new Map(keys.map((key,index)=>[key,index]));
+    list.forEach(transaction=>{
+      const key=bucket==="day"?transaction.date:bucket==="month"?transaction.date.slice(0,7):transaction.date.slice(0,4);
+      const index=indexByKey.get(key);
+      if(index===undefined)return;
+      if(transaction.type==="income")income[index]+=Number(transaction.amount)||0;
+      else expense[index]+=Number(transaction.amount)||0;
+    });
+    return {keys,labels,expense,income,bucket,first,last};
+  }
+
+  function renderRecordsTrend(list){
+    const data=recordTrendData(list);
+    const type=$("filterType").value;
+    const chart=$("recordsTrendChart");
+    const locked=$("recordsTrendLocked");
+    const grid=$("recordsTrendValueGrid");
+    const title=$("recordsTrendTitle");
+    const subtitle=$("recordsTrendSubtitle");
+
+    if(!data){
+      title.textContent="Filtered trend";subtitle.textContent="No matching records to chart.";
+      chart.classList.add("hidden");locked.classList.add("hidden");grid.innerHTML="";return;
+    }
+
+    const incomeOnly=type==="income";
+    if(incomeOnly&&incomePrivacyLocked()){
+      title.textContent="Income trend";subtitle.textContent="The trend is protected by your income PIN.";
+      chart.classList.add("hidden");locked.classList.remove("hidden");grid.innerHTML="";return;
+    }
+
+    chart.classList.remove("hidden");locked.classList.add("hidden");
+    const unit=data.bucket==="day"?"Daily":data.bucket==="month"?"Monthly":"Yearly";
+    const expenseColor=themeCssColor("--chart-expense","#C79A27");
+    const incomeColor=themeCssColor("--chart-income","#4F9874");
+
+    if(type==="expense"){
+      title.textContent="Expense trend";subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
+      drawSingleLine("recordsTrendChart",data.labels,data.expense,expenseColor,data.labels.length<=12);
+    }else if(type==="income"){
+      title.textContent="Income trend";subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
+      drawSingleLine("recordsTrendChart",data.labels,data.income,incomeColor,data.labels.length<=12);
+    }else if(incomePrivacyLocked()){
+      title.textContent="Expense trend · income locked";subtitle.textContent=`${unit} expense totals · unlock income to include the income line`;
+      drawSingleLine("recordsTrendChart",data.labels,data.expense,expenseColor,data.labels.length<=12);
+    }else{
+      title.textContent="Income and expense trend";subtitle.textContent=`${unit} totals · ${list.length} matching record${list.length===1?"":"s"}`;
+      drawDualLineChart("recordsTrendChart",data.labels,data.expense,data.income,{primaryColor:expenseColor,secondaryColor:incomeColor});
+    }
+
+    const maxCells=12;
+    const indexes=data.labels.length<=maxCells
+      ?data.labels.map((_,index)=>index)
+      :Array.from({length:maxCells},(_,index)=>Math.round(index*(data.labels.length-1)/(maxCells-1)));
+    grid.innerHTML=[...new Set(indexes)].map(index=>{
+      const value=type==="income"?data.income[index]:type==="expense"?data.expense[index]:data.expense[index]+data.income[index];
+      return `<div class="records-trend-value"><small>${escapeHtml(data.labels[index])}</small><strong>${type==="income"&&incomePrivacyLocked()?maskedMoney():money(value)}</strong></div>`;
+    }).join("");
+  }
+
   function renderRecords({
     resetPage=false,
     preserveScroll=false
@@ -7493,8 +7827,9 @@
 
     if(resetPage)recordsPage=0;
 
-    const list=filteredRecords();
-    const totalsForList=totals(list);
+    const filteredSet=filteredRecordSet();
+    const list=sortFilteredRecords(filteredSet);
+    const totalsForList=totals(filteredSet);
     const pageCount=Math.max(1,Math.ceil(list.length/RECORDS_PAGE_SIZE));
     recordsPage=Math.max(0,Math.min(recordsPage,pageCount-1));
 
@@ -7507,6 +7842,8 @@
       ?maskedMoney()
       :money(totalsForList.income);
     $("recordExpense").textContent=money(totalsForList.expense);
+    $("recordsSortMode").value=recordsSortMode;
+    renderRecordsTrend(filteredSet);
     $("recordsList").innerHTML=list.length
       ?visible.map(txnHtml).join("")
       :emptyHtml(
@@ -8546,6 +8883,7 @@
     renderTxnCategoryControl();
     renderTagSuggestions();
     $("deleteTxn").classList.toggle("hidden",!t);
+    $("saveAndAddTxn").classList.toggle("hidden",Boolean(t));
     lockPageForOverlay();
     txnKeyboardBaseline=Math.max(
       window.innerHeight||0,
@@ -8588,45 +8926,30 @@
 
     const operationId=uid();
     pendingSaveOperations.set(String(id),operationId);
-    renderRecords();
+    if(currentView==="records")renderRecords({preserveScroll:true});else recordsRenderDirty=true;
 
     try{
-      const acknowledged=await withTimeout(
-        cloudApi.saveTransaction(
-          cloudUser.uid,
-          pending.transaction,
-          pending.previous||null
-        ),
-        8000
-      );
+      await withTimeout(cloudApi.saveTransaction(cloudUser.uid,pending.transaction,pending.previous||null),10000);
+      const acknowledged=await withTimeout(cloudApi.verifyTransaction(cloudUser.uid,pending.transaction.id),8000);
+      if(!cloudTransactionMatches(pending.transaction,acknowledged))throw new Error("Cloud verification failed: saved record differs from this device.");
 
       if(pendingSaveOperations.get(String(id))!==operationId)return false;
-      pendingSaveOperations.delete(String(id));
-      clearPendingCloudSave(id);
+      pendingSaveOperations.delete(String(id));clearPendingCloudSave(id);
 
       const index=state.transactions.findIndex(item=>String(item.id)===String(id));
-      if(index>=0)state.transactions[index]=acknowledged;
-      else state.transactions.push(acknowledged);
+      const verifiedLocal={...acknowledged,createdAt:Number(pending.transaction.createdAt)||Date.now(),updatedAtLocal:Number(pending.transaction.updatedAtLocal)||Date.now()};
+      if(index>=0)state.transactions[index]=verifiedLocal;else state.transactions.push(verifiedLocal);
 
       if(pending.isNew)setCloudRecordCount(cloudRemoteRecordCount+1);
-      saveLocalMirror();
-      renderAll();
-      markServerVerified();
-      if(showToast)toast("Record uploaded to cloud.");
+      saveLocalMirror();renderAll();markServerVerified();
+      if(showToast)toast("Record uploaded and verified in cloud.");
       return true;
     }catch(error){
       console.error("Pending record upload failed",error);
       pendingSaveOperations.delete(String(id));
-      queuePendingCloudSave(
-        pending.transaction,
-        pending.previous||null,
-        error.message||"Cloud upload failed"
-      );
-      if(cloudErrorIsHard(error))setCloudStatus("error",error.message);
-      else setLocalMode(error.message);
-      renderAll();
-      if(showToast)localModeToast(error,"Record upload");
-      return false;
+      queuePendingCloudSave(pending.transaction,pending.previous||null,error.message||"Cloud upload failed");
+      if(cloudErrorIsHard(error))setCloudStatus("error",error.message);else setLocalMode(error.message);
+      renderAll();if(showToast)localModeToast(error,"Record upload");return false;
     }
   }
 
@@ -8664,11 +8987,13 @@
     }
   }
 
-  async function saveTxn(){
+  async function saveTxn({addAnother=false}={}){
     const amount=Number($("txnAmount").value);
     if(!amount||amount<=0){toast("Enter a valid amount.");return;}
 
     const old=editingId?state.transactions.find(item=>item.id===editingId):null;
+    if(old)addAnother=false;
+    const now=Date.now();
     const txn={
       id:editingId||uid(),
       type:currentTxnType(),
@@ -8676,29 +9001,39 @@
       date:$("txnDate").value||todayKey(),
       category:$("txnCategory").value,
       tag:$("txnTag").value.trim(),
-      createdAt:Number(old?.createdAt)||Date.now()
+      createdAt:Number(old?.createdAt)||now,
+      updatedAtLocal:now
     };
 
     queuePendingCloudSave(txn,old||null);
-
     const localIndex=state.transactions.findIndex(item=>item.id===txn.id);
-    if(localIndex>=0)state.transactions[localIndex]=txn;
-    else state.transactions.push(txn);
-
+    if(localIndex>=0)state.transactions[localIndex]=txn;else state.transactions.push(txn);
     saveLocalMirror();
-    closeModal();
+
+    if(addAnother){
+      editingId=null;
+      $("modalTitle").textContent="Add record";
+      $("deleteTxn").classList.add("hidden");
+      $("saveAndAddTxn").classList.remove("hidden");
+      $("txnAmount").value="";
+      $("txnTag").value="";
+      renderTagSuggestions();
+      const scroller=$("txnModal").querySelector(".txn-sheet-scroll");
+      if(scroller)scroller.scrollTop=0;
+      setTimeout(()=>$("txnAmount").focus(),40);
+    }else{
+      closeModal();
+    }
     renderAll();
 
-    if(browserWriteTransportRestricted()||!cloudApi?.configured||!cloudUser||!navigator.onLine){
+    const localOnly=browserWriteTransportRestricted()||!cloudApi?.configured||!cloudUser||!navigator.onLine;
+    if(localOnly){
       setLocalMode("Record saved locally");
-      toast(old
-        ?"Update saved on this device · cloud upload pending"
-        :"Record saved on this device · cloud upload pending"
-      );
+      toast(addAnother?"Saved locally · ready for the next record":old?"Update saved on this device · cloud upload pending":"Record saved on this device · cloud upload pending");
       return;
     }
 
-    toast(old?"Update saved · uploading in background":"Record saved · uploading in background");
+    toast(addAnother?"Saved · ready for the next record":old?"Update saved · uploading in background":"Record saved · uploading in background");
     syncOnePendingCloudSave(txn.id,{showToast:false});
   }
   async function syncOnePendingCloudDelete(id,{showToast=false}={}){
@@ -8804,6 +9139,7 @@
       chip.classList.toggle("active",chip.dataset.preset==="all");
     });
     recordFiltersExpanded=false;
+    recordsSortMode="time-desc";
     recordsPage=0;
     if(render){
       renderRecords({resetPage:true});
@@ -9302,6 +9638,7 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("retryPendingCloudSaves").addEventListener("click",retryPendingCloudSaves);
   $("retryPendingCloudSettings").addEventListener("click",retryPendingCloudSettings);
   $("cloudFullRefresh").addEventListener("click",()=>verifyCloudNow(true));
+  $("verifyRecentCloudRecords").addEventListener("click",()=>verifyRecentCloudRecords(24));
   $("retryPendingCloudDeletes").addEventListener("click",retryPendingCloudDeletes);
   $("trashList").addEventListener("click",async event=>{
     const restore=event.target.closest("[data-restore-trash]");
@@ -9489,7 +9826,8 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     }
     setTxnType("income");
   });
-  $("saveTxn").addEventListener("click",saveTxn);
+  $("saveTxn").addEventListener("click",()=>saveTxn({addAnother:false}));
+  $("saveAndAddTxn").addEventListener("click",()=>saveTxn({addAnother:true}));
   $("deleteTxn").addEventListener("click",deleteTxn);
   let swipeState=null;
   document.addEventListener("touchstart",e=>{
@@ -9590,6 +9928,11 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     "input",
     scheduleRecordsFilterRender
   );
+
+  $("recordsSortMode").addEventListener("change",event=>{
+    recordsSortMode=event.target.value||"time-desc";
+    renderRecords({resetPage:true,preserveScroll:false});
+  });
 
   $("recordsPrevPage").addEventListener("click",()=>{
     if(recordsPage<=0)return;
