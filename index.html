@@ -2829,6 +2829,196 @@
     .cloud-record-result.invalid{border-color:#E9B5B5}
     .cloud-record-result.different{border-color:#E7D095}
 
+
+    /* V58 — editable amount arithmetic */
+    .money-expression-tools{
+      display:grid;
+      grid-template-columns:auto auto minmax(0,1fr);
+      align-items:center;
+      gap:5px;
+      margin-top:6px
+    }
+    .money-expression-tools button{
+      min-height:28px;
+      padding:5px 8px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:var(--card);
+      color:var(--ink);
+      font-size:7px;
+      font-weight:850
+    }
+    .money-expression-tools small{
+      min-width:0;
+      color:var(--muted);
+      text-align:right;
+      font-size:7px;
+      line-height:1.25
+    }
+    .money-expression-tools small.valid{
+      color:var(--green);
+      font-weight:800
+    }
+    .money-expression-tools small.invalid{color:var(--red)}
+    .money-expression-tools.compact{
+      grid-template-columns:auto auto minmax(0,1fr)
+    }
+    .money-expression-input{font-variant-numeric:tabular-nums}
+    .money-expression-field>.money-expression-input{width:100%}
+    .txn-amount-card{align-self:stretch}
+    .txn-primary-row .txn-compact-control{align-self:stretch}
+    .txn-category-button{height:100%;min-height:54px}
+
+    /* V58 — fixed expense / income */
+    .recurring-mode-toggle{margin-bottom:9px}
+    .recurring-rule-type{
+      display:inline-flex;
+      margin-left:5px;
+      padding:2px 5px;
+      border-radius:999px;
+      background:#EEF1F4;
+      color:var(--muted);
+      font-size:6px;
+      font-weight:900;
+      text-transform:uppercase
+    }
+    .recurring-rule-type.income{
+      background:#E8F5EC;
+      color:#287848
+    }
+    .recurring-rule-amount.income{color:var(--green)}
+
+    /* V58 — cleaner category management */
+    .category-manager-head>div{min-width:0}
+    .category-manager-head small{
+      display:block;
+      margin-top:3px;
+      color:var(--muted);
+      font-size:7px;
+      line-height:1.35
+    }
+    .category-manager-toolbar{
+      display:grid;
+      gap:8px
+    }
+    .category-mode-toggle button span{
+      margin-left:3px;
+      opacity:.66;
+      font-size:7px
+    }
+    .category-search-shell{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      min-height:38px;
+      padding:0 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:var(--field-bg)
+    }
+    .category-search-shell span{color:var(--muted)}
+    .category-search-shell input{
+      width:100%;
+      min-width:0;
+      padding:0;
+      border:0;
+      outline:0;
+      background:transparent;
+      font-size:10px
+    }
+    .category-add-card{
+      display:grid;
+      grid-template-columns:42px minmax(0,1fr) auto;
+      gap:8px;
+      align-items:center;
+      margin-top:10px;
+      padding:8px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:var(--field-bg)
+    }
+    .category-add-card input{
+      width:100%;
+      min-width:0;
+      padding:9px;
+      border:0;
+      border-radius:10px;
+      outline:0;
+      background:var(--card);
+      font-size:10px
+    }
+    .category-add-card .primary{
+      min-height:38px;
+      padding:8px 11px;
+      font-size:9px
+    }
+    .category-list-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:12px;
+      padding:0 2px
+    }
+    .category-list-head span{font-size:9px;font-weight:900}
+    .category-list-head small{color:var(--muted);font-size:7px}
+    .modern-category-list{gap:6px}
+    .modern-category-list .category-item{
+      grid-template-columns:42px minmax(0,1fr) auto;
+      padding:7px 8px;
+      border-radius:13px;
+      background:var(--field-bg)
+    }
+    .category-item-main{min-width:0}
+    .category-item-main .category-name-input{
+      width:100%;
+      min-width:0;
+      padding:5px 7px;
+      border:1px solid transparent;
+      border-radius:8px;
+      background:transparent;
+      font-size:10px;
+      font-weight:850
+    }
+    .category-item-main .category-name-input:focus{
+      border-color:var(--line);
+      background:var(--card)
+    }
+    .category-usage{
+      display:block;
+      margin:2px 7px 0;
+      color:var(--muted);
+      font-size:7px
+    }
+    .modern-category-list .category-actions button{
+      width:29px;
+      height:29px;
+      font-size:8px
+    }
+    .income-pin-auto-hint{
+      margin-top:8px;
+      color:var(--muted);
+      text-align:center;
+      font-size:7px
+    }
+    .income-pin-modal.unlock-mode #incomePinSubmit{display:none}
+    .income-pin-modal:not(.unlock-mode) #incomePinAutoHint{display:none}
+    @media (max-width:360px){
+      .money-expression-tools{
+        grid-template-columns:1fr 1fr
+      }
+      .money-expression-tools small{
+        grid-column:1/-1;
+        text-align:left
+      }
+      .category-add-card{
+        grid-template-columns:40px minmax(0,1fr)
+      }
+      .category-add-card .primary{
+        grid-column:1/-1
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -3274,7 +3464,15 @@
         </summary>
         <div class="settings-card-body">
           <div class="field"><label>Budget month</label><select id="budgetMonth"></select></div>
-          <div class="field" style="margin-top:10px"><label>Total budget (RMB)</label><input id="overallBudget" type="number" min="0" step="100" placeholder="e.g. 8000"></div>
+          <div class="field money-expression-field" style="margin-top:10px">
+            <label for="overallBudget">Total budget (RMB)</label>
+            <input id="overallBudget" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 8000+500-200" data-money-expression data-money-min="0">
+            <div class="money-expression-tools compact">
+              <button type="button" data-money-operator="+" data-money-target="overallBudget">＋ Add</button>
+              <button type="button" data-money-operator="-" data-money-target="overallBudget">− Subtract</button>
+              <small id="overallBudgetResult" data-money-result-for="overallBudget"></small>
+            </div>
+          </div>
           <p id="budgetInheritanceNote" class="helper">Current month is selected automatically.</p>
           <button id="saveBudget" class="primary" style="width:100%;margin-top:10px">Save budget override</button>
         </div>
@@ -3301,16 +3499,21 @@
           <span class="settings-summary-main">
             <span class="settings-summary-icon">🔁</span>
             <span class="settings-summary-copy">
-              <span class="settings-summary-title">Monthly fixed expenses</span>
-              <span class="settings-summary-sub" id="recurringSummaryText">No recurring expenses</span>
+              <span class="settings-summary-title">Monthly fixed items</span>
+              <span class="settings-summary-sub" id="recurringSummaryText">No fixed expenses or income</span>
             </span>
           </span>
           <span class="settings-summary-side"><span id="recurringCountBadge" class="badge">0 active</span></span>
         </summary>
         <div class="settings-card-body">
           <div class="recurring-intro">
-            Due expenses are added when the app opens or verifies cloud data on or after the selected day.
-            Each month is generated only once.
+            Fixed expenses and fixed income are generated locally when due.
+            Each rule is created only once per month and enters the normal cloud-sync queue.
+          </div>
+
+          <div class="type-toggle recurring-mode-toggle">
+            <button id="recurringExpenseMode" class="active" type="button" data-recurring-mode="expense">Expenses</button>
+            <button id="recurringIncomeMode" type="button" data-recurring-mode="income">Income</button>
           </div>
 
           <div class="recurring-toolbar">
@@ -3325,9 +3528,14 @@
             </div>
 
             <div class="recurring-form-grid">
-              <div class="field">
-                <label>Amount (RMB)</label>
-                <input id="recurringAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="e.g. 2100">
+              <div class="field money-expression-field">
+                <label for="recurringAmount">Amount (RMB)</label>
+                <input id="recurringAmount" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2100+100" data-money-expression data-money-min="0.01">
+                <div class="money-expression-tools compact">
+                  <button type="button" data-money-operator="+" data-money-target="recurringAmount">＋ Add</button>
+                  <button type="button" data-money-operator="-" data-money-target="recurringAmount">− Subtract</button>
+                  <small id="recurringAmountResult" data-money-result-for="recurringAmount"></small>
+                </div>
               </div>
               <div class="field">
                 <label>Every month on day</label>
@@ -3343,7 +3551,7 @@
               </div>
               <div class="field full">
                 <label>Tag</label>
-                <input id="recurringTag" maxlength="40" placeholder="Rent, parents allowance, electricity…">
+                <input id="recurringTag" maxlength="40" placeholder="Rent, salary, allowance, utilities…">
               </div>
             </div>
 
@@ -3357,8 +3565,8 @@
 
           <div id="recurringList" class="recurring-list"></div>
           <p class="helper recurring-helper">
-            Day 29–31 automatically uses the last valid day in shorter months.
-            Deleting a rule does not delete records already created.
+            Day 29–31 uses the last valid day in shorter months.
+            Existing generated records are never deleted when a rule is removed.
           </p>
         </div>
       </details>
@@ -3374,24 +3582,46 @@
           </span>
         </summary>
         <div class="settings-card-body">
-          <div class="section-head" style="margin-top:0">
-            <h2>Categories</h2>
-            <button id="toggleCategoryEdit" class="pill-btn" type="button">Edit categories</button>
-          </div>
-          <div id="categorySummary" class="category-summary"></div>
-          <div id="categoryEditor" class="category-editor hidden">
-            <div class="type-toggle">
-              <button id="categoryExpenseBtn" class="active" data-category-mode="expense">Expense</button>
-              <button id="categoryIncomeBtn" data-category-mode="income">Income</button>
+          <div class="section-head category-manager-head" style="margin-top:0">
+            <div>
+              <h2>Categories</h2>
+              <small>Expense and income categories use the same order everywhere in the App.</small>
             </div>
-            <div class="add-category">
+            <button id="toggleCategoryEdit" class="pill-btn" type="button">Manage</button>
+          </div>
+
+          <div id="categorySummary" class="category-summary"></div>
+
+          <div id="categoryEditor" class="category-editor hidden">
+            <div class="category-manager-toolbar">
+              <div class="type-toggle category-mode-toggle">
+                <button id="categoryExpenseBtn" class="active" data-category-mode="expense">Expense <span id="categoryExpenseCount"></span></button>
+                <button id="categoryIncomeBtn" data-category-mode="income">Income <span id="categoryIncomeCount"></span></button>
+              </div>
+              <div class="category-search-shell">
+                <span aria-hidden="true">⌕</span>
+                <input id="categoryManagerSearch" type="search" autocomplete="off" placeholder="Search categories">
+              </div>
+            </div>
+
+            <div class="category-add-card">
+              <button id="newCategoryIconButton" class="category-icon-tile" type="button" aria-label="Choose new category icon">⭐</button>
               <input id="newCategoryName" maxlength="30" placeholder="New category name">
-              <button id="addCategory" class="primary">Add category</button>
+              <button id="addCategory" class="primary" type="button">Add</button>
             </div>
             <input id="newCategoryIcon" type="hidden" value="⭐">
-            <div id="newCategoryPalette" class="icon-palette compact"></div>
-            <div id="categoryList" class="category-list" style="margin-top:12px"></div>
-            <p class="helper">Tap an icon to change it. Use ↑ and ↓ to reorder.</p>
+            <div id="newCategoryPalette" class="icon-palette compact hidden"></div>
+
+            <div class="category-list-head">
+              <span id="categoryListHeading">Expense categories</span>
+              <small id="categoryListMeta">0 categories</small>
+            </div>
+            <div id="categoryList" class="category-list modern-category-list"></div>
+            <div id="categoryManagerEmpty" class="empty hidden">
+              <strong>No matching category</strong>
+              Clear the search or create a new category.
+            </div>
+            <p class="helper">Tap an icon to replace it. Rename inline. Use arrows to keep the same order in Add record and Filters.</p>
           </div>
         </div>
       </details>
@@ -3517,7 +3747,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 57 simplifies the Records trend chart and adds complete, edge-safe date labels.</p>
+            Version 58 adds amount arithmetic, category-first entry, automatic PIN unlock, fixed income and a cleaner category manager.</p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
       </details>
@@ -3615,27 +3845,12 @@
           <label for="txnAmount">Amount</label>
           <div class="txn-amount-input">
             <span>¥</span>
-            <input id="txnAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            <input id="txnAmount" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-money-expression data-money-min="0.01">
           </div>
-        </div>
-
-        <div class="txn-compact-control txn-tag-control">
-          <label for="txnTag">Tag</label>
-          <input id="txnTag" class="txn-compact-input" maxlength="40" placeholder="Short note">
-        </div>
-      </div>
-
-      <div id="tagSuggestionsWrap" class="tag-suggestions-wrap hidden">
-        <span class="tag-suggestions-label">Common notes</span>
-        <div id="tagSuggestions" class="tag-suggestions"></div>
-      </div>
-
-      <div class="txn-secondary-row">
-        <div class="txn-compact-control">
-          <label for="txnDate">Date</label>
-          <div class="txn-compact-shell txn-date-shell">
-            <span class="txn-control-symbol" aria-hidden="true">◷</span>
-            <input id="txnDate" class="txn-compact-input" type="date">
+          <div class="money-expression-tools">
+            <button type="button" data-money-operator="+" data-money-target="txnAmount" aria-label="Add another amount">＋ Add</button>
+            <button type="button" data-money-operator="-" data-money-target="txnAmount" aria-label="Subtract an amount">− Subtract</button>
+            <small id="txnAmountResult" data-money-result-for="txnAmount"></small>
           </div>
         </div>
 
@@ -3648,6 +3863,26 @@
           </button>
           <select id="txnCategory" class="hidden" aria-hidden="true" tabindex="-1"></select>
         </div>
+      </div>
+
+      <div class="txn-secondary-row">
+        <div class="txn-compact-control">
+          <label for="txnDate">Date</label>
+          <div class="txn-compact-shell txn-date-shell">
+            <span class="txn-control-symbol" aria-hidden="true">◷</span>
+            <input id="txnDate" class="txn-compact-input" type="date">
+          </div>
+        </div>
+
+        <div class="txn-compact-control txn-tag-control">
+          <label for="txnTag">Tag</label>
+          <input id="txnTag" class="txn-compact-input" maxlength="40" placeholder="Short note">
+        </div>
+      </div>
+
+      <div id="tagSuggestionsWrap" class="tag-suggestions-wrap hidden">
+        <span class="tag-suggestions-label">Common notes</span>
+        <div id="tagSuggestions" class="tag-suggestions"></div>
       </div>
     </div>
 
@@ -3673,7 +3908,7 @@
 
     <div id="incomePinCurrentWrap" class="field income-pin-field">
       <label for="incomePinCurrent">Current PIN</label>
-      <input id="incomePinCurrent" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
+      <input id="incomePinCurrent" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" enterkeyhint="done" placeholder="••••">
     </div>
     <div id="incomePinNewWrap" class="field income-pin-field hidden">
       <label for="incomePinNew">New four-digit PIN</label>
@@ -3683,6 +3918,7 @@
       <label for="incomePinConfirm">Confirm PIN</label>
       <input id="incomePinConfirm" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
     </div>
+    <div id="incomePinAutoHint" class="income-pin-auto-hint">Unlocks automatically after the fourth digit.</div>
     <div id="incomePinError" class="income-pin-error hidden"></div>
     <button id="incomePinSubmit" class="primary" type="button" style="width:100%;margin-top:10px">Unlock</button>
   </div>
@@ -3743,11 +3979,6 @@
     </div>
 
     <div class="category-picker-scroll">
-      <section id="recentCategorySection" class="category-picker-section hidden">
-        <div class="category-picker-section-title">Recently used</div>
-        <div id="recentCategoryGrid" class="category-picker-grid"></div>
-      </section>
-
       <section class="category-picker-section">
         <div class="category-picker-section-title">All categories</div>
         <div id="allCategoryGrid" class="category-picker-grid"></div>
@@ -3809,8 +4040,8 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=57"></script>
-<script src="firebase-cloud-v57.js?v=57"></script>
+<script src="firebase-config.js?v=58"></script>
+<script src="firebase-cloud-v58.js?v=58"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -4033,6 +4264,7 @@
   let recordFiltersExpanded = false;
   let recordsSortMode = "time-desc";
   let editingRecurringId = null;
+  let recurringMode = "expense";
   let budgetSelectedMonth = currentMonthKey();
   let monthPickerYear = Number(currentMonthKey().slice(0,4));
   let categoryPickerTarget = "transaction";
@@ -4060,6 +4292,7 @@
   let incomePinModalMode = "unlock";
   let incomeUnlockContinuation = null;
   let incomePinSubmitRunning = false;
+  let incomePinAutoSubmitTimer = null;
   let recordsScrollTop = 0;
   let recordsPage = 0;
   let categoryDetailPage = 0;
@@ -6165,6 +6398,7 @@
     ]))}`;
     return {
       id,
+      type:raw.type==="income"?"income":"expense",
       amount,
       day,
       category:normalizedRecordText(raw.category)||"Other",
@@ -6258,7 +6492,8 @@
   }
 
   function recurringTransactionId(rule,month){
-    return `fixed_${stableHash(rule.id)}_${month.replace("-","")}`;
+    const prefix=rule.type==="income"?"fixed_income":"fixed";
+    return `${prefix}_${stableHash(rule.id)}_${month.replace("-","")}`;
   }
 
   function recurringRuleLastGenerated(rule){
@@ -6275,13 +6510,16 @@
     }).join("");
     $("recurringDay").value=previousDay||"1";
 
+    const categories=recurringMode==="income"
+      ?state.incomeCategories
+      :state.expenseCategories;
     const previousCategory=$("recurringCategory").value;
-    $("recurringCategory").innerHTML=state.expenseCategories
+    $("recurringCategory").innerHTML=categories
       .map(category=>`<option value="${escapeHtml(category)}">${categoryIcon(category)} ${escapeHtml(category)}</option>`)
       .join("");
-    $("recurringCategory").value=state.expenseCategories.includes(previousCategory)
+    $("recurringCategory").value=categories.includes(previousCategory)
       ?previousCategory
-      :(state.expenseCategories[0]||"Other");
+      :(categories[0]||(recurringMode==="income"?"Other Income":"Other"));
   }
 
   function closeRecurringForm(){
@@ -6289,20 +6527,40 @@
     $("recurringForm").classList.add("hidden");
   }
 
+  function setRecurringMode(type,{closeForm=false}={}){
+    recurringMode=type==="income"?"income":"expense";
+    if(closeForm)closeRecurringForm();
+    renderRecurringExpenses();
+  }
+
   function openRecurringForm(id=null){
     editingRecurringId=id;
-    populateRecurringFormOptions();
     const rule=id?state.recurringExpenses.find(item=>item.id===id):null;
+    if(rule)recurringMode=rule.type==="income"?"income":"expense";
 
-    $("recurringFormTitle").textContent=rule?"Edit fixed expense":"Add fixed expense";
+    populateRecurringFormOptions();
+    const categories=recurringMode==="income"
+      ?state.incomeCategories
+      :state.expenseCategories;
+    const itemLabel=recurringMode==="income"
+      ?"fixed income"
+      :"fixed expense";
+
+    $("recurringFormTitle").textContent=rule
+      ?`Edit ${itemLabel}`
+      :`Add ${itemLabel}`;
     $("recurringAmount").value=rule?.amount||"";
     $("recurringDay").value=String(rule?.day||1);
-    $("recurringCategory").value=state.expenseCategories.includes(rule?.category)
+    $("recurringCategory").value=categories.includes(rule?.category)
       ?rule.category
-      :(state.expenseCategories[0]||"Other");
+      :(categories[0]||(recurringMode==="income"?"Other Income":"Other"));
     $("recurringTag").value=rule?.tag||"";
     $("recurringStartMonth").value=rule?.startMonth||currentMonthKey();
     $("recurringEnabled").checked=rule?.enabled!==false;
+    $("saveRecurringExpense").textContent=rule
+      ?`Save ${itemLabel}`
+      :`Save ${itemLabel}`;
+    updateMoneyExpressionPreview($("recurringAmount"));
     $("recurringForm").classList.remove("hidden");
 
     setTimeout(()=>$("recurringForm").scrollIntoView({
@@ -6355,32 +6613,53 @@
     if(!$("recurringList"))return;
     populateRecurringFormOptions();
 
-    const rules=[...(state.recurringExpenses||[])].sort((a,b)=>
-      Number(b.enabled)-Number(a.enabled) ||
-      a.day-b.day ||
-      String(a.tag).localeCompare(String(b.tag))
-    );
-    const active=rules.filter(rule=>rule.enabled).length;
+    const allRules=[...(state.recurringExpenses||[])];
+    const expenseActive=allRules.filter(
+      rule=>rule.type!=="income"&&rule.enabled
+    ).length;
+    const incomeActive=allRules.filter(
+      rule=>rule.type==="income"&&rule.enabled
+    ).length;
+    const active=expenseActive+incomeActive;
 
+    const rules=allRules
+      .filter(rule=>(rule.type==="income"?"income":"expense")===recurringMode)
+      .sort((a,b)=>
+        Number(b.enabled)-Number(a.enabled) ||
+        a.day-b.day ||
+        String(a.tag).localeCompare(String(b.tag))
+      );
+
+    $("recurringExpenseMode").classList.toggle("active",recurringMode==="expense");
+    $("recurringIncomeMode").classList.toggle("active",recurringMode==="income");
+    $("addRecurringExpense").textContent=recurringMode==="income"
+      ?"＋ Add fixed income"
+      :"＋ Add fixed expense";
     $("recurringCountBadge").textContent=`${active} active`;
-    $("recurringSummaryText").textContent=rules.length
-      ?`${active} active · ${rules.length} total`
-      :"No recurring expenses";
+    $("recurringSummaryText").textContent=allRules.length
+      ?`${expenseActive} expense · ${incomeActive} income active`
+      :"No fixed expenses or income";
 
     $("recurringList").innerHTML=rules.length
       ?rules.map(rule=>{
           const last=recurringRuleLastGenerated(rule);
+          const income=rule.type==="income";
           return `<div class="recurring-rule" data-recurring-id="${escapeHtml(rule.id)}">
             <div class="recurring-rule-icon">${categoryIcon(rule.category)}</div>
             <div>
-              <div class="recurring-rule-title">${escapeHtml(rule.tag||rule.category)}</div>
+              <div class="recurring-rule-title">
+                ${escapeHtml(rule.tag||rule.category)}
+                <span class="recurring-rule-type ${income?"income":""}">${income?"Income":"Expense"}</span>
+              </div>
               <div class="recurring-rule-meta">
                 ${escapeHtml(rule.category)} · Every month on day ${rule.day}<br>
                 Starts ${monthLabel(rule.startMonth)}${last?` · Last generated ${monthLabel(last)}`:""}
               </div>
               <span class="recurring-rule-status ${rule.enabled?"":"paused"}">${rule.enabled?"Active":"Paused"}</span>
             </div>
-            <div class="recurring-rule-amount">${money(rule.amount)}</div>
+            <div class="recurring-rule-amount ${income?"income":""}">
+              ${income?"+":"−"}${money(rule.amount)}
+            </div>
             <div class="recurring-rule-actions">
               <button type="button" class="secondary" data-recurring-edit="${escapeHtml(rule.id)}">Edit</button>
               <button type="button" class="danger" data-recurring-delete="${escapeHtml(rule.id)}">Delete</button>
@@ -6388,19 +6667,27 @@
           </div>`;
         }).join("")
       :emptyHtml(
-          "No monthly fixed expenses",
-          "Add rent, parents allowance, utilities or another repeating monthly expense."
+          recurringMode==="income"
+            ?"No monthly fixed income"
+            :"No monthly fixed expenses",
+          recurringMode==="income"
+            ?"Add salary, allowance, rent income or another repeating monthly income."
+            :"Add rent, utilities or another repeating monthly expense."
         );
   }
 
   async function saveRecurringExpense(){
-    const amount=Number($("recurringAmount").value);
+    const amount=moneyExpressionValue("recurringAmount");
     const day=Number($("recurringDay").value);
     const category=$("recurringCategory").value;
     const tag=$("recurringTag").value.trim();
     const startMonth=$("recurringStartMonth").value;
 
-    if(!amount||amount<=0){toast("Enter a valid recurring amount.");return;}
+    if(amount===null){
+      toast("Enter a valid fixed amount or calculation.");
+      $("recurringAmount").focus();
+      return;
+    }
     if(!category){toast("Choose a category.");return;}
     if(!/^\d{4}-\d{2}$/.test(startMonth)){toast("Choose a start month.");return;}
 
@@ -6411,6 +6698,7 @@
 
     const rule=normalizeRecurringExpense({
       id:existing?.id||uid(),
+      type:recurringMode,
       amount,
       day,
       category,
@@ -6431,13 +6719,15 @@
 
     await syncSettingsToCloud(
       false,
-      existing?"Fixed expense updated":"Fixed expense added"
+      existing
+        ?`${recurringMode==="income"?"Fixed income":"Fixed expense"} updated`
+        :`${recurringMode==="income"?"Fixed income":"Fixed expense"} added`
     );
 
     toast(
       existing
-        ?"Fixed expense updated on this device."
-        :"Fixed expense saved on this device."
+        ?`${recurringMode==="income"?"Fixed income":"Fixed expense"} updated on this device.`
+        :`${recurringMode==="income"?"Fixed income":"Fixed expense"} saved on this device.`
     );
 
     await processRecurringExpenses({showToast:true});
@@ -6492,7 +6782,7 @@
           const dueDate=recurringDueDate(rule,month);
           const transaction={
             id:transactionId,
-            type:"expense",
+            type:rule.type==="income"?"income":"expense",
             amount:Number(rule.amount),
             date:dueDate,
             category:rule.category,
@@ -6511,7 +6801,7 @@
 
       if(settingsChanged){
         saveLocalMirror();
-        queuePendingCloudSettings("Fixed expense generation updated");
+        queuePendingCloudSettings("Fixed item generation updated");
         renderAll();
       }
 
@@ -6528,15 +6818,15 @@
 
       if(showToast){
         toast(created
-          ?`${created} fixed expense${created===1?"":"s"} added on this device.`
-          :"No fixed expenses are due."
+          ?`${created} fixed item${created===1?"":"s"} added on this device.`
+          :"No fixed expenses or income are due."
         );
       }
 
       return {created};
     }catch(error){
       console.error("Recurring expense generation failed",error);
-      if(showToast)toast(error.message||"Fixed expense generation failed.");
+      if(showToast)toast(error.message||"Fixed item generation failed.");
       return {created,error};
     }finally{
       recurringProcessRunning=false;
@@ -6722,11 +7012,31 @@
 
     lockPageForOverlay();
     $("incomePinModal").classList.add("open");
-    setTimeout(()=>$(setup?"incomePinNew":"incomePinCurrent")?.focus(),120);
+    $("incomePinModal").classList.toggle("unlock-mode",mode==="unlock");
+
+    const target=$(setup?"incomePinNew":"incomePinCurrent");
+    const focusPin=()=>{
+      try{
+        target?.focus({preventScroll:true});
+        target?.click();
+        const end=target?.value?.length||0;
+        target?.setSelectionRange?.(end,end);
+      }catch(error){
+        console.warn("PIN keyboard focus failed",error);
+      }
+    };
+
+    // The first call remains inside the user's tap event, which gives iOS
+    // the best chance of opening the numeric keyboard.
+    focusPin();
+    requestAnimationFrame(focusPin);
+    setTimeout(focusPin,90);
   }
 
   function closeIncomePinModal({restoreScroll=true}={}){
+    clearTimeout(incomePinAutoSubmitTimer);
     $("incomePinModal").classList.remove("open");
+    $("incomePinModal").classList.remove("unlock-mode");
     resetSwipeSheet("incomePinModal");
     incomeUnlockContinuation=null;
     clearIncomePinInputs();
@@ -6799,7 +7109,9 @@
           return;
         }
         if(!(await verifyIncomePin(current))){
-          showIncomePinError("Incorrect PIN.");
+          showIncomePinError("Incorrect PIN. Try again.");
+          $("incomePinCurrent").value="";
+          setTimeout(()=>$("incomePinCurrent").focus({preventScroll:true}),40);
           return;
         }
         incomePrivacyUnlocked=true;
@@ -6841,6 +7153,94 @@
       incomePinSubmitRunning=false;
       $("incomePinSubmit").disabled=false;
     }
+  }
+
+  function normalizeMoneyExpressionText(value){
+    return String(value??"")
+      .replace(/[¥￥,，\s]/g,"")
+      .replace(/[−–—]/g,"-")
+      .replace(/＋/g,"+");
+  }
+
+  function evaluateMoneyExpression(value){
+    const text=normalizeMoneyExpressionText(value);
+    if(!text){
+      return {valid:false,empty:true,value:0,text};
+    }
+    if(!/^\d+(?:\.\d{0,2})?(?:[+-]\d+(?:\.\d{0,2})?)*$/.test(text)){
+      return {
+        valid:false,
+        empty:false,
+        incomplete:/[+-]$/.test(text),
+        value:0,
+        text
+      };
+    }
+
+    const parts=text.match(/[+-]?\d+(?:\.\d+)?/g)||[];
+    const result=parts.reduce(
+      (sum,part)=>sum+Number(part),
+      0
+    );
+    if(!Number.isFinite(result)){
+      return {valid:false,empty:false,value:0,text};
+    }
+    return {
+      valid:true,
+      empty:false,
+      value:Math.round(result*100)/100,
+      text
+    };
+  }
+
+  function updateMoneyExpressionPreview(input){
+    if(!input)return;
+    const result=evaluateMoneyExpression(input.value);
+    const target=$(`[data-money-result-for="${input.id}"]`);
+    if(!target)return result;
+
+    target.classList.remove("valid","invalid");
+    if(result.empty){
+      target.textContent="You can enter 100+20-5";
+    }else if(result.valid){
+      target.textContent=`= ${money(result.value)}`;
+      target.classList.add("valid");
+    }else if(result.incomplete){
+      target.textContent="Enter the next amount";
+    }else{
+      target.textContent="Use numbers, + and − only";
+      target.classList.add("invalid");
+    }
+    return result;
+  }
+
+  function moneyExpressionValue(inputId,{allowZero=false}={}){
+    const input=$(inputId);
+    const result=updateMoneyExpressionPreview(input);
+    if(!result.valid)return null;
+    if(allowZero?result.value<0:result.value<=0)return null;
+    return result.value;
+  }
+
+  function commitMoneyExpressionInput(input){
+    const result=updateMoneyExpressionPreview(input);
+    if(result.valid){
+      input.value=result.value.toFixed(2);
+      updateMoneyExpressionPreview(input);
+    }
+  }
+
+  function appendMoneyOperator(input,operator){
+    if(!input)return;
+    const normalized=normalizeMoneyExpressionText(input.value);
+    const clean=normalized.replace(/[+-]+$/,"");
+    input.value=clean
+      ?`${clean}${operator}`
+      :"";
+    updateMoneyExpressionPreview(input);
+    input.focus({preventScroll:true});
+    const end=input.value.length;
+    input.setSelectionRange?.(end,end);
   }
 
   function money(v){
@@ -8077,17 +8477,6 @@
       button.classList.toggle("active",button.dataset.pickerMode===categoryPickerFilterMode);
     });
 
-    if(isFilter){
-      $("recentCategorySection").classList.add("hidden");
-      $("recentCategoryGrid").innerHTML="";
-    }else{
-      const recent=recentCategoriesForType(currentTxnType())
-        .filter(category=>all.includes(category))
-        .filter(category=>!query||category.toLocaleLowerCase().includes(query));
-      $("recentCategorySection").classList.toggle("hidden",!recent.length);
-      $("recentCategoryGrid").innerHTML=recent.map(categoryPickerOption).join("");
-    }
-
     $("allCategoryGrid").innerHTML=filtered.map(categoryPickerOption).join("");
     $("categoryPickerEmpty").classList.toggle("hidden",filtered.length>0);
   }
@@ -8216,6 +8605,7 @@
     const today=todayKey();
     const current=currentMonthKey();
     const items=(state.recurringExpenses||[]).filter(rule=>{
+      if(rule.type==="income")return false;
       if(!rule.enabled||rule.startMonth>monthKey)return false;
       if(rule.generatedMonths?.includes(monthKey))return false;
       const due=recurringDueDate(rule,monthKey);
@@ -9497,24 +9887,73 @@
       <span class="category-summary-count">${list.length} categor${list.length===1?"y":"ies"}${extra}</span>
     </div>`;
   }
+  function categoryUsageStats(type,category){
+    const records=state.transactions.filter(
+      transaction=>transaction.type===type&&transaction.category===category
+    ).length;
+    const fixed=state.recurringExpenses.filter(rule=>{
+      const ruleType=rule.type==="income"?"income":"expense";
+      return ruleType===type&&rule.category===category;
+    }).length;
+    return {records,fixed};
+  }
+
   function renderCategoryManager(){
     $("categorySummary").innerHTML=
       categorySummaryRow("Expense",state.expenseCategories)+
       categorySummaryRow("Income",state.incomeCategories);
 
     $("categoryEditor").classList.toggle("hidden",!categoryEditing);
-    $("toggleCategoryEdit").textContent=categoryEditing?"Done":"Edit categories";
+    $("toggleCategoryEdit").textContent=categoryEditing?"Done":"Manage";
     if(!categoryEditing)return;
 
-    const list=categoryMode==="expense"?state.expenseCategories:state.incomeCategories;
+    const list=categoryMode==="expense"
+      ?state.expenseCategories
+      :state.incomeCategories;
+    const query=String($("categoryManagerSearch")?.value||"")
+      .trim()
+      .toLowerCase();
+    const filtered=list
+      .map((category,index)=>({category,index}))
+      .filter(item=>
+        !query||item.category.toLowerCase().includes(query)
+      );
+
     $("categoryExpenseBtn").classList.toggle("active",categoryMode==="expense");
     $("categoryIncomeBtn").classList.toggle("active",categoryMode==="income");
-    renderPalette("newCategoryPalette", $("newCategoryIcon").value || "⭐", true);
-    $("categoryList").innerHTML=list.map((cat,i)=>`<div class="category-item" data-index="${i}">
-      <button class="category-icon-tile" data-cat-action="pick-icon" type="button" aria-label="Choose icon">${categoryIcon(cat)}</button>
-      <input class="category-name-input" data-role="name" value="${escapeHtml(cat)}" maxlength="30" aria-label="Category name">
-      <div class="category-actions"><button type="button" data-cat-action="up" title="Move up" ${i===0?"disabled":""}>↑</button><button type="button" data-cat-action="down" title="Move down" ${i===list.length-1?"disabled":""}>↓</button><button type="button" data-cat-action="delete" class="delete" title="Delete">✕</button></div>
-    </div>`).join("");
+    $("categoryExpenseCount").textContent=String(state.expenseCategories.length);
+    $("categoryIncomeCount").textContent=String(state.incomeCategories.length);
+    $("categoryListHeading").textContent=categoryMode==="expense"
+      ?"Expense categories"
+      :"Income categories";
+    $("categoryListMeta").textContent=
+      `${filtered.length} shown · ${list.length} total`;
+    $("newCategoryIconButton").textContent=$("newCategoryIcon").value||"⭐";
+
+    $("categoryList").innerHTML=filtered.map(({category,index})=>{
+      const usage=categoryUsageStats(categoryMode,category);
+      const usageText=[
+        `${usage.records} record${usage.records===1?"":"s"}`,
+        usage.fixed
+          ?`${usage.fixed} fixed item${usage.fixed===1?"":"s"}`
+          :""
+      ].filter(Boolean).join(" · ");
+
+      return `<div class="category-item" data-index="${index}">
+        <button class="category-icon-tile" data-cat-action="pick-icon" type="button" aria-label="Choose icon">${categoryIcon(category)}</button>
+        <div class="category-item-main">
+          <input class="category-name-input" data-role="name" value="${escapeHtml(category)}" maxlength="30" aria-label="Category name">
+          <small class="category-usage">${escapeHtml(usageText)}</small>
+        </div>
+        <div class="category-actions">
+          <button type="button" data-cat-action="up" title="Move up" ${index===0?"disabled":""}>↑</button>
+          <button type="button" data-cat-action="down" title="Move down" ${index===list.length-1?"disabled":""}>↓</button>
+          <button type="button" data-cat-action="delete" class="delete" title="Delete">✕</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    $("categoryManagerEmpty").classList.toggle("hidden",filtered.length>0);
   }
   function toggleCategoryEditing(){
     categoryEditing=!categoryEditing;
@@ -9538,6 +9977,7 @@
     state.categoryIcons[name]=icon;
     $("newCategoryName").value="";
     $("newCategoryIcon").value="⭐";
+    $("categoryManagerSearch").value="";
 
     saveLocalMirror();
     renderAll();
@@ -9576,11 +10016,10 @@
       if(transaction)transaction.category=name;
     });
 
-    if(type==="expense"){
-      state.recurringExpenses.forEach(rule=>{
-        if(rule.category===old)rule.category=name;
-      });
-    }
+    state.recurringExpenses.forEach(rule=>{
+      const ruleType=rule.type==="income"?"income":"expense";
+      if(ruleType===type&&rule.category===old)rule.category=name;
+    });
 
     state.categoryIcons[name]=state.categoryIcons[old]||ICONS[old]||"⭐";
     delete state.categoryIcons[old];
@@ -9626,7 +10065,10 @@
 
   function openIconPicker(type,index){
     iconPickerTarget={type,index};
-    renderPalette("iconPickerGrid", categoryIcon(categoryArray(type)[index]));
+    const selected=type==="new"
+      ?($("newCategoryIcon").value||"⭐")
+      :categoryIcon(categoryArray(type)[index]);
+    renderPalette("iconPickerGrid",selected);
     lockPageForOverlay();
     $("iconPickerModal").classList.add("open");
   }
@@ -9641,15 +10083,16 @@
     if(!cat)return;
     if(list.length<=1){toast("Keep at least one category.");return;}
     const recordUsage=state.transactions.filter(t=>t.type===type&&t.category===cat).length;
-    const recurringUsage=type==="expense"
-      ?state.recurringExpenses.filter(rule=>rule.category===cat).length
-      :0;
+    const recurringUsage=state.recurringExpenses.filter(rule=>{
+      const ruleType=rule.type==="income"?"income":"expense";
+      return ruleType===type&&rule.category===cat;
+    }).length;
     const used=recordUsage+recurringUsage;
     const choices=list.filter((x,i)=>i!==index);
     $("deleteCategoryTarget").innerHTML=choices.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
     const needsMove=used>0;
     $("deleteCategoryMessage").textContent = needsMove
-      ? `“${cat}” is used by ${recordUsage} record${recordUsage===1?"":"s"}${recurringUsage?` and ${recurringUsage} fixed expense rule${recurringUsage===1?"":"s"}`:""}. Choose another category before deleting it.`
+      ? `“${cat}” is used by ${recordUsage} record${recordUsage===1?"":"s"}${recurringUsage?` and ${recurringUsage} fixed item rule${recurringUsage===1?"":"s"}`:""}. Choose another category before deleting it.`
       : `Delete “${cat}”? This action cannot be undone.`;
     $("deleteCategorySelectWrap").classList.toggle("hidden", !needsMove);
     pendingDeleteCategory={type,index,needsMove};
@@ -10206,8 +10649,12 @@
   }
 
   async function saveTxn({addAnother=false}={}){
-    const amount=Number($("txnAmount").value);
-    if(!amount||amount<=0){toast("Enter a valid amount.");return;}
+    const amount=moneyExpressionValue("txnAmount");
+    if(amount===null){
+      toast("Enter a valid amount or calculation.");
+      $("txnAmount").focus();
+      return;
+    }
 
     const old=editingId?state.transactions.find(item=>item.id===editingId):null;
     if(old)addAnother=false;
@@ -10373,8 +10820,17 @@
 
   async function saveBudget(){
     const key=budgetSelectedMonth||currentMonthKey();
+    const amount=moneyExpressionValue(
+      "overallBudget",
+      {allowZero:true}
+    );
+    if(amount===null){
+      toast("Enter a valid budget calculation.");
+      $("overallBudget").focus();
+      return;
+    }
     state.budgets[key]={
-      overall:Number($("overallBudget").value)||0
+      overall:amount
     };
 
     saveLocalMirror();
@@ -10957,8 +11413,30 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
       }
     }
   });
+  document.addEventListener("click",event=>{
+    const operatorButton=event.target.closest("[data-money-operator][data-money-target]");
+    if(operatorButton){
+      appendMoneyOperator(
+        $(operatorButton.dataset.moneyTarget),
+        operatorButton.dataset.moneyOperator
+      );
+    }
+  });
+
+  qsa("[data-money-expression]").forEach(input=>{
+    input.addEventListener("input",()=>{
+      input.value=input.value
+        .replace(/[^0-9+\-−–—＋.¥￥,，\s]/g,"");
+      updateMoneyExpressionPreview(input);
+    });
+    input.addEventListener("blur",()=>commitMoneyExpressionInput(input));
+    updateMoneyExpressionPreview(input);
+  });
+
   $("toggleCategoryEdit").addEventListener("click",toggleCategoryEditing);
   $("newCategoryName").addEventListener("keydown",e=>{if(e.key==="Enter")addCategory();});
+  $("newCategoryIconButton").addEventListener("click",()=>openIconPicker("new",-1));
+  $("categoryManagerSearch").addEventListener("input",renderCategoryManager);
   $("newCategoryPalette").addEventListener("click",e=>{const btn=e.target.closest("[data-icon]");if(!btn)return;$("newCategoryIcon").value=btn.dataset.icon;renderCategoryManager();});
   $("categoryList").addEventListener("change",e=>{const row=e.target.closest(".category-item");if(!row)return;const i=Number(row.dataset.index);if(e.target.dataset.role==="name")renameCategory(categoryMode,i,e.target.value);});
   $("categoryList").addEventListener("pointerdown",e=>{
@@ -10976,6 +11454,12 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
   $("iconPickerGrid").addEventListener("click",e=>{
     const btn=e.target.closest("[data-icon]");
     if(!btn||!iconPickerTarget)return;
+    if(iconPickerTarget.type==="new"){
+      $("newCategoryIcon").value=btn.dataset.icon;
+      $("newCategoryIconButton").textContent=btn.dataset.icon;
+      closeIconPicker();
+      return;
+    }
     updateCategoryIcon(iconPickerTarget.type, iconPickerTarget.index, btn.dataset.icon);
     closeIconPicker();
     toast("Category icon updated.");
@@ -11034,11 +11518,9 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     renderCategoryPicker();
   });
   $("categoryPickerAllOption").addEventListener("click",()=>selectPickerCategory(""));
-  ["recentCategoryGrid","allCategoryGrid"].forEach(id=>{
-    $(id).addEventListener("click",event=>{
-      const option=event.target.closest("[data-picker-category]");
-      if(option)selectPickerCategory(option.dataset.pickerCategory);
-    });
+  $("allCategoryGrid").addEventListener("click",event=>{
+    const option=event.target.closest("[data-picker-category]");
+    if(option)selectPickerCategory(option.dataset.pickerCategory);
   });
   $("tagSuggestions").addEventListener("click",event=>{
     const suggestion=event.target.closest("[data-tag-suggestion]");
@@ -11228,6 +11710,8 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     const choice=event.target.closest("[data-appearance-theme]");
     if(choice)chooseAppearanceTheme(choice.dataset.appearanceTheme);
   });
+  $("recurringExpenseMode").addEventListener("click",()=>setRecurringMode("expense",{closeForm:true}));
+  $("recurringIncomeMode").addEventListener("click",()=>setRecurringMode("income",{closeForm:true}));
   $("addRecurringExpense").addEventListener("click",()=>openRecurringForm());
   $("cancelRecurringExpense").addEventListener("click",closeRecurringForm);
   $("saveRecurringExpense").addEventListener("click",saveRecurringExpense);
@@ -11287,6 +11771,24 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
     $(id).addEventListener("input",event=>{
       event.target.value=event.target.value.replace(/\D/g,"").slice(0,4);
       $("incomePinError").classList.add("hidden");
+
+      if(
+        id==="incomePinCurrent"&&
+        incomePinModalMode==="unlock"&&
+        event.target.value.length===4
+      ){
+        clearTimeout(incomePinAutoSubmitTimer);
+        incomePinAutoSubmitTimer=setTimeout(
+          ()=>submitIncomePin(),
+          70
+        );
+      }else if(
+        id==="incomePinNew"&&
+        incomePinModalMode==="setup"&&
+        event.target.value.length===4
+      ){
+        $("incomePinConfirm").focus({preventScroll:true});
+      }
     });
     $(id).addEventListener("keydown",event=>{
       if(event.key==="Enter")submitIncomePin();
