@@ -3199,6 +3199,126 @@
       #txnAmount{font-size:27px!important}
     }
 
+
+    /* V60 — compact Add record and purpose-built amount calculation */
+    .txn-sheet-scroll{padding-top:7px!important}
+    .txn-primary-row{
+      display:block!important;
+      margin:0!important
+    }
+    .txn-amount-card{
+      min-height:0!important;
+      padding:6px 9px!important;
+      border-radius:14px!important
+    }
+    .txn-amount-card>label,
+    .txn-compact-control>label{
+      margin-bottom:3px!important;
+      font-size:7px!important
+    }
+    .txn-amount-input{
+      min-height:28px!important;
+      gap:5px!important
+    }
+    .txn-amount-input>span{font-size:17px!important}
+    #txnAmount{
+      font-size:23px!important;
+      line-height:1!important
+    }
+    .txn-category-date-row{
+      display:grid!important;
+      grid-template-columns:minmax(0,1.18fr) minmax(104px,.82fr)!important;
+      gap:7px!important;
+      margin-top:7px!important
+    }
+    .txn-category-date-row .txn-compact-control,
+    .txn-tag-row .txn-compact-control{
+      min-width:0!important;
+      min-height:0!important;
+      padding:5px 7px!important;
+      border-radius:12px!important
+    }
+    .txn-category-card .txn-category-button{
+      min-height:27px!important;
+      height:27px!important;
+      box-sizing:border-box!important;
+      padding:0 1px!important;
+      border:0!important;
+      border-radius:8px!important;
+      background:transparent!important
+    }
+    .txn-category-card .txn-control-symbol{font-size:14px!important}
+    .txn-category-card .txn-category-text{
+      font-size:9px!important;
+      text-align:left!important
+    }
+    .txn-date-shell{
+      height:28px!important;
+      min-height:28px!important
+    }
+    .txn-date-shell .txn-control-symbol{height:26px!important}
+    .txn-date-card .txn-compact-input{
+      height:26px!important;
+      min-height:26px!important;
+      line-height:26px!important;
+      font-size:8px!important;
+      text-align:left!important
+    }
+    .txn-tag-row{margin-top:7px!important}
+    .txn-tag-row .txn-tag-control{
+      display:grid!important;
+      grid-template-columns:auto minmax(0,1fr)!important;
+      align-items:center!important;
+      gap:8px!important;
+      min-height:34px!important
+    }
+    .txn-tag-row .txn-tag-control>label{
+      margin:0!important;
+      white-space:nowrap
+    }
+    .txn-tag-row #txnTag{
+      height:26px!important;
+      min-height:26px!important;
+      line-height:26px!important;
+      padding:0 6px!important;
+      border-radius:8px!important;
+      background:var(--field-bg)!important;
+      text-align:left!important;
+      font-size:9px!important
+    }
+    .tag-suggestions-wrap{margin-top:6px!important}
+    .money-keyboard-toolbar{
+      grid-template-columns:minmax(74px,1fr) 58px 67px 49px!important;
+      gap:5px!important;
+      min-height:50px!important;
+      padding-top:6px!important;
+      padding-bottom:calc(6px + env(safe-area-inset-bottom))!important
+    }
+    .money-keyboard-toolbar .money-keyboard-operator{
+      min-height:36px!important;
+      padding:0 5px!important;
+      font-size:8px!important;
+      white-space:nowrap
+    }
+    .money-keyboard-toolbar .money-keyboard-done{
+      min-width:49px!important;
+      min-height:36px!important;
+      padding:0 7px!important
+    }
+    .money-keyboard-copy strong{font-size:8px!important}
+    body.money-keyboard-toolbar-open .txn-sticky-actions{
+      bottom:calc(var(--keyboard-inset) + 62px + env(safe-area-inset-bottom))!important
+    }
+    @media (max-width:340px){
+      .txn-category-date-row{
+        grid-template-columns:minmax(0,1.08fr) minmax(100px,.92fr)!important
+      }
+      .money-keyboard-toolbar{
+        grid-template-columns:minmax(66px,1fr) 54px 62px 45px!important
+      }
+      .money-keyboard-toolbar .money-keyboard-operator{font-size:7px!important}
+    }
+
 </style>
 </head>
 <body>
@@ -3917,7 +4037,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 59 moves amount operators above the system keyboard, cleans the Add record layout and protects fixed income behind the income PIN.</p>
+            Version 60 fixes Category selection, clarifies cost merging and refund subtraction, and compacts the Add record layout.</p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
       </details>
@@ -4018,7 +4138,9 @@
             <input id="txnAmount" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-money-expression data-money-min="0.01">
           </div>
         </div>
+      </div>
 
+      <div class="txn-secondary-row txn-category-date-row">
         <div class="txn-compact-control txn-category-card">
           <label for="txnCategoryPickerButton">Category</label>
           <button id="txnCategoryPickerButton" class="txn-category-button" type="button">
@@ -4028,17 +4150,17 @@
           </button>
           <select id="txnCategory" class="hidden" aria-hidden="true" tabindex="-1"></select>
         </div>
-      </div>
 
-      <div class="txn-secondary-row">
-        <div class="txn-compact-control">
+        <div class="txn-compact-control txn-date-card">
           <label for="txnDate">Date</label>
           <div class="txn-compact-shell txn-date-shell">
             <span class="txn-control-symbol" aria-hidden="true">◷</span>
             <input id="txnDate" class="txn-compact-input" type="date">
           </div>
         </div>
+      </div>
 
+      <div class="txn-tag-row">
         <div class="txn-compact-control txn-tag-control">
           <label for="txnTag">Tag</label>
           <input id="txnTag" class="txn-compact-input" maxlength="40" placeholder="Short note">
@@ -4208,15 +4330,15 @@
     <small id="moneyKeyboardLabel">Amount</small>
     <strong id="moneyKeyboardResult">Enter an amount</strong>
   </div>
-  <button id="moneyKeyboardAdd" type="button" class="money-keyboard-operator" aria-label="Add amount">＋</button>
-  <button id="moneyKeyboardSubtract" type="button" class="money-keyboard-operator" aria-label="Subtract amount">−</button>
+  <button id="moneyKeyboardAdd" type="button" class="money-keyboard-operator" aria-label="Add another cost">＋ Cost</button>
+  <button id="moneyKeyboardSubtract" type="button" class="money-keyboard-operator" aria-label="Subtract refund">− Refund</button>
   <button id="moneyKeyboardDone" type="button" class="money-keyboard-done">Done</button>
 </div>
 
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=59"></script>
-<script src="firebase-cloud-v59.js?v=59"></script>
+<script src="firebase-config.js?v=60"></script>
+<script src="firebase-cloud-v60.js?v=60"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -7429,8 +7551,15 @@
   }
 
   function moneyExpressionResultText(result){
-    if(result.empty)return "Enter an amount";
-    if(result.valid)return `= ${money(result.value)}`;
+    if(result.empty)return "Add costs or subtract a refund";
+    if(result.valid){
+      const hasPlus=result.text.includes("+");
+      const hasMinus=result.text.includes("-");
+      if(hasPlus&&hasMinus)return `Final total ${money(result.value)}`;
+      if(hasPlus)return `Combined total ${money(result.value)}`;
+      if(hasMinus)return `After refund ${money(result.value)}`;
+      return `Amount ${money(result.value)}`;
+    }
     if(result.incomplete)return "Enter the next amount";
     return "Use numbers, + and − only";
   }
@@ -8767,22 +8896,14 @@
       button.classList.toggle("active",button.dataset.pickerMode===categoryPickerFilterMode);
     });
 
-    if(isFilter){
-      $("recentCategorySection").classList.add("hidden");
-      $("recentCategoryGrid").innerHTML="";
-    }else{
-      const recent=recentCategoriesForType(currentTxnType())
-        .filter(category=>all.includes(category))
-        .filter(category=>!query||category.toLocaleLowerCase().includes(query));
-      $("recentCategorySection").classList.toggle("hidden",!recent.length);
-      $("recentCategoryGrid").innerHTML=recent.map(categoryPickerOption).join("");
-    }
-
     $("allCategoryGrid").innerHTML=filtered.map(categoryPickerOption).join("");
     $("categoryPickerEmpty").classList.toggle("hidden",filtered.length>0);
   }
 
   function openCategoryPicker(target="transaction"){
+    if(activeMoneyExpressionInput){
+      closeMoneyKeyboardToolbar({commit:true,blur:true});
+    }
     categoryPickerTarget=target;
     if(target==="filter"){
       const filterType=$("filterType")?.value||"";
