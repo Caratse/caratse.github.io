@@ -3019,6 +3019,186 @@
       }
     }
 
+
+    /* V59 — clean amount/category layout */
+    .txn-primary-row{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr)!important;
+      gap:10px!important;
+      align-items:stretch!important
+    }
+    .txn-amount-card{
+      width:100%;
+      min-width:0;
+      padding:12px 14px!important;
+      border:1px solid var(--line)!important;
+      border-radius:18px!important;
+      background:var(--card)!important;
+      box-sizing:border-box
+    }
+    .txn-amount-card>label,
+    .txn-category-card>label{
+      display:block;
+      margin:0 0 6px!important;
+      color:var(--muted);
+      font-size:8px!important;
+      font-weight:850
+    }
+    .txn-amount-input{
+      display:grid!important;
+      grid-template-columns:auto minmax(0,1fr)!important;
+      align-items:center!important;
+      gap:7px!important;
+      min-height:54px!important;
+      padding:0!important;
+      border:0!important;
+      background:transparent!important
+    }
+    .txn-amount-input>span{
+      color:var(--muted);
+      font-size:22px!important;
+      font-weight:800
+    }
+    #txnAmount{
+      width:100%!important;
+      min-width:0!important;
+      padding:0!important;
+      border:0!important;
+      outline:0!important;
+      background:transparent!important;
+      text-align:right!important;
+      font-size:30px!important;
+      font-weight:900!important;
+      line-height:1.1!important
+    }
+    .txn-category-card{
+      width:100%;
+      min-width:0;
+      padding:0!important;
+      border:0!important;
+      background:transparent!important;
+      box-sizing:border-box
+    }
+    .txn-category-card .txn-category-button{
+      width:100%!important;
+      min-width:0!important;
+      min-height:58px!important;
+      height:auto!important;
+      padding:11px 13px!important;
+      border:1px solid var(--line)!important;
+      border-radius:16px!important;
+      background:var(--field-bg)!important;
+      box-sizing:border-box
+    }
+    .txn-category-card .txn-category-text{
+      overflow:hidden;
+      min-width:0;
+      text-overflow:ellipsis;
+      white-space:nowrap
+    }
+    .txn-secondary-row{margin-top:10px!important}
+    .money-expression-tools{display:none!important}
+
+    /* V59 — amount accessory bar above the system keyboard */
+    .money-keyboard-toolbar{
+      position:fixed;
+      z-index:2200;
+      left:0;
+      top:auto;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 48px 48px auto;
+      align-items:center;
+      gap:7px;
+      width:100%;
+      min-height:54px;
+      padding:7px max(10px,env(safe-area-inset-right))
+        calc(7px + env(safe-area-inset-bottom))
+        max(10px,env(safe-area-inset-left));
+      border-top:1px solid rgba(60,70,66,.14);
+      background:rgba(248,249,250,.97);
+      box-shadow:0 -8px 24px rgba(28,34,31,.12);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      box-sizing:border-box
+    }
+    .money-keyboard-toolbar.hidden{display:none!important}
+    .money-keyboard-copy{
+      min-width:0;
+      padding-left:2px
+    }
+    .money-keyboard-copy small{
+      display:block;
+      color:var(--muted);
+      font-size:7px;
+      font-weight:800
+    }
+    .money-keyboard-copy strong{
+      display:block;
+      overflow:hidden;
+      margin-top:2px;
+      color:var(--ink);
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:10px
+    }
+    .money-keyboard-copy strong.valid{color:var(--green)}
+    .money-keyboard-copy strong.invalid{color:var(--red)}
+    .money-keyboard-toolbar button{
+      min-height:38px;
+      border:1px solid var(--line);
+      border-radius:11px;
+      background:var(--card);
+      color:var(--ink);
+      font-size:18px;
+      font-weight:900
+    }
+    .money-keyboard-toolbar .money-keyboard-done{
+      min-width:66px;
+      padding:0 13px;
+      border-color:var(--yellow-2);
+      background:var(--yellow);
+      color:var(--accent-ink);
+      font-size:9px
+    }
+    body.money-keyboard-toolbar-open .toast{
+      margin-bottom:62px
+    }
+
+    /* V59 — fixed income privacy */
+    #recurringIncomeMode .privacy-lock{
+      margin-left:4px;
+      font-size:7px
+    }
+    .recurring-private-note{
+      display:grid;
+      place-items:center;
+      gap:5px;
+      min-height:92px;
+      padding:14px;
+      border:1px dashed var(--line);
+      border-radius:14px;
+      background:var(--field-bg);
+      text-align:center
+    }
+    .recurring-private-note strong{font-size:10px}
+    .recurring-private-note span{
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.4
+    }
+
+    @media (max-width:350px){
+      .money-keyboard-toolbar{
+        grid-template-columns:minmax(0,1fr) 42px 42px auto;
+        gap:5px
+      }
+      .money-keyboard-toolbar .money-keyboard-done{
+        min-width:58px;
+        padding:0 9px
+      }
+      #txnAmount{font-size:27px!important}
+    }
+
 </style>
 </head>
 <body>
@@ -3467,11 +3647,6 @@
           <div class="field money-expression-field" style="margin-top:10px">
             <label for="overallBudget">Total budget (RMB)</label>
             <input id="overallBudget" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 8000+500-200" data-money-expression data-money-min="0">
-            <div class="money-expression-tools compact">
-              <button type="button" data-money-operator="+" data-money-target="overallBudget">＋ Add</button>
-              <button type="button" data-money-operator="-" data-money-target="overallBudget">− Subtract</button>
-              <small id="overallBudgetResult" data-money-result-for="overallBudget"></small>
-            </div>
           </div>
           <p id="budgetInheritanceNote" class="helper">Current month is selected automatically.</p>
           <button id="saveBudget" class="primary" style="width:100%;margin-top:10px">Save budget override</button>
@@ -3531,11 +3706,6 @@
               <div class="field money-expression-field">
                 <label for="recurringAmount">Amount (RMB)</label>
                 <input id="recurringAmount" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2100+100" data-money-expression data-money-min="0.01">
-                <div class="money-expression-tools compact">
-                  <button type="button" data-money-operator="+" data-money-target="recurringAmount">＋ Add</button>
-                  <button type="button" data-money-operator="-" data-money-target="recurringAmount">− Subtract</button>
-                  <small id="recurringAmountResult" data-money-result-for="recurringAmount"></small>
-                </div>
               </div>
               <div class="field">
                 <label>Every month on day</label>
@@ -3747,7 +3917,7 @@
         </summary>
         <div class="settings-card-body">
           <p style="margin:0;color:var(--muted);line-height:1.55;font-size:12px">
-            Version 58 adds amount arithmetic, category-first entry, automatic PIN unlock, fixed income and a cleaner category manager.</p>
+            Version 59 moves amount operators above the system keyboard, cleans the Add record layout and protects fixed income behind the income PIN.</p>
           <button id="installBtn" class="primary hidden" style="width:100%;margin-top:12px">Install app</button>
         </div>
       </details>
@@ -3847,14 +4017,9 @@
             <span>¥</span>
             <input id="txnAmount" class="money-expression-input" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-money-expression data-money-min="0.01">
           </div>
-          <div class="money-expression-tools">
-            <button type="button" data-money-operator="+" data-money-target="txnAmount" aria-label="Add another amount">＋ Add</button>
-            <button type="button" data-money-operator="-" data-money-target="txnAmount" aria-label="Subtract an amount">− Subtract</button>
-            <small id="txnAmountResult" data-money-result-for="txnAmount"></small>
-          </div>
         </div>
 
-        <div class="txn-compact-control">
+        <div class="txn-compact-control txn-category-card">
           <label for="txnCategoryPickerButton">Category</label>
           <button id="txnCategoryPickerButton" class="txn-category-button" type="button">
             <span id="txnCategorySymbol" class="txn-control-symbol" aria-hidden="true">#</span>
@@ -4028,7 +4193,7 @@
     </div>
     <p id="deleteCategoryMessage"></p>
     <div id="deleteCategorySelectWrap" class="field delete-box hidden">
-      <label>Move existing records and fixed-expense rules to</label>
+      <label>Move existing records and fixed-item rules to</label>
       <select id="deleteCategoryTarget"></select>
     </div>
     <div class="modal-actions">
@@ -4038,10 +4203,20 @@
   </div>
 </div>
 
+<div id="moneyKeyboardToolbar" class="money-keyboard-toolbar hidden" role="toolbar" aria-label="Amount calculation controls">
+  <div class="money-keyboard-copy">
+    <small id="moneyKeyboardLabel">Amount</small>
+    <strong id="moneyKeyboardResult">Enter an amount</strong>
+  </div>
+  <button id="moneyKeyboardAdd" type="button" class="money-keyboard-operator" aria-label="Add amount">＋</button>
+  <button id="moneyKeyboardSubtract" type="button" class="money-keyboard-operator" aria-label="Subtract amount">−</button>
+  <button id="moneyKeyboardDone" type="button" class="money-keyboard-done">Done</button>
+</div>
+
 <div id="toast" class="toast"></div>
 
-<script src="firebase-config.js?v=58"></script>
-<script src="firebase-cloud-v58.js?v=58"></script>
+<script src="firebase-config.js?v=59"></script>
+<script src="firebase-cloud-v59.js?v=59"></script>
 <script>
 (() => {
   const STORAGE_KEY = "daily_budget_en_rmb_v1";
@@ -4265,6 +4440,8 @@
   let recordsSortMode = "time-desc";
   let editingRecurringId = null;
   let recurringMode = "expense";
+  let activeMoneyExpressionInput = null;
+  let moneyKeyboardClosing = false;
   let budgetSelectedMonth = currentMonthKey();
   let monthPickerYear = Number(currentMonthKey().slice(0,4));
   let categoryPickerTarget = "transaction";
@@ -6528,15 +6705,32 @@
   }
 
   function setRecurringMode(type,{closeForm=false}={}){
-    recurringMode=type==="income"?"income":"expense";
+    const next=type==="income"?"income":"expense";
+    if(next==="income"&&incomePrivacyLocked()){
+      requestIncomeUnlock(
+        ()=>setRecurringMode("income",{closeForm})
+      );
+      return;
+    }
+
+    recurringMode=next;
     if(closeForm)closeRecurringForm();
     renderRecurringExpenses();
   }
 
   function openRecurringForm(id=null){
-    editingRecurringId=id;
     const rule=id?state.recurringExpenses.find(item=>item.id===id):null;
-    if(rule)recurringMode=rule.type==="income"?"income":"expense";
+    const targetType=rule?.type==="income"
+      ?"income"
+      :recurringMode;
+
+    if(targetType==="income"&&incomePrivacyLocked()){
+      requestIncomeUnlock(()=>openRecurringForm(id));
+      return;
+    }
+
+    editingRecurringId=id;
+    if(rule)recurringMode=targetType;
 
     populateRecurringFormOptions();
     const categories=recurringMode==="income"
@@ -6611,34 +6805,64 @@
 
   function renderRecurringExpenses(){
     if(!$("recurringList"))return;
+
+    const locked=incomePrivacyLocked();
+    if(locked&&recurringMode==="income"){
+      recurringMode="expense";
+      closeRecurringForm();
+    }
+
     populateRecurringFormOptions();
 
     const allRules=[...(state.recurringExpenses||[])];
-    const expenseActive=allRules.filter(
-      rule=>rule.type!=="income"&&rule.enabled
-    ).length;
-    const incomeActive=allRules.filter(
-      rule=>rule.type==="income"&&rule.enabled
-    ).length;
+    const expenseRules=allRules.filter(rule=>rule.type!=="income");
+    const incomeRules=allRules.filter(rule=>rule.type==="income");
+    const expenseActive=expenseRules.filter(rule=>rule.enabled).length;
+    const incomeActive=incomeRules.filter(rule=>rule.enabled).length;
     const active=expenseActive+incomeActive;
 
-    const rules=allRules
-      .filter(rule=>(rule.type==="income"?"income":"expense")===recurringMode)
+    const rules=(recurringMode==="income"?incomeRules:expenseRules)
       .sort((a,b)=>
         Number(b.enabled)-Number(a.enabled) ||
         a.day-b.day ||
         String(a.tag).localeCompare(String(b.tag))
       );
 
-    $("recurringExpenseMode").classList.toggle("active",recurringMode==="expense");
-    $("recurringIncomeMode").classList.toggle("active",recurringMode==="income");
+    $("recurringExpenseMode").classList.toggle(
+      "active",
+      recurringMode==="expense"
+    );
+    $("recurringIncomeMode").classList.toggle(
+      "active",
+      recurringMode==="income"
+    );
+    $("recurringIncomeMode").innerHTML=locked
+      ?'Income <span class="privacy-lock">🔒</span>'
+      :"Income";
+
     $("addRecurringExpense").textContent=recurringMode==="income"
       ?"＋ Add fixed income"
       :"＋ Add fixed expense";
-    $("recurringCountBadge").textContent=`${active} active`;
-    $("recurringSummaryText").textContent=allRules.length
-      ?`${expenseActive} expense · ${incomeActive} income active`
-      :"No fixed expenses or income";
+
+    if(locked){
+      $("recurringCountBadge").textContent=
+        `${expenseActive} expense active`;
+      $("recurringSummaryText").textContent=
+        `${expenseActive} expense active · Income protected`;
+    }else{
+      $("recurringCountBadge").textContent=`${active} active`;
+      $("recurringSummaryText").textContent=allRules.length
+        ?`${expenseActive} expense · ${incomeActive} income active`
+        :"No fixed expenses or income";
+    }
+
+    if(locked&&recurringMode==="income"){
+      $("recurringList").innerHTML=`<div class="recurring-private-note">
+        <strong>Fixed income is protected</strong>
+        <span>Enter your income PIN to view or edit these rules.</span>
+      </div>`;
+      return;
+    }
 
     $("recurringList").innerHTML=rules.length
       ?rules.map(rule=>{
@@ -7074,6 +7298,10 @@
   }
 
   function lockIncomePrivacy({showToast=false}={}){
+    if(recurringMode==="income"){
+      recurringMode="expense";
+      closeRecurringForm();
+    }
     if(!incomePrivacyUnlocked){
       document.body.classList.add("income-privacy-locked");
       return;
@@ -7193,25 +7421,87 @@
     };
   }
 
-  function updateMoneyExpressionPreview(input){
-    if(!input)return;
-    const result=evaluateMoneyExpression(input.value);
-    const target=$(`[data-money-result-for="${input.id}"]`);
-    if(!target)return result;
+  function moneyExpressionLabel(input){
+    const labelled=input?.closest(
+      ".txn-amount-card,.money-expression-field,.field"
+    )?.querySelector("label");
+    return labelled?.textContent?.trim()||"Amount";
+  }
 
-    target.classList.remove("valid","invalid");
-    if(result.empty){
-      target.textContent="You can enter 100+20-5";
-    }else if(result.valid){
-      target.textContent=`= ${money(result.value)}`;
-      target.classList.add("valid");
-    }else if(result.incomplete){
-      target.textContent="Enter the next amount";
-    }else{
-      target.textContent="Use numbers, + and − only";
-      target.classList.add("invalid");
+  function moneyExpressionResultText(result){
+    if(result.empty)return "Enter an amount";
+    if(result.valid)return `= ${money(result.value)}`;
+    if(result.incomplete)return "Enter the next amount";
+    return "Use numbers, + and − only";
+  }
+
+  function updateMoneyExpressionPreview(input){
+    if(!input)return {
+      valid:false,
+      empty:true,
+      value:0,
+      text:""
+    };
+
+    const result=evaluateMoneyExpression(input.value);
+    if(activeMoneyExpressionInput===input&&$("moneyKeyboardToolbar")){
+      $("moneyKeyboardLabel").textContent=moneyExpressionLabel(input);
+      $("moneyKeyboardResult").textContent=moneyExpressionResultText(result);
+      $("moneyKeyboardResult").classList.toggle("valid",result.valid);
+      $("moneyKeyboardResult").classList.toggle(
+        "invalid",
+        !result.valid&&!result.empty&&!result.incomplete
+      );
     }
     return result;
+  }
+
+  function positionMoneyKeyboardToolbar(){
+    const toolbar=$("moneyKeyboardToolbar");
+    if(!toolbar||toolbar.classList.contains("hidden"))return;
+
+    const viewport=window.visualViewport;
+    const width=viewport?.width||window.innerWidth;
+    const left=viewport?.offsetLeft||0;
+    const visibleBottom=(viewport?.offsetTop||0)+(viewport?.height||window.innerHeight);
+    const top=Math.max(0,visibleBottom-toolbar.offsetHeight);
+
+    toolbar.style.left=`${left}px`;
+    toolbar.style.width=`${width}px`;
+    toolbar.style.top=`${top}px`;
+  }
+
+  function openMoneyKeyboardToolbar(input){
+    if(!input)return;
+    activeMoneyExpressionInput=input;
+    $("moneyKeyboardToolbar").classList.remove("hidden");
+    document.body.classList.add("money-keyboard-toolbar-open");
+    updateMoneyExpressionPreview(input);
+    requestAnimationFrame(positionMoneyKeyboardToolbar);
+    setTimeout(positionMoneyKeyboardToolbar,80);
+  }
+
+  function closeMoneyKeyboardToolbar({
+    commit=true,
+    blur=false
+  }={}){
+    const input=activeMoneyExpressionInput;
+    if(!input||moneyKeyboardClosing)return;
+
+    moneyKeyboardClosing=true;
+    if(commit)commitMoneyExpressionInput(input);
+
+    activeMoneyExpressionInput=null;
+    $("moneyKeyboardToolbar").classList.add("hidden");
+    $("moneyKeyboardToolbar").style.top="";
+    $("moneyKeyboardToolbar").style.left="";
+    $("moneyKeyboardToolbar").style.width="";
+    document.body.classList.remove("money-keyboard-toolbar-open");
+
+    if(blur&&document.activeElement===input){
+      input.blur();
+    }
+    moneyKeyboardClosing=false;
   }
 
   function moneyExpressionValue(inputId,{allowZero=false}={}){
@@ -8476,6 +8766,17 @@
     qsa("#categoryPickerModeTabs [data-picker-mode]").forEach(button=>{
       button.classList.toggle("active",button.dataset.pickerMode===categoryPickerFilterMode);
     });
+
+    if(isFilter){
+      $("recentCategorySection").classList.add("hidden");
+      $("recentCategoryGrid").innerHTML="";
+    }else{
+      const recent=recentCategoriesForType(currentTxnType())
+        .filter(category=>all.includes(category))
+        .filter(category=>!query||category.toLocaleLowerCase().includes(query));
+      $("recentCategorySection").classList.toggle("hidden",!recent.length);
+      $("recentCategoryGrid").innerHTML=recent.map(categoryPickerOption).join("");
+    }
 
     $("allCategoryGrid").innerHTML=filtered.map(categoryPickerOption).join("");
     $("categoryPickerEmpty").classList.toggle("hidden",filtered.length>0);
@@ -10174,6 +10475,9 @@
   }
 
   function setView(view,{scrollToTop=true}={}){
+    if(activeMoneyExpressionInput){
+      closeMoneyKeyboardToolbar({commit:true,blur:true});
+    }
     const changed=view!==currentView;
     const leavingRecords=
       changed&&currentView==="records"&&view!=="records";
@@ -10274,6 +10578,9 @@
     updateKeyboardGeometry();
   }
   function closeModal({restoreScroll=true}={}){
+    if(activeMoneyExpressionInput){
+      closeMoneyKeyboardToolbar({commit:true,blur:true});
+    }
     $("txnModal").classList.remove("open");
     document.body.classList.remove("keyboard-open");
     document.documentElement.style.setProperty("--keyboard-inset","0px");
@@ -11413,25 +11720,57 @@ $("categoryExpenseBtn").addEventListener("click",()=>setCategoryMode("expense"))
       }
     }
   });
-  document.addEventListener("click",event=>{
-    const operatorButton=event.target.closest("[data-money-operator][data-money-target]");
-    if(operatorButton){
-      appendMoneyOperator(
-        $(operatorButton.dataset.moneyTarget),
-        operatorButton.dataset.moneyOperator
-      );
-    }
+  $("moneyKeyboardToolbar").addEventListener("pointerdown",event=>{
+    if(event.target.closest("button"))event.preventDefault();
+  });
+
+  $("moneyKeyboardAdd").addEventListener("click",()=>{
+    appendMoneyOperator(activeMoneyExpressionInput,"+");
+  });
+  $("moneyKeyboardSubtract").addEventListener("click",()=>{
+    appendMoneyOperator(activeMoneyExpressionInput,"-");
+  });
+  $("moneyKeyboardDone").addEventListener("click",()=>{
+    closeMoneyKeyboardToolbar({commit:true,blur:true});
   });
 
   qsa("[data-money-expression]").forEach(input=>{
+    input.addEventListener("focus",()=>{
+      openMoneyKeyboardToolbar(input);
+    });
+    input.addEventListener("click",()=>{
+      openMoneyKeyboardToolbar(input);
+    });
     input.addEventListener("input",()=>{
       input.value=input.value
         .replace(/[^0-9+\-−–—＋.¥￥,，\s]/g,"");
       updateMoneyExpressionPreview(input);
     });
-    input.addEventListener("blur",()=>commitMoneyExpressionInput(input));
+    input.addEventListener("blur",()=>{
+      setTimeout(()=>{
+        if(activeMoneyExpressionInput===input){
+          closeMoneyKeyboardToolbar({
+            commit:true,
+            blur:false
+          });
+        }
+      },100);
+    });
     updateMoneyExpressionPreview(input);
   });
+
+  window.visualViewport?.addEventListener(
+    "resize",
+    positionMoneyKeyboardToolbar
+  );
+  window.visualViewport?.addEventListener(
+    "scroll",
+    positionMoneyKeyboardToolbar
+  );
+  window.addEventListener(
+    "orientationchange",
+    ()=>setTimeout(positionMoneyKeyboardToolbar,120)
+  );
 
   $("toggleCategoryEdit").addEventListener("click",toggleCategoryEditing);
   $("newCategoryName").addEventListener("keydown",e=>{if(e.key==="Enter")addCategory();});

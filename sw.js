@@ -1,10 +1,10 @@
-const CACHE_NAME = "daily-budget-cloud-v58-entry-income-categories-20260803";
+const CACHE_NAME = "daily-budget-cloud-v59-keyboard-income-privacy-20260803";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./firebase-config.js?v=58",
-  "./firebase-cloud-v58.js?v=58",
+  "./firebase-config.js?v=59",
+  "./firebase-cloud-v59.js?v=59",
   "./icon-192.png",
   "./icon-512.png"
 ];
